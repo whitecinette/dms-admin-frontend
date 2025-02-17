@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './style.scss';
-import config from '../config';
+import config from '../../config';
 import axios from 'axios';
 const backend_url = config.backend_url;
 

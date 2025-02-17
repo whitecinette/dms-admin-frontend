@@ -1,0 +1,24 @@
+.default-layout {
+    display: flex;
+    height: 100vh;
+  
+    .main-content {
+      margin-left: 18rem;
+      width: calc(100% - 18rem);
+      height: 100vh;
+      transition: margin-left 0.3s ease, width 0.3s ease;
+  
+      .page-content {
+        padding: 80px 20px;
+        flex-grow: 1;
+      }
+    }
+  
+    &.collapsed {
+      .main-content {
+        margin-left: 4rem;
+        width: calc(100% - 4rem);
+      }
+    }
+  }
+  
