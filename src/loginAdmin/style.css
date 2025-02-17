@@ -23,7 +23,7 @@ body {
 	display: flex;
 }
 .logo-container{
-	width: 100%;
+	width: 70%;
 	height: 100%;
 	display: flex;
 	align-items: center;
@@ -72,6 +72,8 @@ body {
 .signup-form {
 	/* background: linear-gradient(to bottom, #d7d2ff, #b9b2ff, #c9c9ff); */
 	transform: translateX(100%);
+	display: flex;
+	justify-content: center;
 }
 
 /* .signup h2{
@@ -82,6 +84,7 @@ body {
 	transform: translateX(0);
 	display: flex;
 	justify-content: center;
+	gap: 15PX;
 }
 
 /* Form Active States */
@@ -172,17 +175,44 @@ h2 {
 }
 
 /* Responsive Design */
+@media screen and (max-width: 768px) {
+	.main {
+	flex-direction: column;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	}
+	.logo-container{
+		align-items: start;
+	}
+	.company-logo{
+		border: none;
+		border-bottom: 1px solid #ccc;
+
+	}
+	.company-logo h2{
+		/* display: none; */
+		font-size: large;
+	}
+	h2{
+		margin: 10px;
+	}
+}
 @media screen and (max-width: 420px) {
 	.main {
 		max-width: 95%;
 		height: 500px;
+		border-radius: 0px;
 	}
-
 	input {
 		width: 90%;
+		height: 10px;
 	}
 
 	button {
 		width: 90%;
+	}
+	.company-logo h2{
+		font-size: medium;
 	}
 }
