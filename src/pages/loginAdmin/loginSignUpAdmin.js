@@ -18,7 +18,7 @@ const LoginSignUpAdmin = () => {
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    userRole: '',
+    role: '',
     email: '',
     password: ''
   });
@@ -44,21 +44,30 @@ const LoginSignUpAdmin = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(''); // Clear previous error
-
+    
+    if (!loginData.role) {
+      setError("Please select a role.");
+      return;
+    }
+  
     try {
-      const response = await axios.post(`${backend_url}/login-admin`, loginData);
-      console.log("Sending login data:", loginData);
-
-
+      const response = await axios.post(`${backend_url}/login-admin-or-super-admin`, loginData);
+  
       if (response.status === 200) {
-        localStorage.setItem('isAuthenticated', 'true');
-        alert('Login successful!');
+        console.log("Login successful:", response.data);
+  
+        // Store token and authentication state in localStorage
+        localStorage.setItem('authToken', response.data.token);
+        localStorage.setItem('userRole', response.data.user.role);
+        localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
+        
+        // Redirect to the dashboard
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       setError(error.response?.data?.message || 'Invalid email or password.');
     }
   };
-
 
   return (
     <div className='login_container'>
@@ -72,7 +81,7 @@ const LoginSignUpAdmin = () => {
           {!isSignup ? (
             <form onSubmit={handleLoginSubmit} className="login-form">
               <h2>Login</h2>
-              <select className="form-input" name="userRole" required value={loginData.userRole} onChange={handleLoginChange}>
+              <select className="form-input" name="role" required value={loginData.role} onChange={handleLoginChange}>
                 <option value="" disabled>Select User Role</option>
                 <option value="super_admin">Super Admin</option>
                 <option value="admin">Admin</option>
