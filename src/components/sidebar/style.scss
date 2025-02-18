@@ -72,7 +72,7 @@
           color: #41434b;
           text-decoration: none;
           border-radius: 10px;
-          transition: background 0.3s;
+          transition: background 3s;
 
           &:hover,
           &.active {
@@ -81,4 +81,23 @@
           }
       }
   }
+}
+// Responsive styles
+@media (max-width: 1024px) {
+    .sidebar {
+        // width: 0;
+        
+        &.collapsed {
+            width: 0;
+      
+            .sidebar-header{
+                background-color: #fff;
+                width: 4rem;
+            }
+            .sidebar-nav{
+                display: none;
+                width: 0;
+            }
+        }
+    }
 }

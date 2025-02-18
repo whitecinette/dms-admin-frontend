@@ -2,7 +2,7 @@
     background-color: #fff;
     position: fixed;
     top: 0;
-    left: 18rem;
+    left: 0rem;
     right: 0;
     height: 40px;
     display: flex;
@@ -12,6 +12,7 @@
     font-size: 1.5rem;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease;
+    z-index: 100;
   
     &.collapsed {
       left: 4rem;

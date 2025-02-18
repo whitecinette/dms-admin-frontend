@@ -1,0 +1,288 @@
+.dashboard{
+    .dashboard-header{
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .first-line{
+        display: flex;
+        width: 100%;
+        gap: 20px;
+        margin: 10px;
+        .today-sales{
+            background-color: #fff;
+            padding: 20px;
+            width: 60%;
+            border-radius: 10px;
+            .title{
+                font-weight: bold;
+            }
+            .sales-data{
+                display: inline-flex;
+                width: 100%;
+                .sales-card{
+                    padding: 12px;
+                    margin: 10px;
+                    width: 20%;
+                    border-radius: 10px;
+                    .sale-icon{
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        border-radius: 49%;
+                        width: 20px;
+                        font-size: 13px;
+                        padding: 10px;
+                        color: #fff;
+                    }
+                    .red{
+                        background-color: #FA5A7D;
+                    }
+                    .orange{
+                        background-color: #FF947A;
+                    }
+                    .green{
+                        background-color: #3CD856;
+                    }
+                    .purple{
+                        background-color: #BF83FF;
+                    }
+                    .info{
+                        margin-top: 10px;
+                        .sale-value{
+                            font-size: 1.5rem;
+                            font-weight: 500;
+                        }
+                        .sale-title{
+                            font-size: 15px;
+                            color: #425166;
+                        }
+                        .sale-yesterday{
+                            font-size: 12px;
+                            color: #4079ED;
+                        }
+                    }
+                }
+
+            }
+            .red{
+                background-color: #FFE2E5;
+            }
+            .orange{
+                background-color: #FFF4DE;
+            }
+            .green{
+                background-color: #DCFCE7;
+            }
+            .purple{
+                background-color: #F3E8FF;
+            }
+        }
+        .extraction-insights-graph{
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 40%;
+            // height: 40%;
+            .extraction-header{
+                // font-size: 1rem;
+                font-weight: bold;
+            }
+        }
+    }
+    .second-line{
+        display: flex;
+        width: 100%;
+        gap: 20px;
+        // margin-top: 30px;
+        margin: 10px;
+        .total-revenue-graph{
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            width: 35%;
+            .total-revenue-header{
+                font-weight: bold;
+            }
+        }
+        .customer-satisfaction-graph{
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            width: 30%;
+            .customer-satisfaction-header{
+                font-weight: bold;
+            }
+            .data-table-content {
+                font-size: 1rem;
+                display: flex;
+                gap: 15%;
+                justify-content: center;
+                align-items: center; 
+            }
+              
+        }
+        .target-reality-graph{
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            width: 35%;
+            .target-reality-header{
+                font-weight: bold;
+            }
+            .custom-legend-content{
+                display: flex;
+                justify-content: space-between;
+                font-size: 14px;
+                // gap: 10px;
+            }
+            .green{
+                color: #4AB58E;
+            }
+            .yellow{
+                color: #FFCF00;
+            }            
+        }
+    }
+    .third-line{
+        display: flex;
+        width: 100%;
+        gap: 20px;
+        margin: 10px;
+        .top-products{
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            width: 50%;
+        }
+        .top-products-header{
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        
+            th {
+              text-align: left;
+              font-size: 14px;
+              color: #666;
+              padding-bottom: 8px;
+            }
+        
+            td {
+              padding: 12px 8px;
+              font-size: 14px;
+              color: #333;
+            }
+        
+            tbody tr {
+              border-bottom: 1px solid #f0f0f0;
+            }
+          }
+        
+          .progress-bar {
+            position: relative;
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+            
+            .red{
+                background-color: #FA5A7D;
+            }
+            .orange{
+                background-color: #FF947A;
+            }
+            .green{
+                background-color: #3CD856;
+            }
+            .purple{
+                background-color: #BF83FF;
+            }
+            .progress {
+                height: 100%;
+                border-radius: 3px;
+                transition: width 0.4s ease-in-out;
+            }
+        }
+        
+          .sales-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 20px;
+            border: 1px solid;
+          }
+        .red{
+            border-color: #FA5A7D;
+            color: #FA5A7D;
+        }
+        .orange{
+            border-color: #FF947A;
+            color: #FF947A;
+        }
+        .green{
+            border-color: #3CD856;
+            color: #3CD856;
+        }
+        .purple{
+            border-color: #BF83FF;
+            color: #BF83FF;
+        }
+        
+    }
+    .volume-service{
+        border-radius: 10px;
+        background-color: #fff;
+        padding: 20px;
+        width: 50%;
+        .volume-service-header{
+            font-weight: bold;
+        }
+    }
+}
+// Responsive styles
+@media (max-width: 1024px) {
+    .first-line, 
+    .second-line, 
+    .third-line {
+        flex-direction: column;
+        align-items: center; // Ensures proper alignment when stacked
+    }
+    .total-revenue-graph,
+    .today-sales, 
+    .extraction-insights-graph, 
+    .volume-service, 
+    .top-products, 
+    .target-reality-graph, 
+    .customer-satisfaction-graph {
+        width: 100% !important;  // Force full width
+        max-width: 100%;         // Prevents stretching
+        box-sizing: border-box;  // Ensures proper padding handling
+    }
+    
+    .custom-legend{
+        display: flex;
+        justify-content: center;
+        font-size: 14px;
+        gap: 10px;
+    }
+    .data-table-content{
+        
+        gap: 10% !important;
+        
+    }
+}
+
+@media (max-width: 768px) { 
+    .sales-data {
+        flex-direction: column !important; // Stack sales cards on smaller screens
+        align-items: center; // Center align stacked items
+    }
+
+    .sales-card {
+        width: 100% !important; // Make each card take full width
+    }
+}
