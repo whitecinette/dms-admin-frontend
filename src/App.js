@@ -20,51 +20,13 @@ function App() {
   };
 
   return (
-    // <Router>
-    //   <Suspense fallback={<div>Loading...</div>}      >
-    //     <Routes>
-    //       {/* Public Route - Login Page */}
-    //       <Route path="/login" element={<LoginSignUpAdmin />} />
-
-    //       {/* Private Routes - Only accessible with token */}
-    //       <Route path="/dashboard" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* orders */}
-    //       <Route path="/orders" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* sales report */}
-    //       <Route path="/salesData" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* Extraction */}
-    //       <Route path="/extraction" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* segment */}
-    //       <Route path="/segment" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* users */}
-    //       <Route path="/users" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-    //       {/* logout */}
-    //       <Route path="/logout" element={<PrivateRoute element={<DefaultLayout />} />}>
-    //         <Route index element={<Dashboard />} />
-    //       </Route>
-
-    //       {/* 404 Route for unrecognized paths */}
-    //       <Route path="*" element={<Page404 />} />
-    //     </Routes>
-    //   </Suspense>
-    // </Router>
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+           {/* Redirect from the root to the default page */}
+           {/* <Route path="/" element={<Navigate to="/dashboard" />} /> */}
           {/* Public Route - Login Page */}
-          <Route path="/login" element={<LoginSignUpAdmin />} />
+          <Route path="/" element={<LoginSignUpAdmin />} />
 
           {/* Protected Routes: All using DefaultLayout */}
           <Route element={<PrivateRoute element={<DefaultLayout />} />}>
