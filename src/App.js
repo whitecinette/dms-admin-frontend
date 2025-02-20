@@ -16,7 +16,7 @@ function App() {
 
   // PrivateRoute Component that checks if user is authenticated
   const PrivateRoute = ({ element }) => {
-    return token ? element : <Navigate to="/login" replace />;
+    return token ? element : <Navigate to="/" replace />;
   };
 
   return (

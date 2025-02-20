@@ -68,7 +68,7 @@ function Dashboard(){
                         </div>
                     </div>
                     </div>
-                <div  className="extraction-insights-graph">
+                <div className="extraction-insights-graph">
                     <div className="extraction-header">Extraction Insights</div>
                     <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={extractionData} >

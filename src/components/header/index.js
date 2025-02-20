@@ -1,7 +1,7 @@
 import { FaUserAlt } from "react-icons/fa";
 import "./style.scss";
 
-function Header({ isCollapsed, toggleSidebar }) {
+function Header({ isCollapsed}) {
     return (
         <header className={`header ${isCollapsed ? "collapsed" : ""}`}>
             <div className="profile">

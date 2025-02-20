@@ -1,0 +1,70 @@
+.User-page{
+
+    .user-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .user-page-content{
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .user-page-first-line{
+            display: flex;
+            
+            .user-page-filter{
+                width: 100vw;
+                display: flex;
+                justify-content: space-between;
+                input{
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+                }
+                .user-page-user-count{
+                    display: flex;
+                    gap: 10px;
+                    .user-count{
+                        cursor: pointer;
+                        padding: 5px;
+                        border-radius: 5px;
+                        font-size: 15px;
+                        &:hover{
+                            opacity: .8;
+                        }
+                    }
+                    .red{
+                        background-color: #FFE2E5;
+                    }
+                    .orange{
+                        background-color: #fbe3b2;
+                    }
+                    .green{
+                        background-color: #b9fdd0;
+                    }
+                    .purple{
+                        background-color: #f5c4c9;
+                    }
+                }
+                .user-page-add-button{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    &:hover{
+                        background-color: #45a049;
+                    }
+                }
+            }
+        }
+    }
+    .error-message{
+        color: rgb(240 28 28);
+    }
+}
