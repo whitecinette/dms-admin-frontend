@@ -51,7 +51,7 @@ function Users() {
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error.response.data.message);
+      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);
@@ -70,7 +70,7 @@ function Users() {
       fetchUsersData();
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error.response.data.message);
+      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);
@@ -89,7 +89,7 @@ function Users() {
       fetchUsersData();
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error.response.data.message);
+      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);

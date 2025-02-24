@@ -9,7 +9,7 @@ function DefaultLayout() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Track screen size
 
     const toggleSidebar = () => {
-        setIsCollapsed(!isCollapsed);
+        setIsCollapsed(prevState => !prevState);
     };
 
     // Handle window resize to detect if it's mobile view
@@ -26,7 +26,7 @@ function DefaultLayout() {
 
     return (
         <div className={`default-layout ${isCollapsed ? "collapsed" : isMobile ? "sidebar-open" : ""}`}>
-            <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+            <Sidebar isCollapsed={isCollapsed} open={()=>setIsCollapsed(false)} toggleSidebar={toggleSidebar} />
 
             {/* Show overlay & blur ONLY on small screens */}
             {isMobile && !isCollapsed && <div className="overlay" onClick={() => setIsCollapsed(true)}></div>}

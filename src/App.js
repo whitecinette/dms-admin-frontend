@@ -9,6 +9,7 @@ import SalesData from "./pages/SalesData";
 import Extraction from "./pages/Extraction";
 import Segment from "./pages/Segment";
 import Users from "./pages/Users";
+import Products from "./pages/products";
 
 function App() {
   // Get the token from localStorage
@@ -37,7 +38,7 @@ function App() {
             <Route path="/extraction" element={<Extraction />} />
             <Route path="/segment" element={<Segment />} />
             <Route path="/users" element={<Users />} />
-            {/* <Route path="/logout" element={<Dashboard />} /> */}
+            <Route path="/product" element={<Products />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

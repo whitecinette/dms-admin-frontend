@@ -1,0 +1,122 @@
+.Product-page{
+    .product-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .product-page-content{
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .product-page-first-line{
+            display: flex;
+            justify-content: space-between;
+            input, select{
+                border-radius: 10px;
+                border: 2px solid #808080;
+                color: #808080;
+                padding: 5px;
+                font-size: 12px;
+            }
+            .category-filter{
+                select{
+                    width: 20rem;
+                }
+            } 
+            .product-page-buttons{
+                display: flex;
+                gap: 5px;
+                .product-add-btn, .product-upload-btn, .product-download-btn{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    &:hover{
+                        opacity: .9;
+                    }
+                }
+                .product-add-btn{
+                    background-color: #4CAF50;
+                }
+                .product-upload-btn{
+                    background-color: #6666f2;
+                    .browse-btn{
+                        cursor: pointer;
+                    }
+                }
+                .product-download-btn{
+                    background-color: #ffcd00;
+                    color: black;
+                }
+            }
+        }
+    }
+    .product-add-box{
+        position: fixed;
+        height: 100vh;
+        width: 100vw;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        background: rgb(0 0 0 / 24%); 
+        backdrop-filter: blur(0px);
+        .product-add-container{
+            position: absolute;
+            top: 15%;
+            left: 40%;
+            background-color: #fff;
+            width: 400px;
+            border-radius: 10px;
+            .product-add-content{
+                padding: 15px;
+                .product-add-header{
+                    font-size: 20px;
+                    font-weight: 800;
+                }
+                .product-add-form{
+                    margin-top: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    input,select{
+                        padding: 10px;
+                        margin: 5px;
+                        border-radius: 5px;
+                    }
+                }
+                .product-add-button{
+                    display: flex;
+                    justify-content: end;
+                    margin-top: 10px;
+                    gap: 10px;
+                    .product-submit-btn,.product-cancel-btn{
+                        color: white;
+                        border-radius: 5px;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        &:hover{
+                            opacity: 9;
+                        }
+
+                    }
+                    .product-submit-btn{
+                        background-color: #4CAF50;
+                    }
+                    .product-cancel-btn{
+                        background-color: #8a8eff;
+                    }
+                }
+            }
+        }
+    }
+    .error-message{
+        color: rgb(240 28 28);
+    }
+    .success-message{
+        color: #4CAF50;
+    }
+}
