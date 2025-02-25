@@ -10,7 +10,6 @@ const backendUrl = config.backend_url;
 
 function Products() {
   const [category, setCategory] = useState("");
-  const [categoryList, setCategoryList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [product, setProduct] = useState([]);
@@ -19,8 +18,20 @@ function Products() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [success, setSuccess] = useState("");
   const [addBox, setAddBox] = useState(false);
-  const [productData, setProductData] =useState({})
+  
+  
 
+  const categoryList = ['smartphone', 'tab', 'wearable'];
+  const segmentList = ['6-10k', '10-15k', '15-20k', '20-30k', '30-40k', '40-70k', '70-100k', '100k']
+  const [productData, setProductData] = useState({
+    Brand: "",
+    Model: "",
+    Price: "",
+    Segment: segmentList.length > 0 ? segmentList[0] : "", 
+    Category: categoryList.length > 0 ? categoryList[0] : "", 
+    Status: "active", 
+    Specs: ""
+  });
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -121,6 +132,15 @@ function Products() {
         }
       }
       );
+      setProduct({
+        Brand: "",
+        Model: "",
+        Price: "",
+        Segment: segmentList.length > 0 ? segmentList[0] : "", 
+        Category: categoryList.length > 0 ? categoryList[0] : "", 
+        Status: "active", 
+        Specs: ""
+      })
       setAddBox(false);
       fetchProduct();
       setSuccess(response.data.message)
@@ -165,7 +185,6 @@ function Products() {
         "Category",
         "Status",
       ];
-      setCategoryList(response.data.categories);
       setProduct(response.data);
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
@@ -244,12 +263,12 @@ function Products() {
               onClick={() => setAddBox(true)}
             >
               <IoAddSharp />
-              Add
+              Add New
             </div>
             <div className="product-upload-btn">
               <label htmlFor="file-upload" className="browse-btn">
                 <FaFileUpload />
-                Upload
+                Upload Bulk CSV
               </label>
               <input
                 type="file"
@@ -260,7 +279,7 @@ function Products() {
             </div>
             <div className="product-download-btn">
               <FaDownload />
-              Download
+              Download CSV Format
             </div>
           </div>
         </div>
@@ -297,12 +316,24 @@ function Products() {
             <div className="product-add-content">
               <div className="product-add-header">Add Product</div>
               <div className="product-add-form">
-              <input type="text" name="Brand" placeholder="Brand" value={productData.brand} onChange={handleChange} required/>
-              <input type="text" name="Model" placeholder="Model" value={productData.model} onChange={handleChange} required/>
-              <input type="number" name="Price" placeholder="Price" value={productData.price} onChange={handleChange} required/>
-              <input type="text" name="Segment" placeholder="Segment" value={productData.segment} onChange={handleChange} required/>
-              <input type="text" name="Category" placeholder="Category" value={productData.category} onChange={handleChange} required/>
-              <select name="Status" value={productData.status} onChange={handleChange}>
+              <input type="text" name="Brand" placeholder="Brand" value={productData.Brand} onChange={handleChange} required/>
+              <input type="text" name="Model" placeholder="Model" value={productData.Model} onChange={handleChange} required/>
+              <input type="number" name="Price" placeholder="Price" value={productData.Price} onChange={handleChange} required/>
+              <select name="Segment" value={productData.Segment} onChange={handleChange}>
+              {segmentList.map((item, index) => (
+                <option key={index} value={item}>
+                  {item.toUpperCase()}
+                </option>
+              ))}
+              </select>
+              <select name="Category" value={productData.Category} onChange={handleChange}>
+              {categoryList.map((item, index) => (
+                <option key={index} value={item}>
+                  {item.toUpperCase()}
+                </option>
+              ))}
+              </select>
+              <select name="Status" value={productData.Status} onChange={handleChange}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>

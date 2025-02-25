@@ -7,9 +7,11 @@
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
+        
         .product-page-first-line{
             display: flex;
             justify-content: space-between;
+            margin-bottom: 15px;
             input, select{
                 border-radius: 10px;
                 border: 2px solid #808080;

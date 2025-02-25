@@ -22,6 +22,7 @@ function Users() {
   const fetchUsersData = async (sort = "createdAt", order) => {
     console.log("sort", sort);
     console.log("order", order);
+    console.log("role",role)
     try {
       const response = await axios.get(`${backendUrl}/user/get-by-admins`, {
         params: {
@@ -134,17 +135,17 @@ function Users() {
               </div>
               <div
                 className="user-count orange"
-                onClick={() => setRole("Employee")}
+                onClick={() => setRole("employee")}
               >
                 Employee: {employee}
               </div>
               <div
                 className="user-count purple"
-                onClick={() => setRole("Dealer")}
+                onClick={() => setRole("dealer")}
               >
                 Dealer: {dealer}
               </div>
-              <div className="user-count red" onClick={() => setRole("MDD")}>
+              <div className="user-count red" onClick={() => setRole("mdd")}>
                 MDD: {mdd}
               </div>
             </div>

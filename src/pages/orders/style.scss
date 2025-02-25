@@ -1,0 +1,224 @@
+.order-page{
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    
+    .order-page-filter{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        select{
+            // width: 100%;
+            height: 30px;
+            border-radius: 10px;
+            border: 2px solid #808080;
+            color: #808080;
+            padding:5px 15px;
+            font-size: 12px;
+        }
+        input{
+            // width: 100%;
+            height: 15px;
+            border-radius: 10px;
+            border: 2px solid #808080;
+            color: #808080;
+            padding: 5px;
+            font-size: 12px;
+        }
+        .order-page-filter-date{
+            font-size: .9rem;
+            display: flex;
+            gap: 20px;
+            .date{
+                display: flex;  
+                flex-direction: column;
+                input{
+                    width: 100%;
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+                    &::-webkit-calendar-picker-indicator {
+                        filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+                      }
+                }
+            }
+            .order-page-button{
+                display: flex;
+                gap: 5px;
+            }
+            .order-page-Reset-filter, .order-page-apply-filter{
+                border: none;
+                margin-top: 20px;
+                border-radius: 5px;
+                height: 30px;
+                padding: 5px;
+                cursor: pointer;
+            }
+            .order-page-Reset-filter{
+                background-color: #c1c1c1;
+                color: #fff;
+            }
+            .order-page-apply-filter{
+                background-color: #f78562;
+                color: #fff;
+            }
+
+        }
+        
+    }
+    .order-page-cards{
+        margin-top: 10px;
+        display: flex;
+        background-color: rgb(245 245 245 / 75%);
+        padding: 10px;
+        border-radius: 5px;
+        gap: 15px;
+        .order-page-order-card{
+            width: 70%;
+            .order-page-card-header{
+                font-size: 1.5rem;
+                font-weight: 900;
+            }
+            .order-page-order-list{
+                scrollbar-width: thin;
+                overflow-x: auto;
+                max-height: 60vh;
+                background-color: #fff;
+                padding: 10px;
+                border-radius: 5px;
+                .order-page-action-buttons{
+                    display: flex;
+                    justify-content: end;
+                    gap: 5px;
+                    .order-list-edit-btn{
+                        background-color: #007bff;
+                        color: #fff;
+                        padding: 5px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                    }
+                    .order-list-delete-btn{
+                        background-color: #e95866;
+                        color: #fff;
+                        padding: 5px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                    }
+                }
+                .order-page-details{
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    align-items: center;
+                    padding: 10px 0;
+                    .status {
+                        padding: 5px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    }
+                    .pending {
+                        background-color: #ff9800;
+                        color: #fff;
+                    }
+                    .confirmed {
+                        background-color: #90be6d;
+                        color: #fff;
+                    }
+                    .shipped {
+                        background-color: #f8961e;
+                        color: #fff;
+                      }
+                      .delivered {
+                        background-color: #43aa8b;
+                        color: #fff;
+                      }
+                      .cancelled {
+                        background-color: #f94144;
+                        color: #fff;
+                      }
+                }
+                .product-page-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin:15px 0;
+                    th, td {
+                      border: 1px solid #ddd;
+                      text-align: center;
+                    }
+                    th {
+                        background-color: #6666f2;
+                        font-weight: bold;
+                        border: none;
+                        color: #fff;
+                      }
+                  }
+                .product-total{
+                    display: flex;
+                    justify-content: end;
+                }
+            }
+            .order-page-action-buttons{
+             .order-page-add-product{
+                background-color: #4CAF50;
+                color: #fff;
+                padding: 5px;
+                border-radius: 5px;
+                cursor: pointer;
+                border: none;
+             } 
+             .order-page-save{
+                background-color: #007bff;
+                color: #fff;
+                padding: 5px;
+                border-radius: 5px;
+                cursor: pointer;
+                border: none;
+             }  
+            }
+        }
+        .order-page-dealer-card{
+            width: 30%;
+            height: 70vh;
+            .order-page-dealer-card-header{
+                font-size: 1.5rem;
+                font-weight: 900;
+            }
+            input{
+                height: 15px;
+                border-radius: 10px;
+                border: 2px solid #808080;
+                color: #808080;
+                padding: 5px;
+                font-size: 12px;
+            }
+            .order-page-dealer-card{
+                scrollbar-width: thin;
+                margin-top: 10px;
+                width: 100%;
+                background-color: #fff;
+                overflow-x: auto;
+                max-height: 60vh;
+                .order-page-dealer{
+                    display: flex;
+                    flex-direction: column;
+                    margin: 2px;
+                    padding: 5px;
+                    border-radius: 5px;
+                    background-color: #efeff8e0;
+                    cursor: pointer;
+                    &:hover {
+                        background-color: #f5f5f5;
+                      }
+                    &.active {
+                        background-color: #007bff; // Change background color for active dealer
+                        color: #fff;
+                        font-weight: bold;
+                        border-color: #0056b3;
+                      }
+                }
+            }
+        }
+    }
+}

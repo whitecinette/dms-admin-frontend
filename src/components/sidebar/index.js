@@ -24,7 +24,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
   const navItems = [
     { name: "Sales Dashboard", to: "/dashboard", icon: <FaChartPie size={20} /> },
     { name: "Extraction", to: "/extraction", icon: <LuPickaxe size={20} /> },
-    { name: "GFK", to: "/orders", icon: <GoGraph size={20} /> },
+    { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
     { name: "HR", to: "/salesData", icon: <svg width="20" height="20" viewBox="0 0 60 42" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M58.7419 33.871H1.25806C0.580645 33.871 0 34.4516 0 35.129V39.8715C0 40.5484 0.580645 41.1295 1.25806 41.1295H58.7419C59.4189 41.1295 60 40.5489 60 39.8715V35.129C60 34.4516 59.4194 33.871 58.7419 33.871Z" fill="#F94008" fillOpacity="0.62"/>
         <path d="M1.30645 28.0645H7.06452C7.8871 28.0645 8.70968 27.2419 8.70968 26.4194V18C8.70968 17.1774 9.19355 16.4516 10.0161 16.4516H16.5968C17.4194 16.4516 17.9516 17.1774 17.9516 18V26.4677C17.9516 27.2903 18.7258 28.1124 19.5484 28.1124H25.3548C26.1774 28.1124 26.6613 27.2903 26.6613 26.4677V1.20968C26.6613 0.387097 26.1774 0 25.3548 0H19.5484C18.7258 0 17.9516 0.435484 17.9516 1.20968V8.12903C17.9516 8.95161 17.4194 9.67742 16.5968 9.67742H10.0161C9.19355 9.67742 8.70968 8.95161 8.70968 8.12903V1.20968C8.70968 0.387097 7.8871 0 7.06452 0H1.30645C0.483871 0 0 0.435484 0 1.20968V26.4194C0 27.2419 0.483871 28.0645 1.30645 28.0645Z" fill="#F94008" fillOpacity="0.62"/>
@@ -42,6 +42,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
          },
     { name: "Users", to: "/users", icon: <MdOutlineGroups2 size={20} /> },
     { name: "Inventory", to:"#",icon: <MdOutlineInventory2 size={20} />,
+      onClick: ()=> open(),
         children:  [
           {name:"Products", to:"/product",},
           {name:"Orders", to:"/orders",},
@@ -98,9 +99,9 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
                     )}
                   </NavLink>
                 ) : (
-                  <div className="nav-item">
+                  <div className="nav-item" onClick={item.onClick} style={{cursor:"pointer"}}>
                     {cloneElement(item.icon, { style: { color: "rgba(249, 64, 8, 0.62)" } })}
-                    {!isCollapsed && <span style={{color:"rgb(85, 26, 139)"}}>{item.name}</span>}
+                    {!isCollapsed && <span style={{color:"rgb(85, 26, 139)"}} >{item.name}</span>}
                     {!isCollapsed && (
                       <span className="dropdown-arrow">
                         {openDropdowns[index] ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
