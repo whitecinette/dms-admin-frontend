@@ -5,11 +5,12 @@ import config from "../../config.js";
 import "./style.scss";
 import Table from "../../components/table";
 import axios from "axios";
+import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 
 const backendUrl = config.backend_url;
 
 function Products() {
-  const [category, setCategory] = useState("");
+  const [product_category, setproduct_category] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [product, setProduct] = useState([]);
@@ -18,19 +19,26 @@ function Products() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [success, setSuccess] = useState("");
   const [addBox, setAddBox] = useState(false);
-  
-  
 
-  const categoryList = ['smartphone', 'tab', 'wearable'];
-  const segmentList = ['6-10k', '10-15k', '15-20k', '20-30k', '30-40k', '40-70k', '70-100k', '100k']
+  const product_categoryList = ["smart_phone", "tab", "wearable"];
+  const segmentList = [
+    "6-10",
+    "10-15",
+    "15-20",
+    "20-30",
+    "30-40",
+    "40-70",
+    "70-100",
+    "100",
+  ];
   const [productData, setProductData] = useState({
-    Brand: "",
-    Model: "",
-    Price: "",
-    Segment: segmentList.length > 0 ? segmentList[0] : "", 
-    Category: categoryList.length > 0 ? categoryList[0] : "", 
-    Status: "active", 
-    Specs: ""
+    brand: "",
+    product_name: "",
+    price: "",
+    segment: segmentList.length > 0 ? segmentList[0] : "",
+    product_category:
+      product_categoryList.length > 0 ? product_categoryList[0] : "",
+    status: "active",
   });
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -126,27 +134,28 @@ function Products() {
     try {
       const response = await axios.post(
         `${backendUrl}/product/add-product-by-admin`,
-        productData,{
+        productData,
+        {
           headers: {
             Authorization: localStorage.getItem("authToken"),
+          },
         }
-      }
       );
       setProduct({
-        Brand: "",
-        Model: "",
-        Price: "",
-        Segment: segmentList.length > 0 ? segmentList[0] : "", 
-        Category: categoryList.length > 0 ? categoryList[0] : "", 
-        Status: "active", 
-        Specs: ""
-      })
+        brand: "",
+        product_name: "",
+        price: "",
+        segment: segmentList.length > 0 ? segmentList[0] : "",
+        product_category:
+          product_categoryList.length > 0 ? product_categoryList[0] : "",
+        status: "active",
+      });
       setAddBox(false);
       fetchProduct();
-      setSuccess(response.data.message)
-      setTimeout(()=>{
-        setSuccess("")
-      }, 3000)
+      setSuccess(response.data.message);
+      setTimeout(() => {
+        setSuccess("");
+      }, 3000);
     } catch (error) {
       setAddBox(false);
       console.log("err:", error);
@@ -173,18 +182,17 @@ function Products() {
             sort: String(sort),
             order: order,
             search: search,
-            category: category,
+            product_category: product_category,
           },
         }
       );
-      response.data.headers = [
-        "Brand",
-        "Model",
-        "Price",
-        "Segment",
-        "Category",
-        "Status",
-      ];
+      if (response.data?.data?.length > 0) {
+        response.data.headers = Object.keys(response.data.data[0]).filter(
+          (key) => !["_id", "createdAt", "updatedAt", "__v"].includes(key)
+        );
+      } else {
+        response.data.headers = [];
+      }
       setProduct(response.data);
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
@@ -211,7 +219,7 @@ function Products() {
   //call get function
   useEffect(() => {
     fetchProduct();
-  }, [currentPage, search, category]);
+  }, [currentPage, search, product_category]);
 
   const totalPages = Math.ceil(totalRecords / 50);
   // Handle Previous Page
@@ -244,13 +252,13 @@ function Products() {
               placeholder="Search"
             />
           </div>
-          <div className="category-filter">
+          <div className="product_category-filter">
             <select
-              onChange={(e) => setCategory(e.target.value)}
-              value={category}
+              onChange={(e) => setproduct_category(e.target.value)}
+              value={product_category}
             >
               <option value="">All Category</option>
-              {categoryList.map((item, index) => (
+              {product_categoryList.map((item, index) => (
                 <option key={index} value={item}>
                   {item.toUpperCase()}
                 </option>
@@ -277,7 +285,22 @@ function Products() {
                 onChange={handleFileChange}
               />
             </div>
-            <div className="product-download-btn">
+            <div
+              className="product-download-btn"
+              onClick={() =>
+                downloadCSVTemplate(
+                  product.headers.filter(
+                    (key) =>
+                      ![
+                        "_id",
+                        "createdAt",
+                        "updatedAt",
+                        "__v",
+                      ].includes(key)
+                  )
+                )
+              }
+            >
               <FaDownload />
               Download CSV Format
             </div>
@@ -316,31 +339,65 @@ function Products() {
             <div className="product-add-content">
               <div className="product-add-header">Add Product</div>
               <div className="product-add-form">
-              <input type="text" name="Brand" placeholder="Brand" value={productData.Brand} onChange={handleChange} required/>
-              <input type="text" name="Model" placeholder="Model" value={productData.Model} onChange={handleChange} required/>
-              <input type="number" name="Price" placeholder="Price" value={productData.Price} onChange={handleChange} required/>
-              <select name="Segment" value={productData.Segment} onChange={handleChange}>
-              {segmentList.map((item, index) => (
-                <option key={index} value={item}>
-                  {item.toUpperCase()}
-                </option>
-              ))}
-              </select>
-              <select name="Category" value={productData.Category} onChange={handleChange}>
-              {categoryList.map((item, index) => (
-                <option key={index} value={item}>
-                  {item.toUpperCase()}
-                </option>
-              ))}
-              </select>
-              <select name="Status" value={productData.Status} onChange={handleChange}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              <input type="text" name="Specs" placeholder="Specs" value={productData.specs} onChange={handleChange} required/>
+                <input
+                  type="text"
+                  name="brand"
+                  placeholder="brand"
+                  value={productData.brand}
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="text"
+                  name="product_name"
+                  placeholder="product_name"
+                  value={productData.product_name}
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="price"
+                  value={productData.price}
+                  onChange={handleChange}
+                  required
+                />
+                <select
+                  name="segment"
+                  value={productData.segment}
+                  onChange={handleChange}
+                >
+                  {segmentList.map((item, index) => (
+                    <option key={index} value={item}>
+                      {item.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="product_category"
+                  value={productData.product_category}
+                  onChange={handleChange}
+                >
+                  {product_categoryList.map((item, index) => (
+                    <option key={index} value={item}>
+                      {item.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="status"
+                  value={productData.status}
+                  onChange={handleChange}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </div>
               <div className="product-add-button">
-                <button className="product-submit-btn" onClick={addProduct}>Submit</button>
+                <button className="product-submit-btn" onClick={addProduct}>
+                  Submit
+                </button>
                 <button
                   className="product-cancel-btn"
                   onClick={() => setAddBox(false)}

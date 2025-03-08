@@ -1,0 +1,140 @@
+.mdd-page{
+
+    .mdd-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .mdd-page-content{
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .mdd-page-first-line{
+            display: flex;
+            
+            .mdd-page-filter{
+                width: 100vw;
+                display: flex;
+                justify-content: space-between;
+                input{
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+                }
+                .mdd-page-mdd-count{
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    .mdd-count{
+                        cursor: pointer;
+                        padding: 5px;
+                        border-radius: 5px;
+                        font-size: 15px;
+                        &:hover{
+                            opacity: .8;
+                        }
+                    }
+                    .red{
+                        background-color: #FFE2E5;
+                    }
+                    .orange{
+                        background-color: #fbe3b2;
+                    }
+                    .green{
+                        background-color: #b9fdd0;
+                    }
+                    .purple{
+                        background-color: #f5c4c9;
+                    }
+                }
+                .mdd-page-add-button{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    &:hover{
+                        background-color: #45a049;
+                    }
+                }
+            }
+        }
+    }
+    .error-message{
+        color: rgb(240 28 28);
+    }
+}
+/* 📌 Responsive Styling */
+@media (max-width: 768px) {
+    .mdd-page-header {
+        font-size: 1.2rem;
+    }
+
+    .mdd-page-content {
+        padding: 15px;
+        border-radius: 8px;
+
+        .mdd-page-first-line {
+            // flex-direction: column;
+            align-items: start;
+        }
+
+        .mdd-page-filter {
+            flex-direction: column;
+            justify-content: end;
+            gap: 5px;
+
+            input {
+                width: 90%;
+            }
+
+            .mdd-page-mdd-count {
+                // justify-content: center;
+                gap: 5px;
+            }
+
+            .mdd-page-add-button {
+                align-self: center;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .mdd-page-header {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .mdd-page-content {
+        padding: 10px;
+        
+        .mdd-page-filter {
+            // align-items: normal;
+            // flex-direction: column;
+            // align-items: center;
+
+            input {
+                width: 100%;
+            }
+
+            .mdd-page-mdd-count {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .mdd-page-add-button {
+                width: 100%;
+                max-width: 150px;
+            }
+        }
+    }
+}

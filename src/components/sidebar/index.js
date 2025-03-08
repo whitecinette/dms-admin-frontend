@@ -35,12 +35,18 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
             {name:"Attendance", to:"/salesDate",},
             {name:"Approval", to:"/salesDate",},
             {name:"Payroll", to:"/salesDate",},
-            {name:"View Beat Mapping Status", to:"/salesDate",},
+            {name:"View Beat Mapping Status", to:"/viewBeatMappingStatus",},
             {name:"Employee Management", to:"/salesDate",},
             {name:"Voucher", to:"/salesDate",},
         ]
          },
-    { name: "Users", to: "/users", icon: <MdOutlineGroups2 size={20} /> },
+    { name: "Users", to: "#", icon: <MdOutlineGroups2 size={20} />,
+         children:[
+          {name:"Dealer", to: "/dealer"},
+          {name: "Employee", to: "/employee"},
+          {name: "MDD", to: "/mdd"}
+         ]
+   },
     { name: "Inventory", to:"#",icon: <MdOutlineInventory2 size={20} />,
       onClick: ()=> open(),
         children:  [
@@ -56,7 +62,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     { name: "Hierarchy", to: "/segment", icon: <TbHierarchy3 size={20} /> },
     { name: "Employee Time Line", to: "/segment", icon: <RiTimeLine size={20} /> },
     { name: "Logout", to: "/", icon: <MdLogout size={20} /> ,onClick: () => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("authToken");
         window.location.href = "/login";
       }},
 ];

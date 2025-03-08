@@ -2,27 +2,20 @@ import React, { useEffect, useState } from "react";
 import { IoAddSharp } from "react-icons/io5";
 import config from "../../config.js";
 import "./style.scss";
-import Table from "../../components/table";
+import Table from "../../components/table/index.js";
 import axios from "axios";
 
 const backendUrl = config.backend_url;
 
-function Users() {
+function Employees() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [users, setUsers] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState("");
-  const [employee, setEmployee] = useState(0);
-  const [dealer, setDealer] = useState(0);
-  const [mdd, setMdd] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
 
-  //get users
-  const fetchUsersData = async (sort = "createdAt", order) => {
-    console.log("sort", sort);
-    console.log("order", order);
-    console.log("role",role)
+  // ✅ Fetch Employees Data
+  const fetchEmployeesData = async (sort = "createdAt", order) => {
     try {
       const response = await axios.get(`${backendUrl}/user/get-by-admins`, {
         params: {
@@ -31,12 +24,14 @@ function Users() {
           sort: String(sort),
           order: order,
           search: search,
-          role: role,
+          role: "employee",
         },
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
       });
+
+      // ✅ Ensure Headers Are Set Correctly
       response.data.headers = [
         "name",
         "code",
@@ -44,82 +39,96 @@ function Users() {
         "role",
         "position",
         "status",
+        "expand"
       ];
-      setUsers(response.data);
-      setEmployee(response.data.employees);
-      setDealer(response.data.dealers);
-      setMdd(response.data.mdds);
+
+      setEmployees(response.data); // ✅ Fix Incorrect State Setter
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
+      setErrorMessage(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Please try again."
+      );
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);
     }
   };
-  //delete user
-  const deleteUser = async (id) => {
-    try {await axios.delete(
-        `${backendUrl}/user/delete-by-admins/${id}`,
-        {
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      fetchUsersData();
+
+  // ✅ Delete Employee
+  const deleteEmployee = async (id) => {
+    try {
+      await axios.delete(`${backendUrl}/user/delete-by-admins/${id}`, {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+      fetchEmployeesData();
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
+      setErrorMessage(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Please try again."
+      );
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);
     }
   };
-  //edit user
-  const editUser = async (data, id) => {
+
+  // ✅ Edit Employee
+  const editEmployee = async (data, id) => {
     try {
-      console.log("data:", data);
+      // console.log("data:", data);
 
       await axios.put(`${backendUrl}/user/edit-by-admins/${id}`, data, {
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
       });
-      fetchUsersData();
+      fetchEmployeesData();
     } catch (error) {
       console.log("err:", error);
-      setErrorMessage(error?.response?.data?.message || error?.message || "Something went wrong. Please try again.");
+      setErrorMessage(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Please try again."
+      );
       setTimeout(() => {
         setErrorMessage("");
       }, 3000);
     }
   };
+
+  // ✅ Fetch Data on Component Mount & Update
   useEffect(() => {
-    fetchUsersData();
-  }, [currentPage, search, role]);
+    fetchEmployeesData();
+  }, [currentPage, search]);
 
   const totalPages = Math.ceil(totalRecords / 50);
-  // Handle Previous Page
+
+  // ✅ Handle Pagination
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
     }
   };
 
-  // Handle Next Page
   const nextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
     }
   };
+
   return (
-    <div className="User-page">
-      <div className="user-page-header">Users</div>
-      <div className="user-page-content">
-        <div className="user-page-first-line">
-          <div className="user-page-filter">
+    <div className="employee-page">
+      <div className="employee-page-header">Employees</div>
+      <div className="employee-page-content">
+        <div className="employee-page-first-line">
+          <div className="employee-page-filter">
             <input
               type="text"
               value={search}
@@ -127,43 +136,24 @@ function Users() {
                 setCurrentPage(1);
                 setSearch(e.target.value);
               }}
-              placeholder="Search Users"
+              placeholder="Search employees"
             />
-            <div className="user-page-user-count">
-              <div className="user-count green" onClick={() => setRole("")}>
-                Total Users: {totalRecords}
-              </div>
-              <div
-                className="user-count orange"
-                onClick={() => setRole("employee")}
-              >
-                Employee: {employee}
-              </div>
-              <div
-                className="user-count purple"
-                onClick={() => setRole("dealer")}
-              >
-                Dealer: {dealer}
-              </div>
-              <div className="user-count red" onClick={() => setRole("mdd")}>
-                MDD: {mdd}
-              </div>
-            </div>
-            <div className="user-page-add-button">
+            <div className="employee-page-add-button">
               <IoAddSharp />
-              User
+              Employee
             </div>
           </div>
         </div>
 
+        {/* ✅ Pass Data Correctly to Table */}
         <Table
-          data={users}
-          onSort={fetchUsersData}
-          deleteRow={deleteUser}
-          handleSave={editUser}
+          data={employees}
+          onSort={fetchEmployeesData}
+          deleteRow={deleteEmployee}
+          handleSave={editEmployee}
         />
 
-        {/* Pagination */}
+        {/* ✅ Pagination */}
         <div className="pagination">
           <button
             onClick={prevPage}
@@ -189,4 +179,4 @@ function Users() {
   );
 }
 
-export default Users;
+export default Employees; // ✅ Fix Component Name

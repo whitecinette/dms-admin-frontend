@@ -1,17 +1,17 @@
-.User-page{
+.dealer-page{
 
-    .user-page-header{
+    .dealer-page-header{
         font-size: 1.5rem;
         font-weight: 900;
     }
-    .user-page-content{
+    .dealer-page-content{
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
-        .user-page-first-line{
+        .dealer-page-first-line{
             display: flex;
             
-            .user-page-filter{
+            .dealer-page-filter{
                 width: 100vw;
                 display: flex;
                 justify-content: space-between;
@@ -22,10 +22,11 @@
                     padding: 5px;
                     font-size: 12px;
                 }
-                .user-page-user-count{
+                .dealer-page-dealer-count{
                     display: flex;
+                    flex-wrap: wrap;
                     gap: 10px;
-                    .user-count{
+                    .dealer-count{
                         cursor: pointer;
                         padding: 5px;
                         border-radius: 5px;
@@ -47,7 +48,7 @@
                         background-color: #f5c4c9;
                     }
                 }
-                .user-page-add-button{
+                .dealer-page-add-button{
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -66,5 +67,74 @@
     }
     .error-message{
         color: rgb(240 28 28);
+    }
+}
+/* 📌 Responsive Styling */
+@media (max-width: 768px) {
+    .dealer-page-header {
+        font-size: 1.2rem;
+    }
+
+    .dealer-page-content {
+        padding: 15px;
+        border-radius: 8px;
+
+        .dealer-page-first-line {
+            // flex-direction: column;
+            align-items: start;
+        }
+
+        .dealer-page-filter {
+            flex-direction: column;
+            justify-content: end;
+            gap: 5px;
+
+            input {
+                width: 90%;
+            }
+
+            .dealer-page-dealer-count {
+                // justify-content: center;
+                gap: 5px;
+            }
+
+            .dealer-page-add-button {
+                align-self: center;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .dealer-page-header {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .dealer-page-content {
+        padding: 10px;
+        
+        .dealer-page-filter {
+            // align-items: normal;
+            // flex-direction: column;
+            // align-items: center;
+
+            input {
+                width: 100%;
+            }
+
+            .dealer-page-dealer-count {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .dealer-page-add-button {
+                width: 100%;
+                max-width: 150px;
+            }
+        }
     }
 }

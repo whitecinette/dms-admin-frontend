@@ -122,3 +122,126 @@
         color: #4CAF50;
     }
 }
+//responsive
+@media (max-width: 1024px) {
+    .Product-page {
+        .product-page-header {
+            font-size: 1.3rem;
+        }
+
+        .product-page-content {
+            // padding: 15px;
+
+            .product-page-first-line {
+                flex-wrap: wrap;
+                font-size: .1rem;
+                // flex-direction: column;
+                align-items: center;
+                gap: 10px;
+
+                .category-filter {
+                    select {
+                        width: 100%;
+                        max-width: 300px;
+                    }
+                }
+
+                .product-page-buttons {
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 8px;
+
+                    
+                }
+            }
+        }
+
+        .product-add-box {
+            .product-add-container {
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 400px;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .Product-page {
+        .product-page-header {
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .product-page-content {
+            padding: 10px;
+
+            .product-page-first-line {
+                gap: 12px;
+            }
+
+            .category-filter {
+                select {
+                    width: 100%;
+                }
+            }
+
+            .product-page-buttons {
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+
+                .product-add-btn, 
+                .product-upload-btn, 
+                .product-download-btn {
+                    width: 100%;
+                    max-width: 200px;
+                }
+            }
+        }
+
+        .product-add-box {
+            .product-add-container {
+                width: 90%;
+                top: 12%;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .Product-page {
+        .product-page-header {
+            font-size: .9rem;
+        }
+
+        .product-page-content {
+            // padding: 8px;
+
+            .product-page-first-line {
+                .category-filter {
+                    select {
+                        width: 100%;
+                    }
+                }
+
+                .product-page-buttons {
+                    // flex-direction: column;
+                    flex-wrap: wrap;
+                    // align-items: center;
+
+                    
+                }
+            }
+        }
+
+        .product-add-box {
+            .product-add-container {
+                width: 95%;
+                top: 15%;
+            }
+        }
+    }
+}

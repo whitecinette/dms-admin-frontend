@@ -1,0 +1,140 @@
+.employee-page{
+
+    .employee-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .employee-page-content{
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .employee-page-first-line{
+            display: flex;
+            
+            .employee-page-filter{
+                width: 100vw;
+                display: flex;
+                justify-content: space-between;
+                input{
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+                }
+                .employee-page-employee-count{
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    .employee-count{
+                        cursor: pointer;
+                        padding: 5px;
+                        border-radius: 5px;
+                        font-size: 15px;
+                        &:hover{
+                            opacity: .8;
+                        }
+                    }
+                    .red{
+                        background-color: #FFE2E5;
+                    }
+                    .orange{
+                        background-color: #fbe3b2;
+                    }
+                    .green{
+                        background-color: #b9fdd0;
+                    }
+                    .purple{
+                        background-color: #f5c4c9;
+                    }
+                }
+                .employee-page-add-button{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    &:hover{
+                        background-color: #45a049;
+                    }
+                }
+            }
+        }
+    }
+    .error-message{
+        color: rgb(240 28 28);
+    }
+}
+/* 📌 Responsive Styling */
+@media (max-width: 768px) {
+    .employee-page-header {
+        font-size: 1.2rem;
+    }
+
+    .employee-page-content {
+        padding: 15px;
+        border-radius: 8px;
+
+        .employee-page-first-line {
+            // flex-direction: column;
+            align-items: start;
+        }
+
+        .employee-page-filter {
+            flex-direction: column;
+            justify-content: end;
+            gap: 5px;
+
+            input {
+                width: 90%;
+            }
+
+            .employee-page-employee-count {
+                // justify-content: center;
+                gap: 5px;
+            }
+
+            .employee-page-add-button {
+                align-self: center;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .employee-page-header {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .employee-page-content {
+        padding: 10px;
+        
+        .employee-page-filter {
+            // align-items: normal;
+            // flex-direction: column;
+            // align-items: center;
+
+            input {
+                width: 100%;
+            }
+
+            .employee-page-employee-count {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .employee-page-add-button {
+                width: 100%;
+                max-width: 150px;
+            }
+        }
+    }
+}

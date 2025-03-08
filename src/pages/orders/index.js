@@ -42,7 +42,7 @@ function Orders() {
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        `${backendUrl}/product/get-all-products`
+        `${backendUrl}/product/get-all-products-for-admin`
       );
       setProductList(response.data.products);
     } catch (err) {

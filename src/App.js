@@ -8,8 +8,11 @@ import Orders from "./pages/orders";
 import SalesData from "./pages/SalesData";
 import Extraction from "./pages/Extraction";
 import Segment from "./pages/Segment";
-import Users from "./pages/Users";
+import Dealer from "./pages/dealer";
 import Products from "./pages/products";
+import Employees from "./pages/employee";
+import Mdd from "./pages/mdd";
+import ViewBeatMappingStatus from "./pages/viewBeatMappingStatus";
 
 function App() {
   // Get the token from localStorage
@@ -17,17 +20,19 @@ function App() {
 
   // PrivateRoute Component that checks if user is authenticated
   const PrivateRoute = ({ element }) => {
-    return token ? element : <Navigate to="/" replace />;
+    return token ? element : <Navigate to="/login" replace />;
   };
 
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          {/* Redirect from root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
            {/* Redirect from the root to the default page */}
            {/* <Route path="/" element={<Navigate to="/dashboard" />} /> */}
           {/* Public Route - Login Page */}
-          <Route path="/" element={<LoginSignUpAdmin />} />
+          <Route path="/login" element={<LoginSignUpAdmin />} />
 
           {/* Protected Routes: All using DefaultLayout */}
           <Route element={<PrivateRoute element={<DefaultLayout />} />}>
@@ -37,8 +42,11 @@ function App() {
             <Route path="/salesData" element={<SalesData />} />
             <Route path="/extraction" element={<Extraction />} />
             <Route path="/segment" element={<Segment />} />
-            <Route path="/users" element={<Users />} />
+            <Route path="/dealer" element={<Dealer />} />
+            <Route path="/employee" element={<Employees />} />
+            <Route path="/mdd" element={<Mdd />} />
             <Route path="/product" element={<Products />} />
+            <Route path="/viewBeatMappingStatus" element={<ViewBeatMappingStatus/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

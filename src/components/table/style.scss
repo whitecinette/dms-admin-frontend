@@ -27,10 +27,13 @@
             background-color: #6399f9;
             color: white;
             
-            th {
+            th {               
+                padding: 0 5px;
+                white-space: nowrap;
                 text-align: center;
                 // padding: 12px;
             }
+            
 
             /* Rounded corners for first and last th */
             th:first-child {
@@ -44,12 +47,24 @@
 
         tbody {
             tr {
+                
                 background-color: #f8f8f8;
 
                 &:nth-child(even) {
                     background-color: white;
                 }
-
+                .expand-btn{
+                    padding: 2px;
+                    button{
+                        padding: 2px;
+                        background-color: #6399f9;
+                        color: white;
+                        border: none;
+                        font-size: 12px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                    }
+                }
                 td {
                     font-size: 12px;
                     text-align: center;
@@ -126,9 +141,43 @@
     .table-component {
         max-height: 50vh; /* Reduce height on mobile */
         overflow-x: auto;
+        table {
+           
+            // min-width: 600px; /* Prevent shrinking */
+            th{
+                // display: flex;
+                padding: 3px;
+                font-size: .8rem;
+            }
+        }
     }
 
-    table {
-        min-width: 600px; /* Prevent shrinking */
-    }
 }
+.expanded-content {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-wrap: wrap; /* Ensures cards are positioned properly */
+    gap: 15px; /* Adds spacing between elements */
+    align-items: flex-start;
+    
+    .nested-label{
+        font-size: .7rem;
+        font-weight: 600;
+    }
+    .nested-card{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        .nested-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+              
+    }
+    
+}
+
