@@ -13,6 +13,8 @@ import Products from "./pages/products";
 import Employees from "./pages/employee";
 import Mdd from "./pages/mdd";
 import ViewBeatMappingStatus from "./pages/viewBeatMappingStatus";
+import ActorTypeHierarchy from "./pages/actorTypeHierarchy";
+import AddUser from "./pages/addUser";
 
 function App() {
   // Get the token from localStorage
@@ -47,6 +49,8 @@ function App() {
             <Route path="/mdd" element={<Mdd />} />
             <Route path="/product" element={<Products />} />
             <Route path="/viewBeatMappingStatus" element={<ViewBeatMappingStatus/>} />
+            <Route path="/actorTypeHierarchy" element={<ActorTypeHierarchy/>} />
+            <Route path="/addUser" element={<AddUser/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

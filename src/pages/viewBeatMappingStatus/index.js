@@ -335,382 +335,385 @@ const ViewBeatMappingStatus = () => {
 
   return (
     <div className="viewBeatMappingStatus-page">
-      <div className="viewBeatMappingStatus-calendar-container">
-        <div className="viewBeatMappingStatus-calendar-header">
-          <FaArrowLeft className="icon" onClick={handlePrevWeek} />
-          <h2>
-            {startDay.toDateString()} - {endDay.toDateString()}
-          </h2>
-          <FaArrowRight className="icon" onClick={handleNextWeek} />
-        </div>
+      <div className="viewBeatMappingStatus-page-header">View Beat Mapping Status</div>
+      <div className="viewBeatMappingStatus-page-container">
+        <div className="viewBeatMappingStatus-calendar-container">
+          <div className="viewBeatMappingStatus-calendar-header">
+            <FaArrowLeft className="icon" onClick={handlePrevWeek} />
+            <h2>
+              {startDay.toDateString()} - {endDay.toDateString()}
+            </h2>
+            <FaArrowRight className="icon" onClick={handleNextWeek} />
+          </div>
 
-        <div className="viewBeatMappingStatus-calendar-body">
-          <div className="viewBeatMappingStatus-calendar-days">
-            <div
-              className={`day ${selectedDate === null ? "selected" : ""}`}
-              onClick={() => handleDateClick(null)}
-            >
-              All
-            </div>
-            {weekDates.map((date) => (
+          <div className="viewBeatMappingStatus-calendar-body">
+            <div className="viewBeatMappingStatus-calendar-days">
               <div
-                key={date.toDateString()}
-                className={`day ${
-                  selectedDate &&
-                  date.toDateString() === selectedDate.toDateString()
-                    ? "selected"
-                    : ""
-                }`}
-                onClick={() => handleDateClick(date)}
+                className={`day ${selectedDate === null ? "selected" : ""}`}
+                onClick={() => handleDateClick(null)}
               >
-                {getShortDay(date)} {/* Show Mon, Tue, etc. */}
+                All
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="viewBeatMapping-first-line">
-        <div className="viewBeatMappingStatus-filter">
-          <input
-            type="text"
-            placeholder="Search Employee Code"
-            name="search"
-            value={search}
-            onChange={(e) => setsearch(e.target.value)}
-          />
-          <select value={status} onChange={(e) => setstatus(e.target.value)}>
-            <option value="">Select Status</option>
-            <option value="done">Done</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
-        <div className="viewBeatMapping-buttons">
-          <div className="viewBeatMappingStatus-upload-btn">
-            <label htmlFor="file-upload" className="browse-btn">
-              <FaFileUpload />
-              Upload Bulk CSV
-            </label>
-            <input
-              type="file"
-              id="file-upload"
-              hidden
-              onChange={handleFileChange}
-            />
-          </div>
-          <div className="viewBeatMappingStatus-download-btn">
-            <div className="browse-btn">
-              <FaDownload />
-              Download CSV Format
+              {weekDates.map((date) => (
+                <div
+                  key={date.toDateString()}
+                  className={`day ${
+                    selectedDate &&
+                    date.toDateString() === selectedDate.toDateString()
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => handleDateClick(date)}
+                >
+                  {getShortDay(date)} {/* Show Mon, Tue, etc. */}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-      <div className="viewBeatMapping-table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>S.NO</th>
-              <th>Employee Code</th>
-              <th>Employee Name</th>
-              <th>Done</th>
-              <th>Pending</th>
-              <th>Total</th>
-              <th>Expand</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.length === 0 ? ( // Check if data is empty
+        <div className="viewBeatMapping-first-line">
+          <div className="viewBeatMappingStatus-filter">
+            <input
+              type="text"
+              placeholder="Search Employee Code"
+              name="search"
+              value={search}
+              onChange={(e) => setsearch(e.target.value)}
+            />
+            <select value={status} onChange={(e) => setstatus(e.target.value)}>
+              <option value="">Select Status</option>
+              <option value="done">Done</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+          <div className="viewBeatMapping-buttons">
+            <div className="viewBeatMappingStatus-upload-btn">
+              <label htmlFor="file-upload" className="browse-btn">
+                <FaFileUpload />
+                Upload Bulk CSV
+              </label>
+              <input
+                type="file"
+                id="file-upload"
+                hidden
+                onChange={handleFileChange}
+              />
+            </div>
+            <div className="viewBeatMappingStatus-download-btn">
+              <div className="browse-btn">
+                <FaDownload />
+                Download CSV Format
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="viewBeatMapping-table-container">
+          <table>
+            <thead>
               <tr>
-                <td colSpan="7" style={{ textAlign: "center" }}>
-                  No data available
-                </td>
+                <th>S.NO</th>
+                <th>Employee Code</th>
+                <th>Employee Name</th>
+                <th>Done</th>
+                <th>Pending</th>
+                <th>Total</th>
+                <th>Expand</th>
+                <th>Action</th>
               </tr>
-            ) : (
-              data.map((item, index) => (
-                <React.Fragment key={index}>
-                  <tr>
-                    <td>{index + 1}</td>
-                    {editId === item._id ? (
-                      <>
-                        <td>
-                          <input name="code" value={editRow.code} readOnly />
-                        </td>
-                        <td>
-                          <Select
-                            options={employeesList.map((employee) => ({
-                              value: employee.employee_code,
-                              label: employee.employee_name,
-                            }))}
-                            value={
-                              editRow?.code
-                                ? {
-                                    value: editRow?.code,
-                                    label: employeesList?.find?.(emp => emp.employee_code === editRow?.code)?.employee_name || editRow?.name
-                                  }
-                                : null
-                            }
-                            onChange={(selectedOption) =>
-                              setEditRow((prevState) => ({
-                                ...prevState,
-                                code: selectedOption.value,
-                                name: selectedOption.label,
-                              }))
-                            }
-                            menuPosition="absolute" 
-                            menuPlacement="bottom"
-                            styles={{
-                              menu: (base) => ({
-                                ...base,
-                                // position: 'fixed',
-                                zIndex: 100000,
-                                // width: 'fit-content',
-                                minWidth: '200px'
-                              }),
-                              control: (base) => ({
-                                ...base,
-                                minWidth: "200px",
-                                zIndex: 100000
-                              }),
-                            }}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>{item.code}</td>
-                        <td>
-                          {employeesList?.find?.(
-                            (emp) => emp.employee_code === item.code
-                          )?.employee_name || "N/A"}
-                        </td>
-                      </>
-                    )}
-
-                    <td>{item.done}</td>
-                    <td>{item.pending}</td>
-                    <td>{item.total}</td>
-                    <td className="expand-btn">
-                      <button
-                        onClick={() =>
-                          setExpandedRow(expandedRow === index ? null : index)
-                        }
-                      >
-                        {expandedRow === index ? (
-                          <>
-                            Collapse
-                            <FaChevronUp />
-                          </>
-                        ) : (
-                          <>
-                            Expand
-                            <FaChevronDown />
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td>
+            </thead>
+            <tbody>
+              {data.length === 0 ? ( // Check if data is empty
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center" }}>
+                    No data available
+                  </td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <tr>
+                      <td>{index + 1}</td>
                       {editId === item._id ? (
-                        <div>
-                          <FaSave
-                            color="#005bfe"
-                            style={{ cursor: "pointer", marginRight: "10px" }}
-                            onClick={() => handleSaveData()}
-                          />
-                          <FaTimes
-                            color="#F21E1E"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => {
-                              setEditId("");
-                              setEditRow({});
-                            }}
-                          />
-                        </div>
+                        <>
+                          <td>
+                            <input name="code" value={editRow.code} readOnly />
+                          </td>
+                          <td>
+                            <Select
+                              options={employeesList.map((employee) => ({
+                                value: employee.employee_code,
+                                label: employee.employee_name,
+                              }))}
+                              value={
+                                editRow?.code
+                                  ? {
+                                      value: editRow?.code,
+                                      label: employeesList?.find?.(emp => emp.employee_code === editRow?.code)?.employee_name || editRow?.name
+                                    }
+                                  : null
+                              }
+                              onChange={(selectedOption) =>
+                                setEditRow((prevState) => ({
+                                  ...prevState,
+                                  code: selectedOption.value,
+                                  name: selectedOption.label,
+                                }))
+                              }
+                              menuPosition="absolute" 
+                              menuPlacement="bottom"
+                              styles={{
+                                menu: (base) => ({
+                                  ...base,
+                                  // position: 'fixed',
+                                  zIndex: 100000,
+                                  // width: 'fit-content',
+                                  minWidth: '200px'
+                                }),
+                                control: (base) => ({
+                                  ...base,
+                                  minWidth: "200px",
+                                  zIndex: 100000
+                                }),
+                              }}
+                            />
+                          </td>
+                        </>
                       ) : (
-                        <div>
-                          <FaEdit
-                            color="#005bfe"
-                            style={{ cursor: "pointer", marginRight: "10px" }}
-                            onClick={() => {
-                              handleEdit(item);
-                              setExpandedRow(index);
-                            }}
-                          />
-                        </div>
+                        <>
+                          <td>{item.code}</td>
+                          <td>
+                            {employeesList?.find?.(
+                              (emp) => emp.employee_code === item.code
+                            )?.employee_name || "N/A"}
+                          </td>
+                        </>
                       )}
-                    </td>
-                  </tr>
-                  {expandedRow === index && (
-                    <>
-                      {Object.keys(item.schedule || {}).map((dayKey) => (
-                        <React.Fragment key={dayKey}>
-                          <tr className="schedule">
-                            {editId === item._id ? (
-                              <>
-                                <td colSpan="7" className="schedule-title">
+
+                      <td>{item.done}</td>
+                      <td>{item.pending}</td>
+                      <td>{item.total}</td>
+                      <td className="expand-btn">
+                        <button
+                          onClick={() =>
+                            setExpandedRow(expandedRow === index ? null : index)
+                          }
+                        >
+                          {expandedRow === index ? (
+                            <>
+                              Collapse
+                              <FaChevronUp />
+                            </>
+                          ) : (
+                            <>
+                              Expand
+                              <FaChevronDown />
+                            </>
+                          )}
+                        </button>
+                      </td>
+                      <td>
+                        {editId === item._id ? (
+                          <div>
+                            <FaSave
+                              color="#005bfe"
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                              onClick={() => handleSaveData()}
+                            />
+                            <FaTimes
+                              color="#F21E1E"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => {
+                                setEditId("");
+                                setEditRow({});
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <FaEdit
+                              color="#005bfe"
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                              onClick={() => {
+                                handleEdit(item);
+                                setExpandedRow(index);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {expandedRow === index && (
+                      <>
+                        {Object.keys(item.schedule || {}).map((dayKey) => (
+                          <React.Fragment key={dayKey}>
+                            <tr className="schedule">
+                              {editId === item._id ? (
+                                <>
+                                  <td colSpan="7" className="schedule-title">
+                                    {dayKey}
+                                  </td>
+                                  <td
+                                    className="schedule-add-button"
+                                    onClick={() => handleAddDealer(dayKey)}
+                                  >
+                                    <FaPlus />
+                                    Add Schedule
+                                  </td>
+                                </>
+                              ) : (
+                                <td colSpan="8" className="schedule-title">
                                   {dayKey}
                                 </td>
-                                <td
-                                  className="schedule-add-button"
-                                  onClick={() => handleAddDealer(dayKey)}
-                                >
-                                  <FaPlus />
-                                  Add Schedule
-                                </td>
-                              </>
-                            ) : (
-                              <td colSpan="8" className="schedule-title">
-                                {dayKey}
-                              </td>
-                            )}
-                          </tr>
+                              )}
+                            </tr>
 
-                          <tr>
-                            <td colSpan="8">
-                              <div className="expand-container">
-                                <table className="expanded-table">
-                                  <thead>
-                                    <tr>
-                                      <th>S.NO</th>
-                                      <th>Dealer Code</th>
-                                      <th>Shop Name</th>
-                                      <th>Status</th>
-                                      {editId === item._id ? (
-                                        <th>Action</th>
-                                      ) : (
-                                        ""
-                                      )}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(editId === item._id
-                                      ? editRow.schedule[dayKey]
-                                      : item.schedule[dayKey]
-                                    )?.map((scheduleItem, idx) => (
-                                      <tr key={idx}>
-                                        <td>{idx + 1}</td>
+                            <tr>
+                              <td colSpan="8">
+                                <div className="expand-container">
+                                  <table className="expanded-table">
+                                    <thead>
+                                      <tr>
+                                        <th>S.NO</th>
+                                        <th>Dealer Code</th>
+                                        <th>Shop Name</th>
+                                        <th>Status</th>
                                         {editId === item._id ? (
-                                          <>
-                                            {/* Dealer Code - ReadOnly */}
-                                            <td>
-                                              <input
-                                                type="text"
-                                                value={scheduleItem.code || ""}
-                                                readOnly
-                                              />
-                                            </td>
-
-                                            {/* Shop Name - Editable Select Dropdown */}
-                                            <td>
-                                              <Select
-                                                options={dealerList.map(
-                                                  (dealer) => ({
-                                                    value: dealer.dealer_code,
-                                                    label: dealer.dealer_name,
-                                                  })
-                                                )}
-                                                value={
-                                                  scheduleItem.code
-                                                    ? {
-                                                        value:
-                                                          scheduleItem.code,
-                                                        label:
-                                                          scheduleItem.name,
-                                                      }
-                                                    : null
-                                                }
-                                                onChange={(selectedOption) =>
-                                                  handleShopChange(
-                                                    selectedOption,
-                                                    dayKey,
-                                                    idx
-                                                  )
-                                                }
-                                                menuPosition="fixed"
-                                                menuPlacement="auto"
-                                                styles={{
-                                                  menu: (base) => ({
-                                                    ...base,
-                                                    zIndex: 1000,
-                                                  }),
-                                                  control: (base) => ({
-                                                    ...base,
-                                                    minWidth: "100px",
-                                                  }),
-                                                }}
-                                              />
-                                            </td>
-
-                                            {/* Status (Editable) */}
-                                            <td>
-                                              <select
-                                                value={scheduleItem.status}
-                                                onChange={(e) =>
-                                                  handleStatusChange(
-                                                    e,
-                                                    dayKey,
-                                                    idx
-                                                  )
-                                                }
-                                              >
-                                                <option value="pending">
-                                                  Pending
-                                                </option>
-                                                <option value="done">
-                                                  Done
-                                                </option>
-                                              </select>
-                                            </td>
-                                            <td>
-                                              <div
-                                                className="remove-schedule-row"
-                                                onClick={() =>
-                                                  handleRemoveDealer(
-                                                    dayKey,
-                                                    idx
-                                                  )
-                                                }
-                                              >
-                                                <FaMinus
-                                                  style={{ cursor: "pointer" }}
-                                                />
-                                                Remove Dealer
-                                              </div>
-                                            </td>
-                                          </>
+                                          <th>Action</th>
                                         ) : (
-                                          <>
-                                            <td>{scheduleItem.code}</td>
-                                            <td>{scheduleItem.name}</td>
-                                            <td
-                                              style={{
-                                                color:
-                                                  scheduleItem.status ===
-                                                  "pending"
-                                                    ? "#B76E00"
-                                                    : "#118D57",
-                                              }}
-                                            >
-                                              {scheduleItem.status}
-                                            </td>
-                                          </>
+                                          ""
                                         )}
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        </React.Fragment>
-                      ))}
-                    </>
-                  )}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
+                                    </thead>
+                                    <tbody>
+                                      {(editId === item._id
+                                        ? editRow.schedule[dayKey]
+                                        : item.schedule[dayKey]
+                                      )?.map((scheduleItem, idx) => (
+                                        <tr key={idx}>
+                                          <td>{idx + 1}</td>
+                                          {editId === item._id ? (
+                                            <>
+                                              {/* Dealer Code - ReadOnly */}
+                                              <td>
+                                                <input
+                                                  type="text"
+                                                  value={scheduleItem.code || ""}
+                                                  readOnly
+                                                />
+                                              </td>
+
+                                              {/* Shop Name - Editable Select Dropdown */}
+                                              <td>
+                                                <Select
+                                                  options={dealerList.map(
+                                                    (dealer) => ({
+                                                      value: dealer.dealer_code,
+                                                      label: dealer.dealer_name,
+                                                    })
+                                                  )}
+                                                  value={
+                                                    scheduleItem.code
+                                                      ? {
+                                                          value:
+                                                            scheduleItem.code,
+                                                          label:
+                                                            scheduleItem.name,
+                                                        }
+                                                      : null
+                                                  }
+                                                  onChange={(selectedOption) =>
+                                                    handleShopChange(
+                                                      selectedOption,
+                                                      dayKey,
+                                                      idx
+                                                    )
+                                                  }
+                                                  menuPosition="fixed"
+                                                  menuPlacement="auto"
+                                                  styles={{
+                                                    menu: (base) => ({
+                                                      ...base,
+                                                      zIndex: 1000,
+                                                    }),
+                                                    control: (base) => ({
+                                                      ...base,
+                                                      minWidth: "100px",
+                                                    }),
+                                                  }}
+                                                />
+                                              </td>
+
+                                              {/* Status (Editable) */}
+                                              <td>
+                                                <select
+                                                  value={scheduleItem.status}
+                                                  onChange={(e) =>
+                                                    handleStatusChange(
+                                                      e,
+                                                      dayKey,
+                                                      idx
+                                                    )
+                                                  }
+                                                >
+                                                  <option value="pending">
+                                                    Pending
+                                                  </option>
+                                                  <option value="done">
+                                                    Done
+                                                  </option>
+                                                </select>
+                                              </td>
+                                              <td>
+                                                <div
+                                                  className="remove-schedule-row"
+                                                  onClick={() =>
+                                                    handleRemoveDealer(
+                                                      dayKey,
+                                                      idx
+                                                    )
+                                                  }
+                                                >
+                                                  <FaMinus
+                                                    style={{ cursor: "pointer" }}
+                                                  />
+                                                  Remove Dealer
+                                                </div>
+                                              </td>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <td>{scheduleItem.code}</td>
+                                              <td>{scheduleItem.name}</td>
+                                              <td
+                                                style={{
+                                                  color:
+                                                    scheduleItem.status ===
+                                                    "pending"
+                                                      ? "#B76E00"
+                                                      : "#118D57",
+                                                }}
+                                              >
+                                                {scheduleItem.status}
+                                              </td>
+                                            </>
+                                          )}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       {errorMessage && <div className="error-message">{errorMessage}</div>}
       {success && <div className="success-message">{success}</div>}

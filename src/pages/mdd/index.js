@@ -138,10 +138,12 @@ function Mdd() {
               }}
               placeholder="Search mdds"
             />
-            <div className="mdd-page-add-button">
-              <IoAddSharp />
-              mdd
-            </div>
+            {/**
+              // <div className="mdd-page-add-button">
+              //   <IoAddSharp />
+              //   mdd
+              // </div>
+               */}
           </div>
         </div>
 

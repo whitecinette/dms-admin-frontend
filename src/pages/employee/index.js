@@ -138,10 +138,13 @@ function Employees() {
               }}
               placeholder="Search employees"
             />
-            <div className="employee-page-add-button">
+            {/**
+              <div className="employee-page-add-button">
               <IoAddSharp />
               Employee
             </div>
+               */}
+            
           </div>
         </div>
 

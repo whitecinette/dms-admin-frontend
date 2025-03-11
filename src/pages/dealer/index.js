@@ -139,10 +139,12 @@ function Dealers() {
               }}
               placeholder="Search dealers"
             />
-            <div className="dealer-page-add-button">
-              <IoAddSharp />
-              Dealer
-            </div>
+            {/** 
+              <div className="dealer-page-add-button">
+                <IoAddSharp />
+                Dealer
+              </div>
+              */}
           </div>
         </div>
 

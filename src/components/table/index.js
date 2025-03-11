@@ -68,31 +68,35 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     );
   };
 
-
-
   const NestedItem = ({ label, value, path, hideTitle = false }) => {
     const isEditing = editId === rows[expandedRow]?._id;
     const inputRef = useRef(null);
-  
-    // Restore focus after re-render
+
     useEffect(() => {
       if (focusedPath === path && inputRef.current) {
         inputRef.current.focus();
         inputRef.current.selectionStart = inputRef.current.value.length;
       }
     }, [focusedPath, value]);
-  
+
     return (
       <div className="nested-item">
         <span className="nested-label">{label}:</span>
         <span className="nested-value">
           {typeof value === "object" && value !== null ? (
-            <NestedCard title={label} data={value} path={path} hideTitle={true} />
+            <NestedCard
+              title={label}
+              data={value}
+              path={path}
+              hideTitle={true}
+            />
           ) : isEditing ? (
-            typeof value === "boolean" ? ( 
-              // ✅ Render Select Dropdown for Boolean Values
+            typeof value === "boolean" ? (
+              // ✅ Boolean Select Dropdown
               <select
-                value={getNestedValue(editData, path) ?? ""}
+                value={
+                  getNestedValue(editData, path) === true ? "true" : "false"
+                }
                 onChange={(e) => {
                   const updatedData = JSON.parse(JSON.stringify(editData));
                   setNestedValue(updatedData, path, e.target.value === "true"); // Convert back to boolean
@@ -116,7 +120,11 @@ function Table({ data, onSort, handleSave, deleteRow }) {
               />
             )
           ) : typeof value === "boolean" ? (
-            value ? "True" : "False"
+            value ? (
+              "True"
+            ) : (
+              "False"
+            )
           ) : (
             value || "N/A"
           )}
@@ -124,12 +132,12 @@ function Table({ data, onSort, handleSave, deleteRow }) {
       </div>
     );
   };
-  
-  
 
   const getNestedValue = (obj, path) => {
-    if (!obj || !path) return "N/A"; // Handle undefined cases
+    if (!obj || !path) return "N/A";
+
     return path
+      .replace(/\[(\d+)\]/g, ".$1") // Convert array index notation to dot notation
       .split(".")
       .reduce(
         (acc, key) => (acc && acc[key] !== undefined ? acc[key] : "N/A"),
@@ -140,14 +148,15 @@ function Table({ data, onSort, handleSave, deleteRow }) {
   const setNestedValue = (obj, path, value) => {
     if (!obj || !path) return;
 
-    const keys = path.split(".");
+    const keys = path.replace(/\[(\d+)\]/g, ".$1").split("."); // Convert array index notation to dot notation
     let temp = obj;
 
     for (let i = 0; i < keys.length - 1; i++) {
-      if (!temp[keys[i]] || typeof temp[keys[i]] !== "object") {
-        temp[keys[i]] = {}; // Ensure each level exists
+      const key = keys[i];
+      if (!temp[key] || typeof temp[key] !== "object") {
+        temp[key] = isNaN(keys[i + 1]) ? {} : []; // Ensure object or array at each level
       }
-      temp = temp[keys[i]];
+      temp = temp[key];
     }
 
     temp[keys[keys.length - 1]] = value;
@@ -258,15 +267,16 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                             style={{
                               color:
                                 header.toLowerCase() === "status"
-                                  ? getNestedValue(
-                                      row,
-                                      header
-                                    ).toLowerCase() === "active"||"done"
+                                  ? ["active", "done"].includes(
+                                      getNestedValue(row, header).toLowerCase()
+                                    )
                                     ? "green"
-                                    : getNestedValue(
-                                        row,
-                                        header
-                                      ).toLowerCase() === "inactive"|| "pending"
+                                    : ["inactive", "pending"].includes(
+                                        getNestedValue(
+                                          row,
+                                          header
+                                        ).toLowerCase()
+                                      )
                                     ? "red"
                                     : "black"
                                   : "inherit",
@@ -346,13 +356,21 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                           transition={{
                             duration: 0.4,
                             ease: [0.25, 0.1, 0.25, 1],
-                          }} 
+                          }}
                           className="expanded-content"
                         >
                           {Object.entries(row)
-                            .filter(([key]) => !headers.includes(key) && !["_id", "password", "createdAt", "updatedAt", "__v"].includes(
-                              key
-                            )) // Exclude already visible columns
+                            .filter(
+                              ([key]) =>
+                                !headers.includes(key) &&
+                                ![
+                                  "_id",
+                                  "password",
+                                  "createdAt",
+                                  "updatedAt",
+                                  "__v",
+                                ].includes(key)
+                            ) // Exclude already visible columns
                             .map(([key, value]) =>
                               typeof value === "object" && value !== null ? (
                                 <NestedCard

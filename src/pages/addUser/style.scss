@@ -1,0 +1,127 @@
+.addUser-page{
+    .addUser-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .addUser-page-container{
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .addUser-page-first-line{
+            display: flex;
+            justify-content: space-between;
+            .addUser-page-filter{
+                display: flex;
+                gap: 10px;
+                input, select{
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+                }
+                .green{
+                    color: green;
+                }
+                .red{
+                    color: red;
+                }
+            }
+            .addUser-page-buttons{
+                display: flex;
+                gap: 5px;
+                .addUser-add-btn, .addUser-upload-btn, .addUser-download-btn {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    cursor: pointer;
+                    &:hover{
+                        opacity: .9;
+                    }
+                }
+                .addUser-upload-btn{
+                    background-color: #6666f2;
+                        .browse-btn{
+                            cursor: pointer;
+                        }
+                }
+                .addUser-download-btn{
+                    background-color: #ffcd00;
+                    color: black;
+                }
+                .addUser-add-btn{
+                    background-color: #4CAF50;
+                }
+            }
+        }
+    }
+    .addUser-add-box{
+        position: fixed;
+        height: 100vh;
+        width: 100vw;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        background: rgb(0 0 0 / 24%); 
+        backdrop-filter: blur(0px);
+        .addUser-add-container{
+            position: absolute;
+            top: 15%;
+            left: 40%;
+            background-color: #fff;
+            width: 400px;
+            border-radius: 10px;
+            .addUser-add-content{
+                padding: 15px;
+                .addUser-add-header{
+                    font-size: 20px;
+                    font-weight: 800;
+                }
+                .addUser-add-form{
+                    margin-top: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    input,select{
+                        padding: 10px;
+                        margin: 5px;
+                        border-radius: 5px;
+                    }
+                }
+                .addUser-add-button{
+                    display: flex;
+                    justify-content: end;
+                    margin-top: 10px;
+                    gap: 10px;
+                    .addUser-submit-btn,.addUser-cancel-btn{
+                        color: white;
+                        border-radius: 5px;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        &:hover{
+                            opacity: 9;
+                        }
+
+                    }
+                    .addUser-submit-btn{
+                        background-color: #4CAF50;
+                    }
+                    .addUser-cancel-btn{
+                        background-color: #8a8eff;
+                    }
+                }
+            }
+        }
+    }
+    .error-message{
+        color: rgb(240 28 28);
+    }
+    .success-message{
+        color: #4CAF50;
+    }
+}
