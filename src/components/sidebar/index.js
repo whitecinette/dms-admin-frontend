@@ -2,7 +2,7 @@ import { cloneElement, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaChartPie, FaFileAlt, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { GoGraph } from "react-icons/go";
-import { LuPickaxe, LuMapPinHouse } from "react-icons/lu";
+import { LuPickaxe} from "react-icons/lu";
 import { MdOutlineGroups2, MdLogout, MdMenuOpen, MdOutlineInventory2 } from "react-icons/md";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { BsCloudUpload } from "react-icons/bs";
@@ -32,7 +32,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         </svg>,
         onClick: ()=> open(),
         children:  [
-            {name:"Attendance", to:"/salesDate",},
+            {name:"Attendance", to:"/attendance",},
             {name:"Approval", to:"/salesDate",},
             {name:"Payroll", to:"/salesDate",},
             {name:"View Beat Mapping Status", to:"/viewBeatMappingStatus",},

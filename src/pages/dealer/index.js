@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { IoAddSharp } from "react-icons/io5";
 import config from "../../config.js";
 import "./style.scss";
 import Table from "../../components/table/index.js";
