@@ -44,7 +44,7 @@ export default function ViewAttendance() {
               <span className="label">Leave:</span>
               <span className="value">{attendanceCount.leave}</span>
             </div>
-            <div className="attendance-item red" >
+            <div className="attendance-item red">
               <span className="label">Absent:</span>
               <span className="value">{attendanceCount.absent}</span>
             </div>
@@ -92,14 +92,21 @@ export default function ViewAttendance() {
                     <td>
                       <img src={record.punchInImage} alt="Punch Img" />
                     </td>
-                    <td>{new Date(record.punchIn).toLocaleTimeString()}</td>
+                    <td>
+                      {new Date(record.punchIn).toLocaleTimeString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })}
+                    </td>
                     <td>{record.punchInName || "N/A "}</td>
                     <td>
                       <img src={record.punchOutImage} alt="Punch Img" />
                     </td>
                     <td>
-                      {new Date(record.punchOut).toLocaleTimeString() || "N/A"}
-                    </td>
+  {record.punchOut
+    ? new Date(record.punchOut).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+    : "N/A"}
+</td>
+
                     <td>{record.punchOutName || "N/A "}</td>
                     <td>{record.status}</td>
                     <td>{record.hoursWorked || "N/A"}</td>
