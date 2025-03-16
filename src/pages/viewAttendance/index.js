@@ -52,6 +52,10 @@ export default function ViewAttendance() {
               <span className="label">Present:</span>
               <span className="value">{attendanceCount.present}</span>
             </div>
+            <div className="attendance-item orange">
+              <span className="label">Half Day:</span>
+              <span className="value">{attendanceCount.halfday}</span>
+            </div>
           </div>
           <div className="ViewAttendance-filter">
             <input
@@ -65,21 +69,21 @@ export default function ViewAttendance() {
           <table>
             <thead>
               <tr className="main-header">
-                <th rowSpan={2}>SNo.</th>
-                <th rowSpan={2}>Date</th>
-                <th colSpan={3}>Punch In</th>
-                <th colSpan={3}>Punch Out</th>
-                <th rowSpan={2}>Status</th>
-                <th rowSpan={2}>Hours Worked</th>
-                <th rowSpan={2}>Action</th>
+                <th colSpan={6}>Punch In</th>
+                <th colSpan={6}>Punch Out</th>
               </tr>
               <tr>
-                <th>Image</th>
+               <th>SNo.</th>
+               <th>Image</th>
+                <th>Date</th>
                 <th>Time</th>
                 <th>Shop Name</th>
                 <th>Image</th>
                 <th>Time</th>
                 <th>Shop Name</th>
+                <th>Status</th>
+                <th>Hours Worked</th>
+                {/* <th>Action</th> */}
               </tr>
             </thead>
 
@@ -88,10 +92,10 @@ export default function ViewAttendance() {
                 attendance.map((record, index) => (
                   <tr key={index}>
                     <td>{index + 1}</td>
-                    <td>{new Date(record.date).toLocaleDateString()}</td>
                     <td>
                       <img src={record.punchInImage} alt="Punch Img" />
                     </td>
+                    <td>{new Date(record.date).toLocaleDateString()}</td>
                     <td>
                       {new Date(record.punchIn).toLocaleTimeString("en-IN", {
                         timeZone: "Asia/Kolkata",
@@ -102,20 +106,23 @@ export default function ViewAttendance() {
                       <img src={record.punchOutImage} alt="Punch Img" />
                     </td>
                     <td>
-  {record.punchOut
-    ? new Date(record.punchOut).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-    : "N/A"}
-</td>
+                      {record.punchOut
+                        ? new Date(record.punchOut).toLocaleTimeString(
+                            "en-IN",
+                            { timeZone: "Asia/Kolkata" }
+                          )
+                        : "N/A"}
+                    </td>
 
                     <td>{record.punchOutName || "N/A "}</td>
                     <td>{record.status}</td>
                     <td>{record.hoursWorked || "N/A"}</td>
-                    <td>
+                    {/* <td>
                       <FaEdit
                         color="#005bfe"
                         style={{ cursor: "pointer", marginRight: "10px" }}
                       />
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               ) : (

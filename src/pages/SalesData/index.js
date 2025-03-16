@@ -1,9 +1,9 @@
 import React from 'react'
 
-function SalesData() {
+function HrDashboard() {
   return (
-    <div>SalesData</div>
+    <div>HR Dashboard</div>
   )
 }
 
-export default SalesData
+export default HrDashboard

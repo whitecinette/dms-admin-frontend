@@ -17,6 +17,7 @@ import ActorTypeHierarchy from "./pages/actorTypeHierarchy";
 import AddUser from "./pages/addUser";
 import Attendance from "./pages/attendance";
 import ViewAttendance from "./pages/viewAttendance";
+import HrDashboard from "./pages/SalesData";
 
 function App() {
   // Get the token from localStorage
@@ -43,7 +44,7 @@ function App() {
             {/* All these routes now use DefaultLayout but render different components */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders" element={<Orders />} />
-            <Route path="/salesData" element={<SalesData />} />
+            <Route path="/hrDashboard" element={<HrDashboard />} />
             <Route path="/extraction" element={<Extraction />} />
             <Route path="/segment" element={<Segment />} />
             <Route path="/dealer" element={<Dealer />} />

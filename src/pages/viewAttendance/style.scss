@@ -1,12 +1,12 @@
 .ViewAttendance-page{
     .ViewAttendance-header{
-        font-size: 1.5rem;
+        font-size: 1rem;
         font-weight: 900;
     }
     .ViewAttendance-container{
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 10px;
+        // background-color: #fff;
+        padding: 15px;
+        // border-radius: 10px;
         .ViewAttendance-page-firstLine{
             display: flex;
             justify-content: space-between;
@@ -16,16 +16,23 @@
                 .attendance-item{
                     padding: 5px;
                     color: #fff;
-                    border-radius: 5px;
+                    // border-radius: 5px;
                 }
                 .red{
                     background-color: #ffa3ac;
+                    border-radius: 5px;
                 }
                 .yellow{
                     background-color: #f8dda8;
+                    border-radius: 5px;
                 }
                 .green{
                     background-color: #a0fabf;
+                    border-radius: 5px;
+                }
+                .orange{
+                 background-color: #e67e22;
+                 border-radius: 5px;
                 }
             }
             .ViewAttendance-filter{

@@ -18,6 +18,33 @@ const Attendance = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const limit = 50;
+const recentActivities = [
+  {
+    date: "2025-03-15T10:30:00.000Z",
+    description: "Punched In",
+    status: "Success",
+  },
+  {
+    date: "2025-03-15T12:00:00.000Z",
+    description: "Punched Out",
+    status: "Success",
+  },
+  {
+    date: "2025-03-15T14:15:00.000Z",
+    description: "Marked Absent",
+    status: "Failed",
+  },
+  {
+    date: "2025-03-16T09:00:00.000Z",
+    description: "Punched In - Late",
+    status: "Warning",
+  },
+  {
+    date: "2025-03-16T17:30:00.000Z",
+    description: "Punched Out - Early",
+    status: "Warning",
+  }
+];
 
   const getDateDaysAgo = (days) => {
     const date = new Date();
@@ -107,19 +134,54 @@ const Attendance = () => {
   };
   return (
     <div className="attendance-page">
-      <div className="attendance-header">Attendance</div>
+      {/* <div className="attendance-header">Attendance</div> */}
       <div className="attendance-page-container">
-        <div className="attendance-page-firstLine">
-          <div className="attendance-page-chart">
-            <div className="attendance-page-chart-header">
-              Attendance Overview
-            </div>
-            <div className="attendance-page-chart-date">{dateToFetch}</div>
-            <div className="attendance-page-donutChart">
-              <DonutChart data={chartData} />
-            </div>
-          </div>
-        </div>
+      <div className="attendance-page-firstLine">
+  {/* Chart Section */}
+  <div className="attendance-page-chart">
+    <div className="attendance-page-chart-header">
+      Attendance Overview
+    </div>
+    <div className="attendance-page-chart-date">{dateToFetch}</div>
+    <div className="attendance-page-donutChart">
+      <DonutChart data={chartData} />
+    </div>
+  </div>
+
+  {/* Recent Activities Section */}
+  <div className="attendance-recent-activities">
+    <div className="recent-activities-header">Recent Activities</div>
+    <div className="recent-activities-content">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Activity</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recentActivities.length > 0 ? (
+            recentActivities.map((activity, index) => (
+              <tr key={index}>
+                <td>{new Date(activity.date).toLocaleDateString()}</td>
+                <td>{activity.description}</td>
+                <td>{activity.status}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="3" style={{ textAlign: "center" }}>
+                No recent activities
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
         <div className="attendance-table-container">
           <div className="attendance-table-filter">
             <input

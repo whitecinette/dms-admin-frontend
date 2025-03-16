@@ -7,20 +7,66 @@
         // background-color: #fff;
         // padding: 20px;
         // border-radius: 10px;
-        .attendance-page-firstLine{
-            display: flex;
-            width: 100%;
-            .attendance-page-chart{
-                background-color: #fff;
-                padding: 20px;
-                border-radius: 10px;
-                width: 50%;
-                .attendance-page-chart-header{
-                    font-size: 1rem;
-                    font-weight: 900;
-                }
-            }
-        }
+        .attendance-page-firstLine {
+         display: flex;
+         width: 100%;
+         gap: 20px; /* Adds spacing between chart and table */
+     
+         .attendance-page-chart {
+             width: 50%;
+             background-color: #fff;
+             padding: 20px;
+             border-radius: 10px;
+         }
+     
+         .attendance-recent-activities {
+             width: 50%;
+             background-color: #fff;
+             padding: 20px;
+             border-radius: 10px;
+     
+             .recent-activities-header {
+                 font-size: 1rem;
+                 font-weight: 900;
+                 margin-bottom: 10px;
+             }
+     
+             .recent-activities-content {
+                 max-height: 300px; 
+                 overflow-y: auto;
+     
+                 table {
+                     width: 100%;
+                     border-collapse: collapse;
+     
+                     thead {
+                         background-color: #6399f9;
+                         color: #fff;
+     
+                         th {
+                             padding: 8px;
+                             text-align: center;
+                         }
+                     }
+     
+                     tbody {
+                         tr {
+                             &:nth-child(even) {
+                                 background-color: #f8f8f8;
+                             }
+     
+                             td {
+                                 padding: 8px;
+                                 text-align: center;
+                                 font-size: 12px;
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+     }
+     
         .attendance-table-container{
             margin-top: 10px;
             background-color: #fff;
