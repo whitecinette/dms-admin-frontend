@@ -84,8 +84,8 @@ function Orders() {
           ? {
               ...product,
               ProductId: selectedProduct, // Assign selected model
-              Quantity: 0, // Reset quantity
-              Price: selectedProduct?.Price || 0, // Update price
+              quantity: 0, // Reset quantity
+              price: selectedProduct?.price || 0, // Update price
             }
           : product
       );
@@ -375,7 +375,7 @@ function Orders() {
                                   </option>
                                   {productList.map((p) => (
                                     <option key={p._id} value={p._id}>
-                                      {p.Model}
+                                      {p.product_name}
                                     </option>
                                   ))}
                                 </select>
@@ -397,8 +397,8 @@ function Orders() {
                               {/* Price Column */}
                               <td>
                                 ₹
-                                {product?.ProductId?.Price ??
-                                  product?.Price ??
+                                {product?.ProductId?.price ??
+                                  product?.price ??
                                   0}
                               </td>
 
@@ -407,8 +407,8 @@ function Orders() {
                                 ₹
                                 {(
                                   product.Quantity *
-                                  (product?.ProductId?.Price ??
-                                    product?.Price ??
+                                  (product?.ProductId?.price ??
+                                    product?.price ??
                                     0)
                                 ).toLocaleString()}
                               </td>
@@ -420,14 +420,14 @@ function Orders() {
                               <td>{product?.Quantity}</td>
                               <td>
                                 ₹
-                                {product?.ProductId?.Price?.toLocaleString() ||
+                                {product?.ProductId?.price?.toLocaleString() ||
                                   "N/A"}
                               </td>
                               <td>
                                 ₹
                                 {(
                                   product.Quantity *
-                                  (product?.ProductId?.Price || 0)
+                                  (product?.ProductId?.price || 0)
                                 ).toLocaleString()}
                               </td>
                             </tr>
@@ -444,8 +444,8 @@ function Orders() {
                               (sum, product) =>
                                 sum +
                                 (product.Quantity ?? 0) *
-                                  (product?.ProductId?.Price ??
-                                    product?.Price ??
+                                  (product?.ProductId?.price ??
+                                    product?.price ??
                                     0),
                               0
                             ) ?? 0

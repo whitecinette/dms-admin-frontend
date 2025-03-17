@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import config from "../../config.js";
 import DonutChart from "../../components/DonutChart";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./style.scss";
 
 const backendUrl = config.backend_url;
 
 const Attendance = () => {
   const navigate = useNavigate();
-  const [attendance, setAttendance] = useState([]);
   const [error, setError] = useState("");
   const [counts, setCounts] = useState([]);
   const [dateToFetch, setDateToFetch] = useState("");
@@ -17,34 +16,35 @@ const Attendance = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [latestAttendance, setLatestAttendance] = useState({});
   const limit = 50;
-const recentActivities = [
-  {
-    date: "2025-03-15T10:30:00.000Z",
-    description: "Punched In",
-    status: "Success",
-  },
-  {
-    date: "2025-03-15T12:00:00.000Z",
-    description: "Punched Out",
-    status: "Success",
-  },
-  {
-    date: "2025-03-15T14:15:00.000Z",
-    description: "Marked Absent",
-    status: "Failed",
-  },
-  {
-    date: "2025-03-16T09:00:00.000Z",
-    description: "Punched In - Late",
-    status: "Warning",
-  },
-  {
-    date: "2025-03-16T17:30:00.000Z",
-    description: "Punched Out - Early",
-    status: "Warning",
-  }
-];
+  const recentActivities = [
+    {
+      date: "2025-03-15T10:30:00.000Z",
+      description: "Punched In",
+      status: "Success",
+    },
+    {
+      date: "2025-03-15T12:00:00.000Z",
+      description: "Punched Out",
+      status: "Success",
+    },
+    {
+      date: "2025-03-15T14:15:00.000Z",
+      description: "Marked Absent",
+      status: "Failed",
+    },
+    {
+      date: "2025-03-16T09:00:00.000Z",
+      description: "Punched In - Late",
+      status: "Warning",
+    },
+    {
+      date: "2025-03-16T17:30:00.000Z",
+      description: "Punched Out - Early",
+      status: "Warning",
+    },
+  ];
 
   const getDateDaysAgo = (days) => {
     const date = new Date();
@@ -67,7 +67,6 @@ const recentActivities = [
       const response = await axios.get(apiUrl);
 
       if (response.data.attendance?.length > 0) {
-        setAttendance(response.data.attendance);
         setCounts(response.data.counts);
       } else {
         fetchAttendance(attempt + 1);
@@ -78,19 +77,35 @@ const recentActivities = [
     }
   };
 
+  // fetch latest attendance
+  const getLatestAttendance = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/get-latest-attendance-by-date`,
+        {
+          params: {
+            date: new Date(),
+          },
+        }
+      );
+      setLatestAttendance(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // Fetch employee data
   const getAllEmployee = async () => {
     try {
       const res = await axios.get(`${backendUrl}/get-emp-for-hr`, {
         params: {
-          // ✅ Fixed `param` -> `params`
           page: currentPage,
           limit,
           search,
         },
       });
-      setEmployee(res.data.data || []); // ✅ Ensure it's always an array
-      setTotalRecords(res.data.totalRecords)
+      setEmployee(res.data.data || []);
+      setTotalRecords(res.data.totalRecords);
     } catch (error) {
       console.log(error);
     }
@@ -102,21 +117,24 @@ const recentActivities = [
   }, [currentPage, search]);
 
   useEffect(() => {
-    console.log(employee);
-  }, [employee]);
+    getLatestAttendance();
+    setInterval(() => {
+      getLatestAttendance();
+    }, 100000);
+  }, []);
 
-  //   const chartData = [
-  //     { name: "Present", value: counts.present, color: "#28a745" },
-  //     { name: "Absent", value: counts.absent, color: "#dc3545" },
-  //     { name: "Leave", value: counts.leave, color: "#ffc107" },
-  //     { name: "Half Day", value: counts.halfDay, color: "#17a2b8" }
-  //   ];
   const chartData = [
-    { name: "Present", value: 100, color: "#28a745" },
-    { name: "Absent", value: 40, color: "#dc3545" },
-    { name: "Leave", value: 3, color: "#ffc107" },
-    { name: "Half Day", value: 5, color: "#17a2b8" },
+    { name: "Present", value: counts.present, color: "#28a745" },
+    { name: "Absent", value: counts.absent, color: "#dc3545" },
+    { name: "Leave", value: counts.leave, color: "#ffc107" },
+    { name: "Half Day", value: counts.halfDay, color: "#17a2b8" },
   ];
+  // const chartData = [
+  //    { name: "Present", value: 100, color: "#28a745" },
+  //    { name: "Absent", value: 40, color: "#dc3545" },
+  //    { name: "Leave", value: 3, color: "#ffc107" },
+  //    { name: "Half Day", value: 5, color: "#17a2b8" },
+  // ];
 
   const totalPages = Math.ceil(totalRecords / 50);
 
@@ -136,51 +154,78 @@ const recentActivities = [
     <div className="attendance-page">
       {/* <div className="attendance-header">Attendance</div> */}
       <div className="attendance-page-container">
-      <div className="attendance-page-firstLine">
-  {/* Chart Section */}
-  <div className="attendance-page-chart">
-    <div className="attendance-page-chart-header">
-      Attendance Overview
-    </div>
-    <div className="attendance-page-chart-date">{dateToFetch}</div>
-    <div className="attendance-page-donutChart">
-      <DonutChart data={chartData} />
-    </div>
-  </div>
+        <div className="attendance-page-firstLine">
+          {/* Chart Section */}
+          <div className="attendance-page-chart">
+            <div className="attendance-page-chart-header">
+              Attendance Overview
+            </div>
 
-  {/* Recent Activities Section */}
-  <div className="attendance-recent-activities">
-    <div className="recent-activities-header">Recent Activities</div>
-    <div className="recent-activities-content">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Activity</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentActivities.length > 0 ? (
-            recentActivities.map((activity, index) => (
-              <tr key={index}>
-                <td>{new Date(activity.date).toLocaleDateString()}</td>
-                <td>{activity.description}</td>
-                <td>{activity.status}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="3" style={{ textAlign: "center" }}>
-                No recent activities
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+            {counts &&
+            (counts.present ||
+              counts.absent ||
+              counts.leave ||
+              counts.halfDay) ? (
+              <>
+                <div className="attendance-page-chart-date">{dateToFetch}</div>
+                <div className="attendance-page-donutChart">
+                  <DonutChart data={chartData} />
+                </div>
+              </>
+            ) : (
+              <div>No Previous Data</div>
+            )}
+          </div> 
+
+          {/* Recent Activities Section */}
+          <div className="attendance-recent-activities">
+            <div className="recent-activities-header">Recent Activities</div>
+            <div className="recent-activities-first-line">
+              <div className="recent-activity-date">
+                {new Date().toLocaleDateString()}
+              </div>
+              <div className="recent-activity-show-more">
+                <Link to={"#"}>Show more</Link>
+              </div>
+            </div>
+            <div className="recent-activities-content">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee Code</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(latestAttendance).length > 0 ? (
+                    Object.entries(latestAttendance).map(
+                      ([category, records]) =>
+                        records.slice(0, 4).map((record, index) => (
+                          <tr key={record._id || index}>
+                            <td>{record.code}</td>
+                            <td>
+                              {record.punchIn
+                                ? new Date(record.punchIn).toLocaleTimeString()
+                                : "N/A"}
+                            </td>
+                            <td>{record.status}</td>
+                            {/* Show the category (Present, Absent, etc.) */}
+                          </tr>
+                        ))
+                    )
+                  ) : (
+                    <tr>
+                      <td colSpan="3" style={{ textAlign: "center" }}>
+                        No recent activities
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
         <div className="attendance-table-container">
           <div className="attendance-table-filter">
@@ -241,24 +286,24 @@ const recentActivities = [
       </div>
       {/* ✅ Pagination */}
       <div className="pagination">
-      <button
-        onClick={prevPage}
-        className="page-btn"
-        disabled={currentPage === 1}
-      >
-        &lt;
-      </button>
-      <span>
-        Page {currentPage} of {totalPages}
-      </span>
-      <button
-        onClick={nextPage}
-        className="page-btn"
-        disabled={currentPage === totalPages}
-      >
-        &gt;
-      </button>
-    </div>
+        <button
+          onClick={prevPage}
+          className="page-btn"
+          disabled={currentPage === 1}
+        >
+          &lt;
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={nextPage}
+          className="page-btn"
+          disabled={currentPage === totalPages}
+        >
+          &gt;
+        </button>
+      </div>
     </div>
   );
 };

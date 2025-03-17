@@ -17,6 +17,11 @@
              background-color: #fff;
              padding: 20px;
              border-radius: 10px;
+             .attendance-page-chart-header{
+                font-size: 1rem;
+                 font-weight: 900;
+                 margin-bottom: 10px;
+             }
          }
      
          .attendance-recent-activities {
@@ -29,6 +34,11 @@
                  font-size: 1rem;
                  font-weight: 900;
                  margin-bottom: 10px;
+             }
+             .recent-activities-first-line{
+                display: flex;
+                justify-content: space-between;
+                font-size: .9rem;
              }
      
              .recent-activities-content {
