@@ -1,0 +1,91 @@
+.latestAttendance-page{
+    .latestAttendance-page-header{
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+    .latestAttendance-page-container{
+        // background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        .latestAttendance-page-filters{
+            input{
+                // width: 100%;
+                border-radius: 10px;
+                border: 2px solid #808080;
+                color: #808080;
+                padding: 5px;
+                font-size: 12px;
+            }
+        }
+        .latestAttendance-table-container{
+            margin-top: 5px;
+            width: 100%;
+            overflow-x: auto;
+            max-height: 60vh;
+            scrollbar-width: thin;
+    
+            /* Enable vertical scrolling */
+            display: block;
+            max-width: 100%;
+            overflow-y: auto;
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 700px; 
+                
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #6399f9;
+                    color: white;
+                    
+                    th {   
+                        // border: 2px solid gray;          
+                        white-space: nowrap;
+                        text-align: center;
+                    }
+                
+                    // // Rounded corners for the first and last th in the main-header row
+                    // .main-header th:first-child {
+                    //     border-radius: 5px 0 0 5px;
+                    // }
+                
+                    // .main-header th:last-child {
+                    //     border-radius: 0 5px 5px 0;
+                    // }
+                }
+        
+                tbody {
+                    tr {
+                        
+                        background-color: #f8f8f8;
+        
+                        &:nth-child(even) {
+                            background-color: white;
+                        }
+                        td {
+                            padding: 12px;
+                            font-size: 12px;
+                            text-align: center;
+                            white-space: nowrap; 
+        
+                            /* Rounded corners */
+                            &:first-child {
+                                border-radius: 5px 0 0 5px;
+                            }
+        
+                            &:last-child {
+                                border-radius: 0 5px 5px 0;
+                            }
+                            img{
+                                width: 5rem;
+                                height: 5rem;
+                                border-radius: 50%;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

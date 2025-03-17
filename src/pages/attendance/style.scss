@@ -83,12 +83,29 @@
             padding: 20px;
             border-radius: 10px;
             .attendance-table-filter{
-                input{
-                    border-radius: 10px;
-                    border: 2px solid #808080;
-                    color: #808080;
-                    padding: 5px;
-                    font-size: 12px;
+                display: flex;
+                justify-content: space-between;
+                .search-filter{
+                    input{
+                        border-radius: 10px;
+                        border: 2px solid #808080;
+                        color: #808080;
+                        padding: 5px;
+                        font-size: 12px;
+                    }
+                }
+                .firm-filter{
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                    select{
+                        width: 100%;
+                        border-radius: 10px;
+                        border: 2px solid #808080;
+                        color: #808080;
+                        padding:5px 0px;
+                        font-size: 12px;
+                    }
                 }
             }
             .table-scroll{

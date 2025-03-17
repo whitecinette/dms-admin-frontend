@@ -18,6 +18,7 @@ import AddUser from "./pages/addUser";
 import Attendance from "./pages/attendance";
 import ViewAttendance from "./pages/viewAttendance";
 import HrDashboard from "./pages/SalesData";
+import LatestAttendance from "./pages/latestAttendance";
 
 function App() {
   // Get the token from localStorage
@@ -56,6 +57,7 @@ function App() {
             <Route path="/addUser" element={<AddUser/>} />
             <Route path="/attendance" element={<Attendance/>} />
             <Route path="/attendance/:code" element={<ViewAttendance/>} />
+            <Route path="/attendance/todaysAttendance" element={<LatestAttendance/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

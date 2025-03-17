@@ -12,39 +12,25 @@ const Attendance = () => {
   const [error, setError] = useState("");
   const [counts, setCounts] = useState([]);
   const [dateToFetch, setDateToFetch] = useState("");
-  const [employee, setEmployee] = useState([]); // ✅ Changed from "" to []
+  const [employee, setEmployee] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [latestAttendance, setLatestAttendance] = useState({});
+  const [firmList, setFirmList] = useState([]);
+  const [firm, setFirm] = useState({});
   const limit = 50;
-  const recentActivities = [
-    {
-      date: "2025-03-15T10:30:00.000Z",
-      description: "Punched In",
-      status: "Success",
-    },
-    {
-      date: "2025-03-15T12:00:00.000Z",
-      description: "Punched Out",
-      status: "Success",
-    },
-    {
-      date: "2025-03-15T14:15:00.000Z",
-      description: "Marked Absent",
-      status: "Failed",
-    },
-    {
-      date: "2025-03-16T09:00:00.000Z",
-      description: "Punched In - Late",
-      status: "Warning",
-    },
-    {
-      date: "2025-03-16T17:30:00.000Z",
-      description: "Punched Out - Early",
-      status: "Warning",
-    },
-  ];
+
+  const getAllActorTypes = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/actorTypesHierarchy/get-all-by-admin`
+      );
+      setFirmList(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const getDateDaysAgo = (days) => {
     const date = new Date();
@@ -102,6 +88,7 @@ const Attendance = () => {
           page: currentPage,
           limit,
           search,
+          firm,
         },
       });
       setEmployee(res.data.data || []);
@@ -114,14 +101,16 @@ const Attendance = () => {
   useEffect(() => {
     fetchAttendance();
     getAllEmployee();
-  }, [currentPage, search]);
+    getAllActorTypes();
+  }, [currentPage, search, firm]);
 
   useEffect(() => {
     getLatestAttendance();
     setInterval(() => {
       getLatestAttendance();
-    }, 100000);
+    }, 60000);
   }, []);
+
 
   const chartData = [
     { name: "Present", value: counts.present, color: "#28a745" },
@@ -175,7 +164,7 @@ const Attendance = () => {
             ) : (
               <div>No Previous Data</div>
             )}
-          </div> 
+          </div>
 
           {/* Recent Activities Section */}
           <div className="attendance-recent-activities">
@@ -185,7 +174,7 @@ const Attendance = () => {
                 {new Date().toLocaleDateString()}
               </div>
               <div className="recent-activity-show-more">
-                <Link to={"#"}>Show more</Link>
+                <Link to={"/attendance/todaysAttendance"}>Show more</Link>
               </div>
             </div>
             <div className="recent-activities-content">
@@ -229,15 +218,35 @@ const Attendance = () => {
 
         <div className="attendance-table-container">
           <div className="attendance-table-filter">
-            <input
-              name="search"
-              value={search}
-              onChange={(e) => {
-                setCurrentPage(1);
-                setSearch(e.target.value);
-              }}
-              placeholder="Search employee..."
-            />
+            <div className="search-filter">
+              <input
+                name="search"
+                value={search}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setSearch(e.target.value);
+                }}
+                placeholder="Search employee..."
+              />
+            </div>
+            <div className="firm-filter">
+              <label>Firm:</label>
+              <select
+                value={firm || ""} // Ensure it's a string
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setFirm(e.target.value); // Store firm ID as a string
+                }}
+              >
+                <option value="">Select Firm</option>
+                {firmList.length > 0 &&
+                  firmList.map((item, index) => (
+                    <option key={item._id} value={item._id}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
           <div className="table-scroll">
             <table>
