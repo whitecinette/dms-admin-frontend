@@ -17,8 +17,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
   const toggleDropdown = (index) => {
     setOpenDropdowns((prev) => ({
       ...prev,
-      [index]: !prev[index], // Toggle dropdown state
-    }));
+      [index]: !prev[index], // Toggle dropdown State
+    })); 
   };
 
   const navItems = [
