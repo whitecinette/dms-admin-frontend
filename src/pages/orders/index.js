@@ -416,7 +416,7 @@ function Orders() {
                           ))
                         : order?.Products?.map((product, idx) => (
                             <tr key={idx}>
-                              <td>{product?.ProductId?.Model || "N/A"}</td>
+                              <td>{product?.ProductId?.product_name || "N/A"}</td>
                               <td>{product?.Quantity}</td>
                               <td>
                                 ₹

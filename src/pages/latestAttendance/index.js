@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import "./style.scss";
 import config from "../../config.js";
+import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -10,19 +11,23 @@ export default function LatestAttendance() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalpages] = useState(0);
   const [search, setSearch] = useState("");
+  const [editID, setEditId] = useState("");
+  const [editData, setEditData] = useState({});
 
   const getAttendance = async () => {
     try {
-  
-      const res = await axios.get(`${backendUrl}/get-latest-attendance-by-date`, {
-        params: {
-          date: new Date(),
-          page: currentPage,
-          limit: 10,
-          search,
-        },
-      });
-  
+      const res = await axios.get(
+        `${backendUrl}/get-latest-attendance-by-date`,
+        {
+          params: {
+            date: new Date(),
+            page: currentPage,
+            limit: 10,
+            search,
+          },
+        }
+      );
+
       console.log(res);
       setAttendance(res.data.data);
       setTotalpages(res.data.totalPages);
@@ -30,7 +35,28 @@ export default function LatestAttendance() {
       console.log("Error fetching attendance:", error);
     }
   };
-  
+  //handle save
+  const handleSave = async () => {
+    try {
+      const res = await axios.put(
+        `${backendUrl}/edit-attendance/${editID}`,
+        editData,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      getAttendance()
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  //Handle edit
+  const handleEdit = (row) => {
+    setEditId(row._id);
+    setEditData(row);
+  };
 
   // Handle Previous Page
   const prevPage = () => {
@@ -54,9 +80,9 @@ export default function LatestAttendance() {
     return () => clearInterval(interval); // Cleanup on unmount
   }, []);
 
-  useEffect(()=>{
-    getAttendance()
-  },[currentPage, search])
+  useEffect(() => {
+    getAttendance();
+  }, [currentPage, search]);
 
   return (
     <div className="latestAttendance-page">
@@ -91,6 +117,7 @@ export default function LatestAttendance() {
                 <th>Shop Name</th>
                 <th>Status</th>
                 <th>Hours Worked</th>
+                <th>Action</th>
               </tr>
             </thead>
 
@@ -102,7 +129,7 @@ export default function LatestAttendance() {
                     <React.Fragment key={category}>
                       <tr>
                         <td
-                          colSpan="11"
+                          colSpan="12"
                           style={{ fontWeight: "bold", textAlign: "center" }}
                         >
                           {category}
@@ -149,15 +176,68 @@ export default function LatestAttendance() {
                               : "N/A"}
                           </td>
                           <td>{record.punchOutName || "N/A "}</td>
-                          <td>{record.status}</td>
+                          {editID === record._id ? (
+                            <td>
+                              <select
+                                value={editData.status}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    status: e.target.value,
+                                  })
+                                }
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Half Day">Half Day</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                              </select>
+                            </td>
+                          ) : (
+                            <td>{record.status}</td>
+                          )}
                           <td>{record.hoursWorked || "N/A"}</td>
+                          <td>
+                            {editID === record._id ? (
+                              <>
+                                <FaSave
+                                  color="green"
+                                  style={{
+                                    cursor: "pointer",
+                                    marginRight: "10px",
+                                  }}
+                                  onClick={() => {
+                                    handleSave();
+                                    setEditId(null); // Exit edit mode
+                                  }}
+                                />
+                                <FaTimes
+                                  color="red"
+                                  style={{ cursor: "pointer" }}
+                                  onClick={() => {
+                                    setEditId(null); // Exit edit mode without saving
+                                  }}
+                                />
+                              </>
+                            ) : (
+                              <FaEdit
+                                color="#005bfe"
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                                onClick={() => handleEdit(record)}
+                              />
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </React.Fragment>
                   ))
               ) : (
                 <tr>
-                  <td colSpan="11" style={{ textAlign: "center" }}>
+                  <td colSpan="12" style={{ textAlign: "center" }}>
                     No recent activities
                   </td>
                 </tr>
@@ -168,24 +248,24 @@ export default function LatestAttendance() {
       </div>
       {/* Pagination */}
       <div className="pagination">
-      <button
-        onClick={prevPage}
-        className="page-btn"
-        disabled={currentPage === 1}
-      >
-        &lt;
-      </button>
-      <span>
-        Page {currentPage} of {totalPages}
-      </span>
-      <button
-        onClick={nextPage}
-        className="page-btn"
-        disabled={currentPage === totalPages}
-      >
-        &gt;
-      </button>
-    </div>
+        <button
+          onClick={prevPage}
+          className="page-btn"
+          disabled={currentPage === 1}
+        >
+          &lt;
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={nextPage}
+          className="page-btn"
+          disabled={currentPage === totalPages}
+        >
+          &gt;
+        </button>
+      </div>
     </div>
   );
 }
