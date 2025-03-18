@@ -174,7 +174,7 @@ const Attendance = () => {
                 {new Date().toLocaleDateString()}
               </div>
               <div className="recent-activity-show-more">
-                <Link to={"/attendance/todaysAttendance"}>Show more</Link>
+                <Link to={"/attendance/allAttendance"}>Show more</Link>
               </div>
             </div>
             <div className="recent-activities-content">

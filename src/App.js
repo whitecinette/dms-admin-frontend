@@ -57,7 +57,7 @@ function App() {
             <Route path="/addUser" element={<AddUser/>} />
             <Route path="/attendance" element={<Attendance/>} />
             <Route path="/attendance/:code" element={<ViewAttendance/>} />
-            <Route path="/attendance/todaysAttendance" element={<LatestAttendance/>} />
+            <Route path="/attendance/allAttendance" element={<LatestAttendance/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

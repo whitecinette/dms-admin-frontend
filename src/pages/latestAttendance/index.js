@@ -13,14 +13,16 @@ export default function LatestAttendance() {
   const [search, setSearch] = useState("");
   const [editID, setEditId] = useState("");
   const [editData, setEditData] = useState({});
+  const [date, setdate] = useState();
 
   const getAttendance = async () => {
     try {
+      console.log(date);
       const res = await axios.get(
         `${backendUrl}/get-latest-attendance-by-date`,
         {
           params: {
-            date: new Date(),
+            date,
             page: currentPage,
             limit: 10,
             search,
@@ -39,17 +41,20 @@ export default function LatestAttendance() {
   //handle download
   const handleDownload = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/download-all-attendance/`, {
-        responseType: "blob", // ✅ Important for file downloads
-        
-        headers: {
-          Authorization: localStorage.getItem("authToken"),
-        },
-      });
-  
+      const response = await axios.get(
+        `${backendUrl}/download-all-attendance/`,
+        {
+          responseType: "blob", // ✅ Important for file downloads
+
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
       // Create a Blob URL
       const url = window.URL.createObjectURL(new Blob([response.data]));
-  
+
       // Create a download link
       const a = document.createElement("a");
       a.href = url;
@@ -57,7 +62,7 @@ export default function LatestAttendance() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      
+
       // Cleanup Blob URL
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -65,7 +70,7 @@ export default function LatestAttendance() {
       alert("Error downloading the file. Please try again.");
     }
   };
-  
+
   //handle save
   const handleSave = async () => {
     try {
@@ -78,7 +83,7 @@ export default function LatestAttendance() {
           },
         }
       );
-      getAttendance()
+      getAttendance();
     } catch (error) {
       console.log(error);
     }
@@ -103,38 +108,55 @@ export default function LatestAttendance() {
     }
   };
 
-  // Fetch attendance when the component mounts
+  // // Fetch attendance when the component mounts
+  // useEffect(() => {
+  //   getAttendance();
+
+  //   const interval = setInterval(() => {
+  //     getAttendance();
+  //     setCurrentPage(1);
+  //   }, 60000); // ✅ Corrected setInterval syntax
+
+  //   return () => clearInterval(interval); // ✅ Cleanup on unmount
+  // }, []);
+
   useEffect(() => {
     getAttendance();
-    const interval = setInterval(getAttendance, 60000);
-
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
-
-  useEffect(() => {
-    getAttendance();
-  }, [currentPage, search]);
+  }, [currentPage, search, date]);
 
   return (
     <div className="latestAttendance-page">
       <div className="latestAttendance-page-header">Attendance</div>
       <div className="latestAttendance-page-container">
-      <div className="latestAttendance-page-first-line">
-        <div className="latestAttendance-page-filters">
-          <input
-            value={search}
-            onChange={(e) => {
-              setCurrentPage(1);
-              setSearch(e.target.value);
-            }}
-            placeholder="Search code"
-          />
+        <div className="latestAttendance-page-first-line">
+          <div className="latestAttendance-page-filters">
+            <input
+              value={search}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSearch(e.target.value);
+              }}
+              placeholder="Search code"
+            />
+            <input
+              type="date"
+              onChange={(e) => {
+                setCurrentPage(1);
+                const selectedDate = new Date(e.target.value); // Convert string to Date
+                setdate(selectedDate.toLocaleDateString()); // Format date properly
+              }}
+            />
+          </div>
+          <div className="latestAttendance-page-button">
+            <button
+              className="download-attendance-button"
+              onClick={handleDownload}
+            >
+              <FaDownload />
+              Download All Attendance
+            </button>
+          </div>
         </div>
-        <div className="latestAttendance-page-button">
-            <button className="download-attendance-button" onClick={handleDownload}><FaDownload />
-            Download All Attendance</button>
-        </div>
-      </div>
         <div className="latestAttendance-table-container">
           <table>
             <thead>
@@ -160,7 +182,7 @@ export default function LatestAttendance() {
             </thead>
 
             <tbody>
-              {Object.keys(attendance).length > 0 ? (
+              {Object.keys(attendance).some((key) => attendance[key].length > 0) ? (
                 Object.entries(attendance)
                   .filter(([category, records]) => records.length > 0) // Exclude empty categories
                   .map(([category, records]) => (

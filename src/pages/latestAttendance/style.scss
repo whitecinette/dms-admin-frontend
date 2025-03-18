@@ -25,6 +25,8 @@
                     }
             }
             .latestAttendance-page-filters{
+                display: flex;
+                gap: 10px;
                 input{
                     // width: 100%;
                     border-radius: 10px;
