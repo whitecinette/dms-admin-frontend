@@ -125,17 +125,21 @@ function Orders() {
     }
   
     // ✅ Calculate new total price
-    const newTotalPrice = editingOrder.Products.reduce(
-      (sum, product) => sum + (product.Quantity || 0) * (product?.ProductId?.Price ?? product?.Price ?? 0),
-      0
-    );
-  
+    const newTotalPrice =
+      editingOrder?.Products?.reduce(
+        (sum, product) =>
+          sum +
+          (product.Quantity ?? 0) *
+            (product.ProductId?.price ?? product?.price ?? 0),
+        0
+      ) ?? 0;
+
     // ✅ Create a local copy with updated total price
     const updatedOrder = {
       ...editingOrder,
       TotalPrice: newTotalPrice,
     };
-  
+
     try {
       const response = await axios.put(
         `${backendUrl}/order/edit-order-by-admin/${editingOrder._id}`,
@@ -144,9 +148,9 @@ function Orders() {
           headers: { Authorization: authToken },
         }
       );
-  
+
       console.log("Order updated successfully:", response.data);
-      
+
       // ✅ Reset editing state
       setEditingOrder(null);
       fetchOrderData();
@@ -154,7 +158,7 @@ function Orders() {
       console.error("Error updating order:", err.response?.data || err.message);
     }
   };
-  
+
 
   // delete order
   const handleDeleteOrder = async (orderId) => {
@@ -407,16 +411,16 @@ function Orders() {
                                 ₹
                                 {(
                                   product.Quantity *
-                                  (product?.ProductId?.price ??
-                                    product?.price ??
-                                    0)
+                                  (product?.ProductId?.price ?? 0)
                                 ).toLocaleString()}
                               </td>
                             </tr>
                           ))
                         : order?.Products?.map((product, idx) => (
                             <tr key={idx}>
-                              <td>{product?.ProductId?.product_name || "N/A"}</td>
+                              <td>
+                                {product?.ProductId?.product_name || "N/A"}
+                              </td>
                               <td>{product?.Quantity}</td>
                               <td>
                                 ₹

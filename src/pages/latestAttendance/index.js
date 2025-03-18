@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import "./style.scss";
 import config from "../../config.js";
-import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { FaDownload, FaEdit, FaSave, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -35,6 +35,37 @@ export default function LatestAttendance() {
       console.log("Error fetching attendance:", error);
     }
   };
+
+  //handle download
+  const handleDownload = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/download-all-attendance/`, {
+        responseType: "blob", // ✅ Important for file downloads
+        
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+  
+      // Create a Blob URL
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+  
+      // Create a download link
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "all_attendance_data.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Cleanup Blob URL
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Error downloading the file. Please try again.");
+    }
+  };
+  
   //handle save
   const handleSave = async () => {
     try {
@@ -88,6 +119,7 @@ export default function LatestAttendance() {
     <div className="latestAttendance-page">
       <div className="latestAttendance-page-header">Attendance</div>
       <div className="latestAttendance-page-container">
+      <div className="latestAttendance-page-first-line">
         <div className="latestAttendance-page-filters">
           <input
             value={search}
@@ -98,16 +130,22 @@ export default function LatestAttendance() {
             placeholder="Search code"
           />
         </div>
+        <div className="latestAttendance-page-button">
+            <button className="download-attendance-button" onClick={handleDownload}><FaDownload />
+            Download All Attendance</button>
+        </div>
+      </div>
         <div className="latestAttendance-table-container">
           <table>
             <thead>
               <tr className="main-header">
                 <th colSpan={6}>Punch In</th>
-                <th colSpan={6}>Punch Out</th>
+                <th colSpan={7}>Punch Out</th>
               </tr>
               <tr>
                 <th>SNo.</th>
-                <th>code</th>
+                <th>Code</th>
+                <th>Name</th>
                 <th>Image</th>
                 <th>Date</th>
                 <th>Time</th>
@@ -129,7 +167,7 @@ export default function LatestAttendance() {
                     <React.Fragment key={category}>
                       <tr>
                         <td
-                          colSpan="12"
+                          colSpan="13"
                           style={{ fontWeight: "bold", textAlign: "center" }}
                         >
                           {category}
@@ -139,6 +177,7 @@ export default function LatestAttendance() {
                         <tr key={record._id || index}>
                           <td>{index + 1}</td>
                           <td>{record.code}</td>
+                          <td>{record.name}</td>
                           <td>
                             {record.punchInImage ? (
                               <img src={record.punchInImage} alt="Punch Img" />
@@ -237,7 +276,7 @@ export default function LatestAttendance() {
                   ))
               ) : (
                 <tr>
-                  <td colSpan="12" style={{ textAlign: "center" }}>
+                  <td colSpan="13" style={{ textAlign: "center" }}>
                     No recent activities
                   </td>
                 </tr>
