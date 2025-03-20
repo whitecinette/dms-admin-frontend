@@ -27,7 +27,7 @@
             .latestAttendance-page-filters{
                 display: flex;
                 gap: 10px;
-                input{
+                input, select{
                     // width: 100%;
                     border-radius: 10px;
                     border: 2px solid #808080;
@@ -60,19 +60,19 @@
                     color: white;
                     
                     th {   
-                        // border: 2px solid gray;          
+                        border: 1px solid rgb(162, 245, 248);
                         white-space: nowrap;
                         text-align: center;
                     }
                 
                     // // Rounded corners for the first and last th in the main-header row
-                    // .main-header th:first-child {
-                    //     border-radius: 5px 0 0 5px;
-                    // }
+                    .main-header th:first-child {
+                         border-radius: 5px 0 0 5px;
+                    }
                 
-                    // .main-header th:last-child {
-                    //     border-radius: 0 5px 5px 0;
-                    // }
+                    .main-header th:last-child {
+                        border-radius: 0 5px 5px 0;
+                    }
                 }
         
                 tbody {
@@ -82,6 +82,18 @@
         
                         &:nth-child(even) {
                             background-color: white;
+                        }
+                        .expand-btn{
+                            padding: 2px;
+                            button{
+                                padding: 2px;
+                                background-color: #6399f9;
+                                color: white;
+                                border: none;
+                                font-size: 12px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                            }
                         }
                         td {
                             padding: 12px;
@@ -97,11 +109,89 @@
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
                             }
-                            img{
-                                width: 5rem;
-                                height: 5rem;
-                                border-radius: 50%;
+                        }
+                        .inner-code{
+                            margin-top: 5px;
+                            width: 100%;
+                            overflow-x: auto;
+                            max-height: 60vh;
+                            scrollbar-width: thin;
+                    
+                            /* Enable vertical scrolling */
+                            // display: block;
+                            max-width: 100%;
+                            overflow-y: auto;
+                            .expanded-table{
+                                width: 100%;
+                                border-collapse: collapse;
+                                min-width: 700px; 
+                                
+                                thead {
+                                    position: sticky;
+                                    top: 0;
+                                    background-color: #fff;
+                                    
+                                    color: white;
+                                    
+                                    th {               
+                                        padding: 0 5px;
+                                        white-space: nowrap;
+                                        text-align: center;
+                                        background-color: #6399f9;
+                                        // padding: 12px;
+                                    }
+                                    
+                        
+                                    /* Rounded corners for first and last th */
+                                    // // Rounded corners for the first and last th in the main-header row
+                                            .main-header th:first-child {
+                                                border-radius: 5px 0 0 5px;
+                                        }
+                                    
+                                        .main-header th:last-child {
+                                            border-radius: 0 5px 5px 0;
+                                        }
+                                }
+                        
+                                tbody {
+                                    tr {
+                                        
+                                        background-color: #f8f8f8;
+                        
+                                        &:nth-child(even) {
+                                            background-color: white;
+                                        }
+                                        .inner-table-address{
+                                            white-space: pre-wrap; 
+                                            width: 10rem;
+                                        }
+                                        .inner-table-map{
+                                            white-space: pre-wrap; 
+                                            width: 20rem;
+                                        }
+                                        
+                                        td {
+                                            font-size: 12px;
+                                            text-align: center;
+                                            white-space: nowrap; 
+                        
+                                            /* Rounded corners */
+                                            &:first-child {
+                                                border-radius: 5px 0 0 5px;
+                                            }
+                        
+                                            &:last-child {
+                                                border-radius: 0 5px 5px 0;
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                        }
+                        img{
+                            width: 10rem;
+                            height: 10rem;
+                            border-radius: 50%;
                         }
                     }
                 }

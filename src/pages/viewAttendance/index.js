@@ -73,8 +73,8 @@ export default function ViewAttendance() {
                 <th colSpan={6}>Punch Out</th>
               </tr>
               <tr>
-               <th>SNo.</th>
-               <th>Image</th>
+                <th>SNo.</th>
+                <th>Image</th>
                 <th>Date</th>
                 <th>Time</th>
                 <th>Shop Name</th>
@@ -93,7 +93,11 @@ export default function ViewAttendance() {
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>
-                      <img src={record.punchInImage} alt="Punch Img" />
+                      {record.punchInImage ? (
+                        <img src={record.punchInImage} />
+                      ) : (
+                        "N/A"
+                      )}
                     </td>
                     <td>{new Date(record.date).toLocaleDateString()}</td>
                     <td>
@@ -103,7 +107,11 @@ export default function ViewAttendance() {
                     </td>
                     <td>{record.punchInName || "N/A "}</td>
                     <td>
-                      <img src={record.punchOutImage} alt="Punch Img" />
+                      {record.punchOutImage ? (
+                        <img src={record.punchOutImage} />
+                      ) : (
+                        "N/A"
+                      )}
                     </td>
                     <td>
                       {record.punchOut

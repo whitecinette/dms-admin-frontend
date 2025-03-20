@@ -1,10 +1,10 @@
-const downloadCSVTemplate = (header) => {
-  if (!header || header.length === 0) {
+const downloadCSVTemplate = (headers) => {
+  if (!Array.isArray(headers) || headers.length === 0) {
     alert("No headers available to download the template.");
     return;
   }
 
-  const csvContent = header.join(",") + "\n"; // CSV header row
+  const csvContent = headers.join(",") + "\n"; // ✅ Corrected usage
 
   // Create a Blob and trigger download
   const blob = new Blob([csvContent], { type: "text/csv" });

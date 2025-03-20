@@ -2,7 +2,14 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import "./style.scss";
 import config from "../../config.js";
-import { FaDownload, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import {
+  FaChevronDown,
+  FaChevronUp,
+  FaDownload,
+  FaEdit,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -13,7 +20,11 @@ export default function LatestAttendance() {
   const [search, setSearch] = useState("");
   const [editID, setEditId] = useState("");
   const [editData, setEditData] = useState({});
-  const [date, setdate] = useState();
+  const [date, setdate] = useState("");
+  const [expand, setExpand] = useState("");
+  const [address, setAddresses] = useState("");
+  const [status, setStatus] = useState("");
+  const limit =50
 
   const getAttendance = async () => {
     try {
@@ -24,8 +35,9 @@ export default function LatestAttendance() {
           params: {
             date,
             page: currentPage,
-            limit: 10,
+            limit,
             search,
+            status,
           },
         }
       );
@@ -35,6 +47,18 @@ export default function LatestAttendance() {
       setTotalpages(res.data.totalPages);
     } catch (error) {
       console.log("Error fetching attendance:", error);
+    }
+  };
+
+  const fetchAddress = async (lat, lon) => {
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      );
+
+      setAddresses(response.data.display_name);
+    } catch (error) {
+      console.error("Error fetching address:", error);
     }
   };
 
@@ -74,7 +98,7 @@ export default function LatestAttendance() {
   //handle save
   const handleSave = async () => {
     try {
-      const res = await axios.put(
+      await axios.put(
         `${backendUrl}/edit-attendance/${editID}`,
         editData,
         {
@@ -107,6 +131,7 @@ export default function LatestAttendance() {
       setCurrentPage((prev) => prev + 1);
     }
   };
+  // Component to fix Leaflet rendering issues
 
   // // Fetch attendance when the component mounts
   // useEffect(() => {
@@ -122,7 +147,7 @@ export default function LatestAttendance() {
 
   useEffect(() => {
     getAttendance();
-  }, [currentPage, search, date]);
+  }, [currentPage, search, date, status]);
 
   return (
     <div className="latestAttendance-page">
@@ -146,6 +171,21 @@ export default function LatestAttendance() {
                 setdate(selectedDate.toLocaleDateString()); // Format date properly
               }}
             />
+            <select
+              value={status}
+              onChange={(e) => {
+                setCurrentPage(1); // Reset pagination on status change
+                setStatus(e.target.value); // Update status state
+              }}
+            >
+              <option value="">Select Status</option>
+              <option value="Present">Present</option>
+              <option value="Pending">Pending</option>
+              <option value="Absent">Absent</option>
+              <option value="Half Day">Half Day</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
           </div>
           <div className="latestAttendance-page-button">
             <button
@@ -161,141 +201,194 @@ export default function LatestAttendance() {
           <table>
             <thead>
               <tr className="main-header">
-                <th colSpan={6}>Punch In</th>
-                <th colSpan={7}>Punch Out</th>
+                <th rowSpan={2}>SNo.</th>
+                <th rowSpan={2}>code</th>
+                <th rowSpan={2}>Name</th>
+                <th rowSpan={2}>Date</th>
+                <th colSpan={2}>Punch In</th>
+                <th colSpan={2}>Punch Out</th>
+                <th rowSpan={2}>Status</th>
+                <th rowSpan={2}>Hours Worked</th>
+                <th rowSpan={2}>Expand</th>
+                <th rowSpan={2}>Action</th>
               </tr>
               <tr>
-                <th>SNo.</th>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Image</th>
-                <th>Date</th>
+                {/**
+                  <th>Image</th>
+                  */}
                 <th>Time</th>
                 <th>Shop Name</th>
-                <th>Image</th>
+                {/**
+                  <th>Image</th> 
+                  */}
                 <th>Time</th>
                 <th>Shop Name</th>
-                <th>Status</th>
-                <th>Hours Worked</th>
-                <th>Action</th>
               </tr>
             </thead>
 
             <tbody>
-              {Object.keys(attendance).some((key) => attendance[key].length > 0) ? (
-                Object.entries(attendance)
-                  .filter(([category, records]) => records.length > 0) // Exclude empty categories
-                  .map(([category, records]) => (
-                    <React.Fragment key={category}>
-                      <tr>
-                        <td
-                          colSpan="13"
-                          style={{ fontWeight: "bold", textAlign: "center" }}
+              {attendance.length > 0 ? (
+                attendance.map((record, index) => (
+                  <React.Fragment key={record._id || index}>
+                    <tr>
+                      <td>{(currentPage-1)*limit+index+1}</td>
+                      <td>{record.code}</td>
+                      <td>{record.name}</td>
+                      <td>{new Date(record.date).toLocaleDateString()}</td>
+                      <td>
+                        {record.punchIn
+                          ? new Date(record.punchIn).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          : "N/A"}
+                      </td>
+                      <td>{record.punchInName || "N/A"}</td>
+                      <td>
+                        {record.punchOut
+                          ? new Date(record.punchOut).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          : "N/A"}
+                      </td>
+                      <td>{record.punchOutName || "N/A"}</td>
+
+                      {editID === record._id ? (
+                        <td>
+                          <select
+                            value={editData.status}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                status: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Half Day">Half Day</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </td>
+                      ) : (
+                        <td>{record.status}</td>
+                      )}
+
+                      <td>{record.hoursWorked || "N/A"}</td>
+
+                      <td className="expand-btn">
+                        <button
+                          onClick={() => {
+                            setExpand(
+                              expand === record._id ? null : record._id
+                            );
+                            fetchAddress(record.latitude, record.longitude);
+                          }}
                         >
-                          {category}
+                          {expand === record._id ? (
+                            <>
+                              Collapse <FaChevronUp />
+                            </>
+                          ) : (
+                            <>
+                              Expand <FaChevronDown />
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      <td>
+                        {editID === record._id ? (
+                          <>
+                            <FaSave
+                              color="green"
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                              onClick={() => {
+                                handleSave();
+                                setEditId(null);
+                              }}
+                            />
+                            <FaTimes
+                              color="red"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => setEditId(null)}
+                            />
+                          </>
+                        ) : (
+                          <FaEdit
+                            color="#005bfe"
+                            style={{ cursor: "pointer", marginRight: "10px" }}
+                            onClick={() => handleEdit(record)}
+                          />
+                        )}
+                      </td>
+                    </tr>
+
+                    {expand === record._id && (
+                      <tr>
+                        <td colSpan="13" className="inner-code">
+                          <table className="expanded-table">
+                            <thead>
+                              <tr>
+                                <th>Address</th>
+                                <th>Map</th>
+                                <th>Punch In Image</th>
+                                <th>Punch Out Image</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="inner-table-address">
+                                  {address}
+                                </td>
+                                <td className="inner-table-map">
+                                  <iframe
+                                    style={{
+                                      width: "100%",
+                                      height: "250px",
+                                      border: "0",
+                                      borderRadius: "10px",
+                                    }}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    src={`https://maps.google.com/maps?q=${record.latitude},${record.longitude}&z=16&output=embed`}
+                                    title="Google Map"
+                                  ></iframe>
+                                </td>
+                                <td>
+                                  {record.punchInImage ? (
+                                    <img
+                                      src={record.punchInImage}
+                                      alt="Punch In"
+                                    />
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </td>
+                                <td>
+                                  {record.punchOutImage ? (
+                                    <img
+                                      src={record.punchOutImage}
+                                      alt="Punch Out"
+                                    />
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </td>
                       </tr>
-                      {records.map((record, index) => (
-                        <tr key={record._id || index}>
-                          <td>{index + 1}</td>
-                          <td>{record.code}</td>
-                          <td>{record.name}</td>
-                          <td>
-                            {record.punchInImage ? (
-                              <img src={record.punchInImage} alt="Punch Img" />
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          <td>{new Date(record.date).toLocaleDateString()}</td>
-                          <td>
-                            {record.punchIn
-                              ? new Date(record.punchIn).toLocaleTimeString(
-                                  "en-IN",
-                                  {
-                                    timeZone: "Asia/Kolkata",
-                                  }
-                                )
-                              : "N/A"}
-                          </td>
-                          <td>{record.punchInName || "N/A "}</td>
-                          <td>
-                            {record.punchOutImage ? (
-                              <img src={record.punchOutImage} alt="Punch Img" />
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          <td>
-                            {record.punchOut
-                              ? new Date(record.punchOut).toLocaleTimeString(
-                                  "en-IN",
-                                  {
-                                    timeZone: "Asia/Kolkata",
-                                  }
-                                )
-                              : "N/A"}
-                          </td>
-                          <td>{record.punchOutName || "N/A "}</td>
-                          {editID === record._id ? (
-                            <td>
-                              <select
-                                value={editData.status}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    status: e.target.value,
-                                  })
-                                }
-                              >
-                                <option value="Pending">Pending</option>
-                                <option value="Absent">Absent</option>
-                                <option value="Half Day">Half Day</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
-                              </select>
-                            </td>
-                          ) : (
-                            <td>{record.status}</td>
-                          )}
-                          <td>{record.hoursWorked || "N/A"}</td>
-                          <td>
-                            {editID === record._id ? (
-                              <>
-                                <FaSave
-                                  color="green"
-                                  style={{
-                                    cursor: "pointer",
-                                    marginRight: "10px",
-                                  }}
-                                  onClick={() => {
-                                    handleSave();
-                                    setEditId(null); // Exit edit mode
-                                  }}
-                                />
-                                <FaTimes
-                                  color="red"
-                                  style={{ cursor: "pointer" }}
-                                  onClick={() => {
-                                    setEditId(null); // Exit edit mode without saving
-                                  }}
-                                />
-                              </>
-                            ) : (
-                              <FaEdit
-                                color="#005bfe"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => handleEdit(record)}
-                              />
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))
+                    )}
+                  </React.Fragment>
+                ))
               ) : (
                 <tr>
                   <td colSpan="13" style={{ textAlign: "center" }}>

@@ -111,18 +111,18 @@ const Attendance = () => {
     }, 60000);
   }, []);
 
-
   const chartData = [
-    { name: "Present", value: counts.present, color: "#28a745" },
-    { name: "Absent", value: counts.absent, color: "#dc3545" },
-    { name: "Leave", value: counts.leave, color: "#ffc107" },
-    { name: "Half Day", value: counts.halfDay, color: "#17a2b8" },
-  ];
+    { name: "Present", value: counts.present, color: "#2ecc71" }, // Bright Green
+    { name: "Absent", value: counts.absent, color: "#e74c3c" }, // Vibrant Red
+    { name: "Leave", value: counts.leave, color: "#f39c12" }, // Warm Orange
+    { name: "Half Day", value: counts.halfDay, color: "#3498db" }, // Bright Blue
+  ].filter((item) => item.value > 0); // Remove items with count 0
+
   // const chartData = [
-  //    { name: "Present", value: 100, color: "#28a745" },
-  //    { name: "Absent", value: 40, color: "#dc3545" },
-  //    { name: "Leave", value: 3, color: "#ffc107" },
-  //    { name: "Half Day", value: 5, color: "#17a2b8" },
+  //    { name: "Present", value: 100, color: "#2ecc71" },
+  //    { name: "Absent", value: 40, color: "#e74c3c" },
+  //    { name: "Leave", value: 3, color: "#f39c12" },
+  //    { name: "Half Day", value: 5, color: "#3498db" },
   // ];
 
   const totalPages = Math.ceil(totalRecords / 50);
@@ -181,28 +181,27 @@ const Attendance = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>Employee Code</th>
+                    <th>Name</th>
                     <th>Time</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.keys(latestAttendance).length > 0 ? (
-                    Object.entries(latestAttendance).map(
-                      ([category, records]) =>
-                        records.slice(0, 4).map((record, index) => (
-                          <tr key={record._id || index}>
-                            <td>{record.code}</td>
-                            <td>
-                              {record.punchIn
-                                ? new Date(record.punchIn).toLocaleTimeString()
-                                : "N/A"}
-                            </td>
-                            <td>{record.status}</td>
-                            {/* Show the category (Present, Absent, etc.) */}
-                          </tr>
-                        ))
-                    )
+                  {latestAttendance.length > 0 ? (
+                    latestAttendance
+                      .flat() // Flatten the array in case of nested structures
+                      .slice(0, 6) // Take only the first 4 records
+                      .map((record, index) => (
+                        <tr key={record._id || index}>
+                          <td>{record.name}</td>
+                          <td>
+                            {record.punchIn
+                              ? new Date(record.punchIn).toLocaleTimeString()
+                              : "N/A"}
+                          </td>
+                          <td>{record.status}</td>
+                        </tr>
+                      ))
                   ) : (
                     <tr>
                       <td colSpan="3" style={{ textAlign: "center" }}>
