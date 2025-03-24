@@ -10,6 +10,7 @@ import {
   FaSave,
   FaTimes,
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const backendUrl = config.backend_url;
 
@@ -24,7 +25,22 @@ export default function LatestAttendance() {
   const [expand, setExpand] = useState("");
   const [address, setAddresses] = useState("");
   const [status, setStatus] = useState("");
-  const limit =50
+  const [count, setCount] = useState({})
+  const limit = 50;
+
+  //get getAttendanceCount
+  const getAttendanceCount = async()=>{
+    const date = new Date()
+    const newDate = date.toISOString().split("T")[0];
+    try {
+      const response = await axios.get(`${backendUrl}/get-attendance-by-date/${newDate}`);
+        setCount(response.data.counts);
+      
+    } catch (err) {
+      console.error("Error fetching attendance:", err);
+      
+    }
+  }
 
   const getAttendance = async () => {
     try {
@@ -42,7 +58,7 @@ export default function LatestAttendance() {
         }
       );
 
-      console.log(res);
+      // console.log(res);
       setAttendance(res.data.data);
       setTotalpages(res.data.totalPages);
     } catch (error) {
@@ -98,15 +114,11 @@ export default function LatestAttendance() {
   //handle save
   const handleSave = async () => {
     try {
-      await axios.put(
-        `${backendUrl}/edit-attendance/${editID}`,
-        editData,
-        {
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
+      await axios.put(`${backendUrl}/edit-attendance/${editID}`, editData, {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
       getAttendance();
     } catch (error) {
       console.log(error);
@@ -131,27 +143,36 @@ export default function LatestAttendance() {
       setCurrentPage((prev) => prev + 1);
     }
   };
-  // Component to fix Leaflet rendering issues
-
-  // // Fetch attendance when the component mounts
-  // useEffect(() => {
-  //   getAttendance();
-
-  //   const interval = setInterval(() => {
-  //     getAttendance();
-  //     setCurrentPage(1);
-  //   }, 60000); // ✅ Corrected setInterval syntax
-
-  //   return () => clearInterval(interval); // ✅ Cleanup on unmount
-  // }, []);
 
   useEffect(() => {
     getAttendance();
+    getAttendanceCount()
   }, [currentPage, search, date, status]);
+
+  useEffect(()=>{
+    const total = Object.values(count).reduce((sum, value) => sum + value, 0);
+    if(!Object.keys(count).includes("totalEmployees")){
+      setCount(prev => ({ ...prev, totalEmployees:total })); 
+    }
+    console.log(count)
+  },[count])
 
   return (
     <div className="latestAttendance-page">
-      <div className="latestAttendance-page-header">Attendance</div>
+      <div className="latestAttendance-page-header">
+        <Link to="/attendance">Attendance</Link> &#47; <span>All Attendance</span>
+      </div>
+      <div className="latestAttendance-page-counter-container">
+        <div className="latestAttendance-page-counter-container-header">Today&apos;s  Attendance</div>
+        <div className="latestAttendance-page-counter">
+          <div className="latestAttendance-page-total-count counts"><span className="latestAttendance-page-counter-header">Total Employee:</span> <span>{count.totalEmployees}</span></div>
+          <div className="latestAttendance-page-present-count counts"><span className="latestAttendance-page-counter-header">Total Present:</span> <span>{count.present + count.pending}</span></div>
+          <div className="latestAttendance-page-absent-count counts"><span className="latestAttendance-page-counter-header">Total Absent:</span> <span>{count.absent}</span></div>
+          <div className="latestAttendance-page-half-day-count counts"><span className="latestAttendance-page-counter-header">Total Half-Day:</span> <span>{count.halfDay}</span></div>
+          <div className="latestAttendance-page-leave-count counts"><span className="latestAttendance-page-counter-header">Total Leave:</span> <span>{count.leave}</span></div>
+        </div>
+      </div>
+
       <div className="latestAttendance-page-container">
         <div className="latestAttendance-page-first-line">
           <div className="latestAttendance-page-filters">
@@ -231,7 +252,7 @@ export default function LatestAttendance() {
                 attendance.map((record, index) => (
                   <React.Fragment key={record._id || index}>
                     <tr>
-                      <td>{(currentPage-1)*limit+index+1}</td>
+                      <td>{(currentPage - 1) * limit + index + 1}</td>
                       <td>{record.code}</td>
                       <td>{record.name}</td>
                       <td>{new Date(record.date).toLocaleDateString()}</td>
@@ -349,12 +370,6 @@ export default function LatestAttendance() {
                                 </td>
                                 <td className="inner-table-map">
                                   <iframe
-                                    style={{
-                                      width: "100%",
-                                      height: "250px",
-                                      border: "0",
-                                      borderRadius: "10px",
-                                    }}
                                     loading="lazy"
                                     referrerPolicy="no-referrer-when-downgrade"
                                     src={`https://maps.google.com/maps?q=${record.latitude},${record.longitude}&z=16&output=embed`}

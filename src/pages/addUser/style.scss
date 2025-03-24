@@ -125,3 +125,22 @@
         color: #4CAF50;
     }
 }
+//responsive
+@media (max-width: 1024px) {
+    
+    .addUser-add-container {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .addUser-page-first-line{
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .addUser-add-btn, .addUser-upload-btn, .addUser-download-btn {
+        font-size: .6rem !important;
+    }
+}

@@ -87,6 +87,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       <path d="M58.1772 6.42856H42.7629V10.7142H58.1773C59.184 10.7142 60 9.89813 60 8.89149V8.25118C59.9999 7.24465 59.1838 6.42856 58.1772 6.42856Z" fill="currentColor"/>
       <path d="M34.6216 17.1429H35.9043C37.9174 17.1429 39.5486 15.5107 39.5486 13.4986V3.6443C39.5486 1.63219 37.9174 0 35.9043 0H34.6216C32.6084 0 30.9773 1.63219 30.9773 3.6443V13.4985C30.9772 15.5107 32.6084 17.1429 34.6216 17.1429Z" fill="currentColor" />
       </svg>, 
+      onClick: ()=> open(),
       children:[
         { name: "Hierarchy", to: "/hierarchy" },
         {name:"Actor Type Hierarchy", to: "/actorTypeHierarchy"},

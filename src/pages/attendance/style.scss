@@ -188,4 +188,59 @@
             }
         }
     }
+    .pagination {
+        display: flex;
+        justify-content: end;
+        margin-right: 2%;
+        align-items: center;
+        margin-top: 5px;
+        font-size: 0.7rem;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 50px;
+     
+        .page-btn,
+        .prev-block-btn,
+        .next-block-btn {
+          border: 1px solid #ddd;
+          background-color: white;
+          cursor: pointer;
+          border-radius: 5px;
+          transition: background-color 0.3s;
+     
+          &:disabled {
+            background-color: #f4f4f4;
+            color: #999;
+            cursor: not-allowed;
+          }
+        }
+      }
+}
+//responsive
+@media (max-width: 768px) { 
+    .attendance-page {
+        .attendance-page-firstLine {
+            flex-wrap: wrap;
+            .attendance-page-chart{
+                width: 100% !important;
+                // .attendance-page-donutChart{
+                //     height: 100rem;
+                // } 
+            }
+            .attendance-recent-activities{
+                width: 100% !important;
+            }
+        }
+        
+    }
+}
+
+@media (max-width:425px) {
+    .attendance-page{
+
+        .attendance-table-filter{
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    }
 }

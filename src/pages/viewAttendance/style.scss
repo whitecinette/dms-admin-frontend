@@ -124,3 +124,36 @@
         }
     }
 }
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .ViewAttendance-page-firstLine {
+            flex-direction: column;
+            align-items: center;
+        }
+        .ViewAttendance-table-container {
+            max-height: 50vh;
+        }
+    }
+    @media (max-width: 600px) {
+        .ViewAttendance-header {
+            font-size: 0.9rem;
+        }
+        .ViewAttendance-page-firstLine {
+            flex-direction: column;
+            align-items: stretch;
+            .ViewAttendance-count{
+                flex-wrap: wrap;
+            }
+        }
+        .ViewAttendance-filter {
+            margin-top: 10px;
+            max-width: 10rem;
+        }
+        .ViewAttendance-table-container {
+            max-height: 40vh;
+            table {
+                min-width: 100%;
+                font-size: 10px;
+            }
+        }
+    }

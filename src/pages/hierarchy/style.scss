@@ -140,3 +140,19 @@
         }
     }
 }
+//responsive
+@media (max-width: 768px) {
+    .hierarchy-page{
+        .hierarchy-page-container{
+            .hierarchy-page-first-line{
+                flex-wrap: wrap;
+            }
+            .hierarchy-page-buttons{
+                .hierarchy-upload-btn, .hierarchy-download-btn{
+                    font-size: .6rem !important;
+                }
+            }
+        }
+    }
+    
+}

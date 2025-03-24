@@ -266,3 +266,60 @@
         color: #4CAF50;
     }
 }
+    /* ====== Media Queries for Responsiveness ====== */
+
+    /* 🔹 Tablets (max-width: 1024px) */
+    @media (max-width: 1024px) {
+        .viewBeatMappingStatus-page-container {
+            padding: 15px;
+
+            .viewBeatMappingStatus-calendar-container {
+                padding: 15px;
+            }
+
+            .viewBeatMappingStatus-calendar-body .viewBeatMappingStatus-calendar-days {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+            }
+        }
+
+        .viewBeatMapping-table-container {
+            table {
+                min-width: 100%;
+            }
+        }
+    }
+
+    /* 🔹 Mobile (max-width: 768px) */
+    @media (max-width: 768px) {
+
+        .viewBeatMappingStatus-page-header {
+            font-size: 1.2rem;
+        }
+
+        .viewBeatMappingStatus-page-container {
+            padding: 10px;
+        }
+
+        .viewBeatMappingStatus-calendar-container {
+            padding: 10px;
+        }
+
+        .viewBeatMappingStatus-calendar-body .viewBeatMappingStatus-calendar-days {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+
+        .viewBeatMapping-first-line {
+            flex-direction: column;
+            align-items: center;
+            .ViewAttendance-filter{
+                max-width: 4rem;
+            }
+        }
+
+        .viewBeatMapping-buttons {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }

@@ -1,12 +1,19 @@
 import React from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import PropTypes from "prop-types";
 // import "./DonutChart.scss"; // Add custom styles if needed
 
 const DonutChart = ({ data }) => {
   return (
-    <div className="donut-chart">
-      <ResponsiveContainer width="100%" height={250}>
+    <div className="donut-chart" style={{ width: "100%", height: "300px" }}>
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
