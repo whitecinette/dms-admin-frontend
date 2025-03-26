@@ -10,11 +10,13 @@ import {
   FaSave,
   FaTimes,
 } from "react-icons/fa";
+import { RiDeleteBin6Line } from "react-icons/ri";
 import { Link } from "react-router-dom";
 
 const backendUrl = config.backend_url;
 
 export default function LatestAttendance() {
+  const [deleteId, setDeleteId] = useState(null);
   const [attendance, setAttendance] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalpages] = useState(0);
@@ -25,26 +27,26 @@ export default function LatestAttendance() {
   const [expand, setExpand] = useState("");
   const [address, setAddresses] = useState("");
   const [status, setStatus] = useState("");
-  const [count, setCount] = useState({})
+  const [count, setCount] = useState({});
   const limit = 50;
 
   //get getAttendanceCount
-  const getAttendanceCount = async()=>{
-    const date = new Date()
+  const getAttendanceCount = async () => {
+    const date = new Date();
     const newDate = date.toISOString().split("T")[0];
     try {
-      const response = await axios.get(`${backendUrl}/get-attendance-by-date/${newDate}`);
-        setCount(response.data.counts);
-      
+      const response = await axios.get(
+        `${backendUrl}/get-attendance-by-date/${newDate}`
+      );
+      setCount(response.data.counts);
     } catch (err) {
       console.error("Error fetching attendance:", err);
-      
     }
-  }
+  };
 
   const getAttendance = async () => {
     try {
-      console.log(date);
+      // console.log(date);
       const res = await axios.get(
         `${backendUrl}/get-latest-attendance-by-date`,
         {
@@ -111,6 +113,24 @@ export default function LatestAttendance() {
     }
   };
 
+  //delete employee attendance by id
+  const deleteRow = async () => {
+  
+    try {
+      await axios.delete(`${backendUrl}/delete-employee-attendance/${deleteId}`, {
+        headers: {
+          Authorization: localStorage.getItem("authToken") || "",
+        },
+      });
+  
+      setDeleteId(null);  // Reset deleteId after successful deletion
+      getAttendance();    // Refresh data
+  
+    } catch (error) {
+      console.error("Error deleting attendance record:", error);
+    }
+  };  
+
   //handle save
   const handleSave = async () => {
     try {
@@ -146,30 +166,58 @@ export default function LatestAttendance() {
 
   useEffect(() => {
     getAttendance();
-    getAttendanceCount()
+    getAttendanceCount();
   }, [currentPage, search, date, status]);
 
-  useEffect(()=>{
+  useEffect(() => {
     const total = Object.values(count).reduce((sum, value) => sum + value, 0);
-    if(!Object.keys(count).includes("totalEmployees")){
-      setCount(prev => ({ ...prev, totalEmployees:total })); 
+    if (!Object.keys(count).includes("totalEmployees")) {
+      setCount((prev) => ({ ...prev, totalEmployees: total }));
     }
-    console.log(count)
-  },[count])
+    // console.log(count);
+  }, [count]);
 
   return (
     <div className="latestAttendance-page">
       <div className="latestAttendance-page-header">
-        <Link to="/attendance">Attendance</Link> &#47; <span>All Attendance</span>
+        <Link to="/attendance">Attendance</Link> &#47;
+        <span>All Attendance</span>
       </div>
       <div className="latestAttendance-page-counter-container">
-        <div className="latestAttendance-page-counter-container-header">Today&apos;s  Attendance</div>
+        <div className="latestAttendance-page-counter-container-header">
+          Today&apos;s Attendance
+        </div>
         <div className="latestAttendance-page-counter">
-          <div className="latestAttendance-page-total-count counts"><span className="latestAttendance-page-counter-header">Total Employee:</span> <span>{count.totalEmployees}</span></div>
-          <div className="latestAttendance-page-present-count counts"><span className="latestAttendance-page-counter-header">Total Present:</span> <span>{count.present + count.pending}</span></div>
-          <div className="latestAttendance-page-absent-count counts"><span className="latestAttendance-page-counter-header">Total Absent:</span> <span>{count.absent}</span></div>
-          <div className="latestAttendance-page-half-day-count counts"><span className="latestAttendance-page-counter-header">Total Half-Day:</span> <span>{count.halfDay}</span></div>
-          <div className="latestAttendance-page-leave-count counts"><span className="latestAttendance-page-counter-header">Total Leave:</span> <span>{count.leave}</span></div>
+          <div className="latestAttendance-page-total-count counts">
+            <span className="latestAttendance-page-counter-header">
+              Total Employee:
+            </span>
+            <span>{count.totalEmployees}</span>
+          </div>
+          <div className="latestAttendance-page-present-count counts">
+            <span className="latestAttendance-page-counter-header">
+              Total Present:
+            </span>
+            <span>{count.present + count.pending}</span>
+          </div>
+          <div className="latestAttendance-page-absent-count counts">
+            <span className="latestAttendance-page-counter-header">
+              Total Absent:
+            </span>
+            <span>{count.absent}</span>
+          </div>
+          <div className="latestAttendance-page-half-day-count counts">
+            <span className="latestAttendance-page-counter-header">
+              Total Half-Day:
+            </span>
+            <span>{count.halfDay}</span>
+          </div>
+          <div className="latestAttendance-page-leave-count counts">
+            <span className="latestAttendance-page-counter-header">
+              Total Leave:
+            </span>
+            <span>{count.leave}</span>
+          </div>
         </div>
       </div>
 
@@ -342,11 +390,18 @@ export default function LatestAttendance() {
                             />
                           </>
                         ) : (
-                          <FaEdit
-                            color="#005bfe"
-                            style={{ cursor: "pointer", marginRight: "10px" }}
-                            onClick={() => handleEdit(record)}
-                          />
+                          <>
+                            <FaEdit
+                              color="#005bfe"
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                              onClick={() => handleEdit(record)}
+                            />
+                            <RiDeleteBin6Line
+                              color="#F21E1E"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => setDeleteId(record._id)}
+                            />
+                          </>
                         )}
                       </td>
                     </tr>
@@ -435,6 +490,28 @@ export default function LatestAttendance() {
           &gt;
         </button>
       </div>
+      {deleteId !== null && (
+        <div className="delete-modal" onClick={() => setDeleteId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-content">
+              <div className="delete-model-header">
+                Are you sure you want to delete this row?
+              </div>
+              <div className="delete-modal-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setDeleteId(null)}
+                >
+                  Cancel
+                </button>
+                <button className="delete-btn" onClick={deleteRow}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
