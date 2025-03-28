@@ -112,11 +112,11 @@ const Attendance = () => {
   }, []);
 
   const chartData = [
-    { name: "Present", value: counts.present, color: "#2ecc71" }, // Bright Green
+    { name: "Present", value: (counts.present || 0) + (counts.pending || 0), color: "#2ecc71" }, // Bright Green
     { name: "Absent", value: counts.absent, color: "#e74c3c" }, // Vibrant Red
     { name: "Leave", value: counts.leave, color: "#f39c12" }, // Warm Orange
     { name: "Half Day", value: counts.halfDay, color: "#3498db" }, // Bright Blue
-  ].filter((item) => item.value > 0); // Remove items with count 0
+  ]; // Remove items with count 0
 
   // const chartData = [
   //    { name: "Present", value: 100, color: "#2ecc71" },
@@ -150,11 +150,7 @@ const Attendance = () => {
               Attendance Overview
             </div>
 
-            {counts &&
-            (counts.present ||
-              counts.absent ||
-              counts.leave ||
-              counts.halfDay) ? (
+            {counts  ? (
               <>
                 <div className="attendance-page-chart-date">{dateToFetch}</div>
                 <div className="attendance-page-donutChart">

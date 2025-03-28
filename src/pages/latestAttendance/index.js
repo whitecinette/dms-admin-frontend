@@ -32,8 +32,14 @@ export default function LatestAttendance() {
 
   //get getAttendanceCount
   const getAttendanceCount = async () => {
-    const date = new Date();
-    const newDate = date.toISOString().split("T")[0];
+    let newDate = "";
+    if (!date) {
+      const date = new Date();
+      newDate = date.toISOString().split("T")[0];
+    } else {
+      newDate = new Date(date).toISOString().split("T")[0];
+    }
+    console.log(newDate);
     try {
       const response = await axios.get(
         `${backendUrl}/get-attendance-by-date/${newDate}`
@@ -115,21 +121,22 @@ export default function LatestAttendance() {
 
   //delete employee attendance by id
   const deleteRow = async () => {
-  
     try {
-      await axios.delete(`${backendUrl}/delete-employee-attendance/${deleteId}`, {
-        headers: {
-          Authorization: localStorage.getItem("authToken") || "",
-        },
-      });
-  
-      setDeleteId(null);  // Reset deleteId after successful deletion
-      getAttendance();    // Refresh data
-  
+      await axios.delete(
+        `${backendUrl}/delete-employee-attendance/${deleteId}`,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken") || "",
+          },
+        }
+      );
+
+      setDeleteId(null); // Reset deleteId after successful deletion
+      getAttendance(); // Refresh data
     } catch (error) {
       console.error("Error deleting attendance record:", error);
     }
-  };  
+  };
 
   //handle save
   const handleSave = async () => {
@@ -185,7 +192,11 @@ export default function LatestAttendance() {
       </div>
       <div className="latestAttendance-page-counter-container">
         <div className="latestAttendance-page-counter-container-header">
-          Today&apos;s Attendance
+          {date ? (
+            <>{new Date(date).toISOString().split("T")[0]} Attendance</>
+          ) : (
+            <>Today&apos;s Attendance</>
+          )}
         </div>
         <div className="latestAttendance-page-counter">
           <div className="latestAttendance-page-total-count counts">
@@ -236,8 +247,7 @@ export default function LatestAttendance() {
               type="date"
               onChange={(e) => {
                 setCurrentPage(1);
-                const selectedDate = new Date(e.target.value); // Convert string to Date
-                setdate(selectedDate.toLocaleDateString()); // Format date properly
+                setdate(new Date(e.target.value).toISOString().split("T")[0]); // Save in YYYY-MM-DD format
               }}
             />
             <select
