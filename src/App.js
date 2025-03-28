@@ -22,12 +22,31 @@ import LatestAttendance from "./pages/latestAttendance";
 import Hierarchy from "./pages/hierarchy";
 
 function App() {
-  // Get the token from localStorage
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem("authToken");
 
-  // PrivateRoute Component that checks if user is authenticated
+  const isTokenExpired = () => {
+    if (!token) return true; // No token means expired
+
+    try {
+      const tokenPayload = JSON.parse(atob(token.split(".")[1])); // Decode JWT
+      const expiryTime = tokenPayload.exp * 1000; // Convert to milliseconds
+
+      if (new Date(expiryTime) < Date.now()) {
+        localStorage.removeItem("authToken"); // Remove expired token
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Invalid token:", error);
+      localStorage.removeItem("authToken"); // Remove invalid token
+      return true;
+    }
+  };
+
+  // PrivateRoute to protect pages
   const PrivateRoute = ({ element }) => {
-    return token ? element : <Navigate to="/login" replace />;
+    return isTokenExpired() ? <Navigate to="/login" replace /> : element;
   };
 
   return (
