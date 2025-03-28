@@ -313,7 +313,7 @@ export default function LatestAttendance() {
                       <td>{(currentPage - 1) * limit + index + 1}</td>
                       <td>{record.code}</td>
                       <td>{record.name}</td>
-                      <td>{new Date(record.date).toLocaleDateString()}</td>
+                      <td>{new Date(record.date).toISOString().split("T")[0]}</td>
                       <td>
                         {record.punchIn
                           ? new Date(record.punchIn).toLocaleTimeString(

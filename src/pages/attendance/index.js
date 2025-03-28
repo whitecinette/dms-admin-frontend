@@ -39,8 +39,8 @@ const Attendance = () => {
   };
 
   // Fetch attendance data
-  const fetchAttendance = async (attempt = 1) => {
-    if (attempt > 2) {
+  const fetchAttendance = async (attempt = 0) => {
+    if (attempt > 3) {
       setError("No attendance records found for the last two days.");
       return;
     }
