@@ -18,8 +18,7 @@ const LoginSignUpAdmin = () => {
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    role: '',
-    email: '',
+    code:'',
     password: ''
   });
 
@@ -44,22 +43,17 @@ const LoginSignUpAdmin = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(''); // Clear previous error
-    
-    if (!loginData.role) {
-      setError("Please select a role.");
-      return;
-    }
   
     try {
-      const response = await axios.post(`${backend_url}/login-admin-or-super-admin`, loginData);
+      const response = await axios.post(`${backend_url}/app/user/login`, loginData);
   
       if (response.status === 200) {
         console.log("Login successful:", response.data);
   
         // Store token and authentication state in localStorage
         localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('userRole', response.data.user.role);
-        localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
+        // localStorage.setItem('userRole', response.data.user.role);
+        // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
         
         // Redirect to the dashboard
         window.location.href = "/dashboard";
@@ -81,12 +75,14 @@ const LoginSignUpAdmin = () => {
           {!isSignup ? (
             <form onSubmit={handleLoginSubmit} className="login-form">
               <h2>Login</h2>
-              <select className="form-input" name="role" required value={loginData.role} onChange={handleLoginChange}>
-                <option value="" disabled>Select User Role</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-              </select>
-              <input className="form-input" type="email" name="email" placeholder="Email" required value={loginData.email} onChange={handleLoginChange} />
+              {/** 
+                <select className="form-input" name="role" required value={loginData.role} onChange={handleLoginChange}>
+                  <option value="" disabled>Select User Role</option>
+                  <option value="super_admin">Super Admin</option>
+                  <option value="admin">Admin</option>
+                </select>
+                */}
+              <input className="form-input" type="text" name="code" placeholder="code" required value={loginData.code} onChange={handleLoginChange} />
               <input className="form-input" type="password" name="password" placeholder="Password" required value={loginData.password} onChange={handleLoginChange} />
               {error && <p className="error">{error}</p>}
               <div>

@@ -17,7 +17,6 @@ import ActorTypeHierarchy from "./pages/actorTypeHierarchy";
 import AddUser from "./pages/addUser";
 import Attendance from "./pages/attendance";
 import ViewAttendance from "./pages/viewAttendance";
-import HrDashboard from "./pages/SalesData";
 import LatestAttendance from "./pages/latestAttendance";
 import Hierarchy from "./pages/hierarchy";
 
@@ -65,7 +64,7 @@ function App() {
             {/* All these routes now use DefaultLayout but render different components */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders" element={<Orders />} />
-            <Route path="/hrDashboard" element={<HrDashboard />} />
+            <Route path="/salesDashboard" element={<SalesData />} />
             <Route path="/extraction" element={<Extraction />} />
             <Route path="/segment" element={<Segment />} />
             <Route path="/dealer" element={<Dealer />} />
