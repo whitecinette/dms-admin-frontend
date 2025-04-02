@@ -28,7 +28,20 @@ export default function LatestAttendance() {
   const [address, setAddresses] = useState("");
   const [status, setStatus] = useState("");
   const [count, setCount] = useState({});
+  const [firmList, setFirmList] = useState([]);
+  const [firm, setFirm] = useState({});
   const limit = 50;
+
+  const getAllActorTypes = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/actorTypesHierarchy/get-all-by-admin`
+      );
+      setFirmList(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   //get getAttendanceCount
   const getAttendanceCount = async () => {
@@ -62,6 +75,7 @@ export default function LatestAttendance() {
             limit,
             search,
             status,
+            firm
           },
         }
       );
@@ -172,9 +186,10 @@ export default function LatestAttendance() {
   };
 
   useEffect(() => {
+    getAllActorTypes();
     getAttendance();
     getAttendanceCount();
-  }, [currentPage, search, date, status]);
+  }, [currentPage, search, date, status, firm]);
 
   useEffect(() => {
     const total = Object.values(count).reduce((sum, value) => sum + value, 0);
@@ -265,6 +280,22 @@ export default function LatestAttendance() {
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
             </select>
+
+            <select
+              value={firm || ""} // Ensure it's a string
+              onChange={(e) => {
+                setCurrentPage(1);
+                setFirm(e.target.value); // Store firm ID as a string
+              }}
+            >
+              <option value="">Select Firm</option>
+              {firmList.length > 0 &&
+                firmList.map((item, index) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+            </select>
           </div>
           <div className="latestAttendance-page-button">
             <button
@@ -283,6 +314,7 @@ export default function LatestAttendance() {
                 <th rowSpan={2}>SNo.</th>
                 <th rowSpan={2}>code</th>
                 <th rowSpan={2}>Name</th>
+                <th rowSpan={2}>Position</th>
                 <th rowSpan={2}>Date</th>
                 <th colSpan={2}>Punch In</th>
                 <th colSpan={2}>Punch Out</th>
@@ -313,7 +345,10 @@ export default function LatestAttendance() {
                       <td>{(currentPage - 1) * limit + index + 1}</td>
                       <td>{record.code}</td>
                       <td>{record.name}</td>
-                      <td>{new Date(record.date).toISOString().split("T")[0]}</td>
+                      <td>{record.position}</td>
+                      <td>
+                        {new Date(record.date).toISOString().split("T")[0]}
+                      </td>
                       <td>
                         {record.punchIn
                           ? new Date(record.punchIn).toLocaleTimeString(
