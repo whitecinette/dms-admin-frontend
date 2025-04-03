@@ -51,9 +51,11 @@ const Attendance = () => {
 
     try {
       const response = await axios.get(apiUrl);
+      console.log(response)
 
-      if (response.data.attendance?.length > 0) {
-        setCounts(response.data.counts);
+
+      if (response.data.attendanceCount !== null) {
+        setCounts(response.data.attendanceCount);
       } else {
         fetchAttendance(attempt + 1);
       }
@@ -110,6 +112,9 @@ const Attendance = () => {
       getLatestAttendance();
     }, 60000);
   }, []);
+  useEffect(()=>{
+    console.log(counts)
+  })
 
   const chartData = [
     { name: "Present", value: (counts.present || 0) + (counts.pending || 0), color: "#2ecc71" }, // Bright Green

@@ -30,7 +30,7 @@ export default function LatestAttendance() {
   const [count, setCount] = useState({});
   const [firmList, setFirmList] = useState([]);
   const [firm, setFirm] = useState({});
-  const limit = 50;
+  const limit = 100;
 
   const getAllActorTypes = async () => {
     try {
@@ -55,9 +55,14 @@ export default function LatestAttendance() {
     console.log(newDate);
     try {
       const response = await axios.get(
-        `${backendUrl}/get-attendance-by-date/${newDate}`
+        `${backendUrl}/get-attendance-by-date/${newDate}`,
+        {
+          params: {
+            firm,
+          },
+        }
       );
-      setCount(response.data.counts);
+      setCount(response.data.attendanceCount);
     } catch (err) {
       console.error("Error fetching attendance:", err);
     }
@@ -75,7 +80,7 @@ export default function LatestAttendance() {
             limit,
             search,
             status,
-            firm
+            firm,
           },
         }
       );
@@ -262,7 +267,14 @@ export default function LatestAttendance() {
               type="date"
               onChange={(e) => {
                 setCurrentPage(1);
-                setdate(new Date(e.target.value).toISOString().split("T")[0]); // Save in YYYY-MM-DD format
+
+                const dateValue = e.target.value; // Get the input value
+
+                if (!dateValue) {
+                  setdate(""); // If cleared, set an empty string
+                } else {
+                  setdate(new Date(dateValue).toISOString().split("T")[0]); // Convert to YYYY-MM-DD
+                }
               }}
             />
             <select
