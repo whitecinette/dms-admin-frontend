@@ -111,6 +111,12 @@ export default function LatestAttendance() {
       const response = await axios.get(
         `${backendUrl}/download-all-attendance/`,
         {
+          params: {
+            date,
+            search,
+            status,
+            firm,
+          },
           responseType: "blob", // ✅ Important for file downloads
 
           headers: {
