@@ -19,7 +19,6 @@ import { MdPhoneIphone } from "react-icons/md";
 
 import "./style.scss";
 import SalesGrowth from "../../components/salesGrowth";
-import { FiltersProvider } from "../../context/filterContext";
 function Dashboard() {
   const extractionData = [
     {
@@ -197,9 +196,7 @@ function Dashboard() {
       <div className="dashboard-header">Dashboard</div>
       <div className="first-line">
         <div className="today-sales">
-        <FiltersProvider>
           <SalesGrowth />
-        </FiltersProvider>
           {/**
                     <div className="content">
                         <div className="title">

@@ -281,14 +281,29 @@ const SalesGrowth = ({ moreFilter }) => {// Check if it’s undefined
                             {item.name} ({item.code})
                           </div>
                         ))}
-                      <div
-                        className="dropdown-item-apply-btn"
-                        onClick={() => {
-                          getMetrics();
-                          setDropdown("");
-                        }}
-                      >
-                        Apply
+                        <div className="dropdown-actions">
+                        <div
+                          className="dropdown-item-clear-btn"
+                          onClick={() => {
+                            setDropdownValue(
+                              dropdownValue.filter(
+                                (item) => item.position !== dropdown
+                              )
+                            );
+                          }}
+                        >
+                          Clear
+                        </div>
+                        <div
+                          className="dropdown-item-apply-btn"
+                          onClick={() => {
+                            setDropdown("");
+                            setDropdownSearch("");
+                            getMetrics();
+                          }}
+                        >
+                          Apply
+                        </div>
                       </div>
                     </div>
                   ) : (

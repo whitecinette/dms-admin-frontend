@@ -1,25 +1,25 @@
-.salesGrowth-component{
+.salesGrowth-component {
     .salesGrowth-first-line {
         display: flex;
         width: 100%;
         gap: 20px;
         justify-content: space-between;
         flex-wrap: wrap; // Ensures items wrap on smaller screens
-    
+
         .salesGrowth-radio-filter {
             display: flex;
             gap: 20px;
             align-items: center; // Align items in the center
-    
+
             .mtd-filter {
                 position: relative;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 gap: 5px;
-    
+
                 &::before {
-                    content: "|"; 
+                    content: "|";
                     position: absolute;
                     left: 4rem;
                     top: 50%;
@@ -28,7 +28,7 @@
                     color: #888;
                 }
             }
-    
+
             .valueAndVolume {
                 display: flex;
                 justify-content: center;
@@ -36,17 +36,17 @@
                 gap: 10px;
             }
         }
-    
+
         .salesGrowth-filter-date {
             font-size: 0.9rem;
             display: flex;
             gap: 20px;
             flex-wrap: wrap; // Allow wrapping if needed
-    
+
             .date {
                 display: flex;
                 flex-direction: column;
-    
+
                 input {
                     width: 100%;
                     border-radius: 10px;
@@ -54,7 +54,7 @@
                     color: #808080;
                     padding: 5px;
                     font-size: 12px;
-    
+
                     &::-webkit-calendar-picker-indicator {
                         filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
                     }
@@ -62,7 +62,8 @@
             }
         }
     }
-    .salesGrowth-filter-dropdown{
+
+    .salesGrowth-filter-dropdown {
         position: relative;
         display: flex;
         gap: 20px;
@@ -70,6 +71,7 @@
         flex-wrap: wrap;
         // justify-content: center;
         font-size: 0.9rem;
+
         .dropdown {
             display: flex;
             align-items: center;
@@ -89,7 +91,8 @@
                 gap: 5px;
             }
         }
-        .dropdown-container{
+
+        .dropdown-container {
             position: absolute;
             top: 3rem; // Position below the dropdown
             display: flex;
@@ -98,13 +101,15 @@
             background-color: white;
             border-radius: 10px;
             padding: 10px;
-            z-index: 10; 
+            z-index: 10;
             border: 2px solid #808080;
             max-height: 16rem;
-            overflow:auto ;
-            .dropdown-search{
+            overflow: auto;
+
+            .dropdown-search {
                 position: sticky;
                 top: 0;
+
                 input {
                     width: 98%;
                     border-radius: 10px;
@@ -114,75 +119,98 @@
                     font-size: 12px;
                 }
             }
-            .dropdown-selected-list{
+
+            .dropdown-selected-list {
                 display: flex;
                 flex-direction: column;
                 gap: 5px;
                 padding: 5px 0;
-                .dropdown-selected-item{
+
+                .dropdown-selected-item {
                     font-size: 0.9rem;
                     color: #808080;
                     cursor: pointer;
                     padding: 5px 10px;
                     border-radius: 10px;
                     background-color: #c2d9ff;
-                    &:hover {
-                        background-color: #f0f0f0; // Highlight on hover
-                    }
                 }
             }
-            .dropdown-list{
+
+            .dropdown-list {
                 display: flex;
                 flex-direction: column;
                 gap: 5px;
                 padding: 5px 0;
-                .dropdown-item{
+
+                .dropdown-item {
                     font-size: 0.9rem;
                     color: #808080;
                     cursor: pointer;
                     padding: 5px 10px;
                     border-radius: 10px;
+
                     &:hover {
                         background-color: #f0f0f0; // Highlight on hover
                     }
                 }
-                .dropdown-item-apply-btn{
+
+                .dropdown-actions {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 8px;
+                    margin-top: 10px;
                     position: sticky;
                     bottom: 0;
-                    background-color: rgb(225 26 26);
-                    display: flex;
-                    color: white;
-                    justify-content: center;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    padding: 5px;
+
+                    .dropdown-item-clear-btn,
+                    .dropdown-item-apply-btn {
+                        color: white;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        text-align: center;
+                        flex: 1;
+                        transition: background-color 0.2s ease;
+                    }
+
+                    .dropdown-item-apply-btn {
+                        background-color: rgb(225 26 26);
+                    }
+
+                    .dropdown-item-clear-btn {
+                        background-color: #eee;
+                    }
                 }
             }
 
         }
     }
-    
-    
+
+
     .salesGrowth-cards {
         margin-top: 10px;
         display: grid;
         gap: 20px;
-        grid-template-rows: repeat(2, 1fr); 
-        grid-template-columns: repeat(3, 1fr); 
-        .salesGrowth-container{
+        grid-template-rows: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
+
+        .salesGrowth-container {
             border-radius: 10px;
             padding: 10px;
-            .salesGrowth-header{
+
+            .salesGrowth-header {
                 font-size: smaller;
                 color: #888;
             }
-            .salesGrowth-content{
+
+            .salesGrowth-content {
                 font-size: larger;
             }
         }
     }
-    
+
 }
+
 // Responsive Adjustments
 @media (max-width: 768px) {
     .salesGrowth-first-line {
