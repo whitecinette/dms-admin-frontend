@@ -16,6 +16,16 @@ import Select from "react-select";
 import config from "../../config.js";
 import axios from "axios";
 import "./style.scss"; // Import SCSS file for styling
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 const backendUrl = config.backend_url;
 
@@ -335,7 +345,33 @@ const ViewBeatMappingStatus = () => {
 
   return (
     <div className="viewBeatMappingStatus-page">
-      <div className="viewBeatMappingStatus-page-header">View Beat Mapping Status</div>
+      <div className="viewBeatMappingStatus-page-header">
+        View Beat Mapping Status
+      </div>
+      {data.length>0 && 
+        <div className="viewBeatMapping-page-graph">
+        <div className="viewBeatMappingStatus-calendar-header">
+            <h2>
+              {startDay.toDateString()} - {endDay.toDateString()}
+            </h2>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={data}
+              barCategoryGap="20%"
+            >
+              
+              <XAxis dataKey="code" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="done" fill="#4CAF50" name="Done" />
+              <Bar dataKey="pending" fill="#FFC107" name="Pending" />
+              <Bar dataKey="total" fill="#2196F3" name="Total" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      }
       <div className="viewBeatMappingStatus-page-container">
         <div className="viewBeatMappingStatus-calendar-container">
           <div className="viewBeatMappingStatus-calendar-header">
@@ -424,7 +460,7 @@ const ViewBeatMappingStatus = () => {
             <tbody>
               {data.length === 0 ? ( // Check if data is empty
                 <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>
+                  <td colSpan="9" style={{ textAlign: "center" }}>
                     No data available
                   </td>
                 </tr>
@@ -448,7 +484,11 @@ const ViewBeatMappingStatus = () => {
                                 editRow?.code
                                   ? {
                                       value: editRow?.code,
-                                      label: employeesList?.find?.(emp => emp.employee_code === editRow?.code)?.employee_name || editRow?.name
+                                      label:
+                                        employeesList?.find?.(
+                                          (emp) =>
+                                            emp.employee_code === editRow?.code
+                                        )?.employee_name || editRow?.name,
                                     }
                                   : null
                               }
@@ -459,7 +499,7 @@ const ViewBeatMappingStatus = () => {
                                   name: selectedOption.label,
                                 }))
                               }
-                              menuPosition="absolute" 
+                              menuPosition="absolute"
                               menuPlacement="bottom"
                               styles={{
                                 menu: (base) => ({
@@ -467,12 +507,12 @@ const ViewBeatMappingStatus = () => {
                                   // position: 'fixed',
                                   zIndex: 100000,
                                   // width: 'fit-content',
-                                  minWidth: '200px'
+                                  minWidth: "200px",
                                 }),
                                 control: (base) => ({
                                   ...base,
                                   minWidth: "200px",
-                                  zIndex: 100000
+                                  zIndex: 100000,
                                 }),
                               }}
                             />
@@ -597,7 +637,9 @@ const ViewBeatMappingStatus = () => {
                                               <td>
                                                 <input
                                                   type="text"
-                                                  value={scheduleItem.code || ""}
+                                                  value={
+                                                    scheduleItem.code || ""
+                                                  }
                                                   readOnly
                                                 />
                                               </td>
@@ -674,7 +716,9 @@ const ViewBeatMappingStatus = () => {
                                                   }
                                                 >
                                                   <FaMinus
-                                                    style={{ cursor: "pointer" }}
+                                                    style={{
+                                                      cursor: "pointer",
+                                                    }}
                                                   />
                                                   Remove Dealer
                                                 </div>
