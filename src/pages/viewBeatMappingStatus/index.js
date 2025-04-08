@@ -342,6 +342,72 @@ const ViewBeatMappingStatus = () => {
       };
     });
   };
+  const downloadCSV = () => {
+    if (!data || data.length === 0) return;
+  
+    // CSV headers
+    const headers = [
+      'Employee Code',
+      'Employee Name',
+      'Done',
+      'Pending',
+      'Total',
+      'Day',
+      'Dealer Code',
+      'Shop Name',
+      'Status',
+    ];
+  
+    const rows = [];
+  
+    data.forEach((item, index) => {
+      const empName =
+        employeesList.find((emp) => emp.employee_code === item.code)?.employee_name || 'N/A';
+  
+      const baseData = [
+        item.code,
+        empName,
+        item.done,
+        item.pending,
+        item.total,
+      ];
+  
+      const schedule = item.schedule || {};
+  
+      let hasSchedule = false;
+  
+      Object.entries(schedule).forEach(([day, schedules]) => {
+        schedules.forEach((sched) => {
+          hasSchedule = true;
+          rows.push([
+            ...baseData,
+            day,
+            sched.code,
+            sched.name,
+            sched.status,
+          ]);
+        });
+      });
+  
+      if (!hasSchedule) {
+        // If no schedule, just push the base row with empty schedule fields
+        rows.push([...baseData, '', '', '', '']);
+      }
+    });
+  
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  
+    // Trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'employee_schedule_full.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
 
   return (
     <div className="viewBeatMappingStatus-page">
@@ -426,7 +492,7 @@ const ViewBeatMappingStatus = () => {
             <div className="viewBeatMappingStatus-upload-btn">
               <label htmlFor="file-upload" className="browse-btn">
                 <FaFileUpload />
-                Upload Bulk CSV
+                Upload Beat Mapping CSV
               </label>
               <input
                 type="file"
@@ -436,9 +502,9 @@ const ViewBeatMappingStatus = () => {
               />
             </div>
             <div className="viewBeatMappingStatus-download-btn">
-              <div className="browse-btn">
+              <div className="browse-btn" onClick={downloadCSV}>
                 <FaDownload />
-                Download CSV Format
+                Download CSV 
               </div>
             </div>
           </div>
