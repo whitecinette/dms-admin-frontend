@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BarGraph from "../../components/barGraph";
 import "./style.scss";
-import { FaGripHorizontal } from "react-icons/fa";
+import { FaDownload, FaGripHorizontal } from "react-icons/fa";
 import { VscGraph } from "react-icons/vsc";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { useFilters } from "../../context/filterContext";
@@ -20,6 +20,7 @@ function Extraction() {
   const [loading, setLoading] = useState(true);
   const [headers, setHeaders] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [search, setSearch] = useState("");
 
   const position = ["SMD", "MDD", "ASM"];
 
@@ -70,6 +71,36 @@ function Extraction() {
       console.error("Error fetching extraction status:", error);
     }
   };
+
+  //handle download
+  const handleDownload = () => {
+    if (!filteredData || filteredData.length === 0) {
+      alert("No data available to download.");
+      return;
+    }
+  
+    const csvHeaders = headers.map(header => header.toUpperCase());
+    const csvRows = filteredData.map(row =>
+      headers.map(header => `"${(row[header] ?? "").toString().replace(/"/g, '""')}"`).join(","));
+  
+    const csvContent = [
+      csvHeaders.join(","), // Header row in UPPERCASE
+      ...csvRows,           // Data rows
+    ].join("\n");
+  
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+  
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "extraction_data.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  
+  
 
   const extractionDataGraph = [
     {
@@ -218,17 +249,6 @@ function Extraction() {
     },
   ];
 
-  const fetchExtractionData = (sort, order) => {
-    console.log("sort:", sort);
-    console.log("order:", order);
-    console.log("search:", search);
-  };
-  const deleteExtractionData = (id) => {
-    console.log("id:", id);
-  };
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
   // useEffect(() => {
   //   // Setting the data inside useEffect to prevent infinite re-renders
   //   setExtractionData({
@@ -261,21 +281,7 @@ function Extraction() {
     getExtractionStatus();
   }, [startDate, endDate]);
 
-  const totalPages = extractionData.totalPages || 1;
-
   // Handle Previous Page
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  // Handle Next Page
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
   useEffect(() => {
     const filtered = extractionData.filter((row) =>
       headers.some((header) =>
@@ -478,6 +484,15 @@ function Extraction() {
                     )}
                   </div>
                 )}
+              </div>
+              <div className="latestAttendance-page-button">
+                <button
+                  className="download-extraction-button"
+                  onClick={handleDownload}
+                >
+                  <FaDownload />
+                  Download Extraction
+                </button>
               </div>
             </div>
           </div>
