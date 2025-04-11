@@ -290,6 +290,18 @@
                         &:nth-child(even) {
                             background-color: white;
                         }
+                        .expand-btn{
+                            padding: 2px;
+                            button{
+                                padding: 2px;
+                                background-color: #6399f9;
+                                color: white;
+                                border: none;
+                                font-size: 12px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                            }
+                        }
 
                         td {
                             font-size: 12px;

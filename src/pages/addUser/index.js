@@ -1,11 +1,12 @@
 import "./style.scss";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import { IoAddSharp } from "react-icons/io5";
-import { FaDownload, FaFileUpload } from "react-icons/fa";
+import { FaDownload, FaFileUpload, FaUserCog } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import config from "../../config.js";
 import Table from "../../components/table";
+import { GoVerified } from "react-icons/go";
 
 const backendUrl = config.backend_url;
 
@@ -103,6 +104,52 @@ export default function AddUser() {
     }
   };
 
+  //register all user
+  const handleRegisterClick = async () => {
+    try {
+      const res = await axios.put(
+        `${backendUrl}/admin/register-update-from-actor-codes`
+      );
+      setSuccess(res.data.message);
+      setTimeout(() => {
+        setSuccess("");
+      }, 3000);
+    } catch (error) {
+      console.error(error);
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Please try again."
+      );
+      setTimeout(() => {
+        setError("");
+      }, 3000);
+    }
+  };
+
+  //verify all user
+  const handleVerifyClick = async () => {
+    try {
+      const res = await axios.put(
+        `${backendUrl}/activate-all-users-in-all-cases`
+      );
+      setSuccess(res.data.message);
+      setTimeout(() => {
+        setSuccess("");
+      }, 3000);
+    } catch (error) {
+      console.error(error);
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Please try again."
+      );
+      setTimeout(() => {
+        setError("");
+      }, 3000);
+    }
+  };
+
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -153,7 +200,7 @@ export default function AddUser() {
           },
         }
       );
-      setAddData({})
+      setAddData({});
       setAddBox(false);
       getActorCodes();
       setSuccess(response.data.message);
@@ -236,6 +283,14 @@ export default function AddUser() {
             <div className="addUser-add-btn" onClick={() => setAddBox(true)}>
               <IoAddSharp />
               Add New
+            </div>
+            <div className="Register-use-btn" onClick={handleRegisterClick}>
+              <FaUserCog />
+              Register All User
+            </div>
+            <div className="verify-use-btn" onClick={handleRegisterClick}>
+              <GoVerified />
+              Verify All User
             </div>
             <div className="addUser-upload-btn">
               <label htmlFor="file-upload" className="browse-btn">
@@ -352,7 +407,9 @@ export default function AddUser() {
                 />
               </div>
               <div className="addUser-add-button">
-                <button className="addUser-submit-btn" onClick={addActorCode}>Submit</button>
+                <button className="addUser-submit-btn" onClick={addActorCode}>
+                  Submit
+                </button>
                 <button
                   className="addUser-cancel-btn"
                   onClick={() => setAddBox(false)}

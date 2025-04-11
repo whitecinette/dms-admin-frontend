@@ -30,7 +30,7 @@
             .addUser-page-buttons{
                 display: flex;
                 gap: 5px;
-                .addUser-add-btn, .addUser-upload-btn, .addUser-download-btn {
+                .addUser-add-btn, .addUser-upload-btn, .addUser-download-btn, .Register-use-btn, .verify-use-btn {
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -42,6 +42,12 @@
                     &:hover{
                         opacity: .9;
                     }
+                }
+                .verify-use-btn{
+                    background: linear-gradient(to right, #667eea, #764ba2)	;
+                }
+                .Register-use-btn{
+                    background-color: #808080;
                 }
                 .addUser-upload-btn{
                     background-color: #6666f2;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./style.scss";
 import axios from "axios";
 import config from "../../config.js";
@@ -8,8 +8,8 @@ import { useFilters } from "../../context/filterContext.js";
 
 const backend_url = config.backend_url;
 
-
-const SalesGrowth = ({ moreFilter }) => {// Check if it’s undefined
+const SalesGrowth = ({ moreFilter }) => {
+  // Check if it’s undefined
   const {
     selectedValue,
     setSelectedValue,
@@ -28,6 +28,10 @@ const SalesGrowth = ({ moreFilter }) => {// Check if it’s undefined
   const [dropdown, setDropdown] = useState("");
   const [subordinate, setSubordinate] = useState([]);
   const [dropdownSearch, setDropdownSearch] = useState("");
+  const dropdownRefs = useRef({}); // store refs for each dropdown]
+  const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+
+
 
   //get metrics data
   const getMetrics = async () => {
@@ -109,6 +113,25 @@ const SalesGrowth = ({ moreFilter }) => {// Check if it’s undefined
       return value; // Return as is for smaller values
     }
   };
+  const NAVBAR_WIDTH = 350;
+
+const handleDropdownClick = (item) => {
+  const element = dropdownRefs.current[item];
+  if (element) {
+    const rect = element.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+
+    const hasNavbar = screenWidth > 768;
+    const calculatedLeft = rect.left  - (hasNavbar ? NAVBAR_WIDTH : 0);
+
+    setDropdown(item);
+    setDropdownStyles({
+      top: rect.bottom + window.scrollY,
+      left: Math.max(calculatedLeft, 0), // 👈 clamp to minimum 0
+    });
+  }
+};
+
 
   // useEffect(() => {
   //   if (!startDate && !endDate) {
@@ -178,140 +201,146 @@ const SalesGrowth = ({ moreFilter }) => {// Check if it’s undefined
                 />
               </div>
             </div>
-            
           </>
         ) : (
           <Link to="/salesDashboard">see more</Link>
         )}
       </div>
-      {moreFilter&&(
+      {moreFilter && (
         <div className="salesGrowth-filter-dropdown">
-              {/* Position Selection Dropdown */}
-              {position.map((item, index) => {
-                const filteredCount = dropdownValue
-                  ? dropdownValue.filter((val) => val.position === item).length
-                  : null;
+          {/* Position Selection Dropdown */}
+          {position.map((item, index) => {
+            const filteredCount = dropdownValue
+              ? dropdownValue.filter((val) => val.position === item).length
+              : null;
 
-                return (
-                  <div key={index} className="dropdown">
-                    {dropdown === item ? (
-                      <div
-                        className="dropdown-content"
-                        onClick={() => setDropdown("")}
-                      >
-                        {item} <FaChevronUp />
-                        {filteredCount > 0 && <span>({filteredCount})</span>}
-                      </div>
-                    ) : (
-                      <div
-                        className="dropdown-content"
-                        onClick={() => setDropdown(item)}
-                      >
-                        {item} <FaChevronDown />
-                        {filteredCount > 0 && <span>({filteredCount})</span>}
-                      </div>
-                    )}
+            return (
+              <div key={index} className="dropdown" ref={(el) => (dropdownRefs.current[item] = el)}>
+                {dropdown === item ? (
+                  <div
+                    className="dropdown-content"
+                    onClick={() => setDropdown("")}
+                  >
+                    {item} <FaChevronUp />
+                    {filteredCount > 0 && <span>({filteredCount})</span>}
                   </div>
-                );
-              })}
-              {dropdown && (
-                <div className="dropdown-container">
-                  <div className="dropdown-search">
-                    <input
-                      type="text"
-                      placeholder="Search Name"
-                      value={dropdownSearch}
-                      onChange={(e) => setDropdownSearch(e.target.value)}
-                    />
+                ) : (
+                  <div
+                    className="dropdown-content"
+                    onClick={() => handleDropdownClick(item)}
+
+                  >
+                    {item} <FaChevronDown />
+                    {filteredCount > 0 && <span>({filteredCount})</span>}
                   </div>
+                )}
+              </div>
+            );
+          })}
+          {dropdown && (
+            <div className="dropdown-container"
+            style={{
+              position: "absolute",
+              top: `${dropdownStyles.top}px`,
+              left: `${dropdownStyles.left}px`,
+            }}
+            >
+              <div className="dropdown-search">
+                <input
+                  type="text"
+                  placeholder="Search Name"
+                  value={dropdownSearch}
+                  onChange={(e) => setDropdownSearch(e.target.value)}
+                />
+              </div>
 
-                  {/* Selected Items List */}
-                  {dropdownValue && dropdownValue.length > 0 ? (
-                    <div className="dropdown-selected-list">
-                      {dropdownValue
-                        .filter((item) =>
-                          dropdown ? item.position === dropdown : true
-                        ) // Filter by position
-                        .map((item) => (
-                          <div
-                            key={item.id || item.name} // Use a unique identifier instead of index
-                            className="dropdown-selected-item"
-                            onClick={() =>
-                              setDropdownValue(
-                                dropdownValue.filter(
-                                  (i) => i.name !== item.name
-                                )
-                              )
-                            }
-                          >
-                            {item.name}
-                          </div>
-                        ))}
-                    </div>
-                  ) : null}
-
-                  {/* Filter subordinate list based on selected position and remove already selected ones */}
-                  {subordinate && subordinate.length > 0 ? (
-                    <div className="dropdown-list">
-                      {subordinate
-                        .filter(
-                          (item) =>
-                            // Check if item position matches the selected dropdown position
-                            (dropdown ? item.position === dropdown : true) &&
-                            // Remove already selected subordinates
-                            !dropdownValue.some(
-                              (selected) => selected.name === item.name
-                            ) &&
-                            // Search by name OR code
-                            (item.name
-                              .toLowerCase()
-                              .includes(dropdownSearch.toLowerCase()) ||
-                              item.code
-                                .toLowerCase()
-                                .includes(dropdownSearch.toLowerCase()))
-                        )
-                        .map((item, index) => (
-                          <div
-                            key={index}
-                            className="dropdown-item"
-                            onClick={() =>
-                              setDropdownValue([...dropdownValue, item])
-                            }
-                          >
-                            {item.name} ({item.code})
-                          </div>
-                        ))}
-                        <div className="dropdown-actions">
-                        <div
-                          className="dropdown-item-clear-btn"
-                          onClick={() => {
-                            setDropdownValue(
-                              dropdownValue.filter(
-                                (item) => item.position !== dropdown
-                              )
-                            );
-                          }}
-                        >
-                          Clear
-                        </div>
-                        <div
-                          className="dropdown-item-apply-btn"
-                          onClick={() => {
-                            setDropdown("");
-                            setDropdownSearch("");
-                            getMetrics();
-                          }}
-                        >
-                          Apply
-                        </div>
+              {/* Selected Items List */}
+              {dropdownValue && dropdownValue.length > 0 ? (
+                <div className="dropdown-selected-list">
+                  {dropdownValue
+                    .filter((item) =>
+                      dropdown ? item.position === dropdown : true
+                    ) // Filter by position
+                    .map((item) => (
+                      <div
+                        key={item.id || item.name} // Use a unique identifier instead of index
+                        className="dropdown-selected-item"
+                        onClick={() =>
+                          setDropdownValue(
+                            dropdownValue.filter((i) => i.name !== item.name)
+                          )
+                        }
+                      >
+                        {item.name}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="dropdown-item">No data found</div>
-                  )}
+                    ))}
                 </div>
+              ) : null}
+
+              {/* Filter subordinate list based on selected position and remove already selected ones */}
+              {subordinate && subordinate.length > 0 ? (
+                <div className="dropdown-list">
+                  {subordinate
+                    .filter(
+                      (item) =>
+                        // Check if item position matches the selected dropdown position
+                        (dropdown ? item.position === dropdown : true) &&
+                        // Remove already selected subordinates
+                        !dropdownValue.some(
+                          (selected) => selected.name === item.name
+                        ) &&
+                        // Search by name OR code
+                        ((item.name &&
+                          item.name
+                            .toLowerCase()
+                            .includes((dropdownSearch || "").toLowerCase())) ||
+                          (item.code &&
+                            item.code
+                              .toLowerCase()
+                              .includes((dropdownSearch || "").toLowerCase())))
+                    )
+                    .map((item, index) => (
+                      <div
+                        key={index}
+                        className="dropdown-item"
+                        onClick={() =>
+                          setDropdownValue([...dropdownValue, item])
+                        }
+                      >
+                        {item.name} ({item.code})
+                      </div>
+                    ))}
+                  <div className="dropdown-actions">
+                    <div
+                      className="dropdown-item-clear-btn"
+                      onClick={() => {
+                        setDropdownValue(
+                          dropdownValue.filter(
+                            (item) => item.position !== dropdown
+                          )
+                        );
+                      }}
+                    >
+                      Clear
+                    </div>
+                    <div
+                      className="dropdown-item-apply-btn"
+                      onClick={() => {
+                        setDropdown("");
+                        setDropdownSearch("");
+                        getMetrics();
+                      }}
+                    >
+                      Apply
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="dropdown-item">No data found</div>
               )}
             </div>
+          )}
+        </div>
       )}
       <div className="salesGrowth-cards">
         <div

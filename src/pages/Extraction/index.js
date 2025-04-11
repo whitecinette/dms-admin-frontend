@@ -21,6 +21,7 @@ function Extraction() {
   const [headers, setHeaders] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [search, setSearch] = useState("");
+  const [uploadedBy, setUpLoadedBy] = useState("");
 
   const position = ["SMD", "MDD", "ASM"];
 
@@ -39,6 +40,7 @@ function Extraction() {
     }
   };
 
+  //get extraction status
   const getExtractionStatus = async () => {
     try {
       const grouped = {
@@ -52,7 +54,6 @@ function Extraction() {
           .filter((item) => item.position === "ASM")
           .map((item) => item.code),
       };
-
       const res = await axios.post(`${backendUrl}/admin/extraction-status`, {
         startDate,
         endDate,
@@ -72,35 +73,79 @@ function Extraction() {
     }
   };
 
-  //handle download
-  const handleDownload = () => {
-    if (!filteredData || filteredData.length === 0) {
-      alert("No data available to download.");
-      return;
+  const handleDownload = async () => {
+    const grouped = {
+      smd: dropdownValue
+        .filter((item) => item.position === "SMD")
+        .map((item) => item.code),
+      mdd: dropdownValue
+        .filter((item) => item.position === "MDD")
+        .map((item) => item.code),
+      asm: dropdownValue
+        .filter((item) => item.position === "ASM")
+        .map((item) => item.code),
+    };
+  
+    try {
+      const response = await axios.get(
+        `${backendUrl}/admin/get-extraction-records/download`,
+        {
+          params: {
+            startDate,
+            endDate,
+            ...grouped,
+          },
+          responseType: "blob",
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+  
+      const contentType = response.headers["content-type"];
+  
+      // If it's JSON, handle as error or warning
+      if (contentType.includes("application/json")) {
+        const text = await response.data.text(); // Read blob as text
+        const json = JSON.parse(text);
+        alert(json.message || "No data found for the selected filters.");
+        return;
+      }
+  
+      // Otherwise, proceed with CSV download
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "extraction_data.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download data. Please check your network or filters.");
     }
-  
-    const csvHeaders = headers.map(header => header.toUpperCase());
-    const csvRows = filteredData.map(row =>
-      headers.map(header => `"${(row[header] ?? "").toString().replace(/"/g, '""')}"`).join(","));
-  
-    const csvContent = [
-      csvHeaders.join(","), // Header row in UPPERCASE
-      ...csvRows,           // Data rows
-    ].join("\n");
-  
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-  
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "extraction_data.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
+
   
-  
+
+  //get done data
+  // const getExtractionDoneRecodes = async () => {
+  //   try {
+  //     const res = await axios.get(
+  //       `${backendUrl}/admin/get-extraction-for-uploaded-by`,
+  //       {
+  //         startDate,
+  //         endDate,
+  //         uploadedBy,
+  //       }
+  //     );
+  //     console.log(res);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   const extractionDataGraph = [
     {
@@ -248,34 +293,6 @@ function Extraction() {
       Xiaomi: 220,
     },
   ];
-
-  // useEffect(() => {
-  //   // Setting the data inside useEffect to prevent infinite re-renders
-  //   setExtractionData({
-  //     data: [
-  //       {
-  //         ID: "67766cdd69cc4c2af284f5e2",
-  //         "Dealer Code": "RAJD12580",
-  //         "Shop Name": "ASTEL SYSTEM",
-  //         Brand: "Apple",
-  //         Model: "10.2-inch iPad Wi-Fi + Cellular 64GB - Space Grey",
-  //         Category: "tab",
-  //         Quantity: 1,
-  //         Price: 45900,
-  //         "Total Price": 45900,
-  //         Segment: "Tab>40k",
-  //         "Uploaded By": "SC-ZSM0001",
-  //         "Employee Name": "Varun Bansal",
-  //         Status: "active",
-  //         Date: "2025-01-02",
-  //         "Admin Note": "N/A",
-  //       },
-  //     ],
-  //     totalRecords: 100,
-  //     totalPages: 2,
-  //     currentPage: 1,
-  //   });
-  // }, [currentPage]);
 
   useEffect(() => {
     getExtractionStatus();
