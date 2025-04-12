@@ -39,11 +39,10 @@ const SalesDataTable = () => {
     }
   };
 
- 
   useEffect(() => {
     const fetchProductData = async () => {
       if (!expandedRow) return; // Don't fetch if nothing is expanded
-  
+
       console.log("Fetching for:", expandedRow);
       try {
         const res = await axios.post(
@@ -67,16 +66,13 @@ const SalesDataTable = () => {
         setProductData([]);
       }
     };
-  
+
     fetchProductData();
   }, [expandedRow]);
 
-  useEffect(()=>{
-    console.log(productData)
-  },[productData])
-
-  
-  
+  useEffect(() => {
+    console.log(productData);
+  }, [productData]);
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -150,7 +146,8 @@ const SalesDataTable = () => {
                     </td>
                   </tr>
                   {Array.isArray(productData?.headers) &&
-                    Array.isArray(productData?.data).length>0 &&
+                    Array.isArray(productData?.data) &&
+                    productData?.data.length > 0 &&
                     expandedRow === row["Segment/Channel"] && (
                       <tr>
                         <td colSpan={tableData.headers.length + 1}>
@@ -166,9 +163,13 @@ const SalesDataTable = () => {
                               <tbody>
                                 {productData.data.map((rowData, index) => (
                                   <tr key={index}>
-                                    {tableData.headers.map((header, cellIndex) => (
-                                      <td key={cellIndex}>{rowData[header]}</td>
-                                    ))}
+                                    {productData.headers.map(
+                                      (header, cellIndex) => (
+                                        <td key={cellIndex}>
+                                          {rowData[header]}
+                                        </td>
+                                      )
+                                    )}
                                   </tr>
                                 ))}
                               </tbody>
@@ -177,7 +178,6 @@ const SalesDataTable = () => {
                         </td>
                       </tr>
                     )}
-                  
                 </>
               ))
             ) : (
