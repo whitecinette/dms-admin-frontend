@@ -1,7 +1,7 @@
 import React from "react";
 import "./style.scss";
-import SalesGrowth from "../../components/salesGrowth";
-import SalesDataTable from "../../components/salesDataTable";
+import SalesGrowth from "./salesGrowth";
+import SalesDataTable from "./salesDataTable";
 
 function SalesData() {
   return (

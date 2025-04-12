@@ -64,6 +64,7 @@
     }
 
     .salesGrowth-filter-dropdown {
+        
         // position: relative;
         display: flex;
         gap: 20px;
@@ -103,6 +104,22 @@
             border: 2px solid #808080;
             max-height: 16rem;
             overflow: auto;
+            .dropdown-item-cards{
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                .card{
+                    background-color: #ffffffb5;
+                    border-radius: 5px;
+                    padding: 5px;
+                    .blue{
+                       color: #BF83FF; 
+                    }
+                    .yellow{
+                        color: #f0b862;
+                    }
+                }
+            }
 
             .dropdown-search {
                 position: sticky;
@@ -131,6 +148,7 @@
                     padding: 5px 10px;
                     border-radius: 10px;
                     background-color: #c2d9ff;
+                    
                 }
             }
 
@@ -150,6 +168,7 @@
                     &:hover {
                         background-color: #f0f0f0; // Highlight on hover
                     }
+                    
                 }
 
                 .dropdown-actions {

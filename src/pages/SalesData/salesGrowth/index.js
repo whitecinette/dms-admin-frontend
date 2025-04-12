@@ -1,12 +1,50 @@
 import { useEffect, useState, useRef } from "react";
 import "./style.scss";
 import axios from "axios";
-import config from "../../config.js";
+import config from "../../../config.js";
 import { Link } from "react-router-dom";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { useFilters } from "../../context/filterContext.js";
+import { useFilters } from "../../../context/filterContext.js";
 
 const backend_url = config.backend_url;
+
+const formatValue = (value) => {
+  if (value >= 10000000) {
+    return (value / 10000000).toFixed(2) + " Cr"; // Format for crores
+  } else if (value >= 100000) {
+    return (value / 100000).toFixed(2) + " Lakh"; // Format for lakhs
+  } else {
+    return value; // Return as is for smaller values
+  }
+};
+
+const DropdownItemsCards = (item) => {
+  return (
+    <div className="dropdown-item-cards">
+      <div className="card">
+        <div className="card-header">MTD</div>
+        <div className="card-content blue">
+          {formatValue(item.mtd_sell_out)}
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header">LMTD</div>
+        <div className="card-content yellow">
+          {formatValue(item.lmtd_sell_out)}
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header">&#37; Growth</div>
+        <div
+          className="card-content"
+          style={{ color: item.sell_out_growth < 0 ? "#FA5A7D" : "#3CD856" }}
+        >
+          {item.sell_out_growth}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SalesGrowth = ({ moreFilter }) => {
   // Check if it’s undefined
@@ -30,8 +68,6 @@ const SalesGrowth = ({ moreFilter }) => {
   const [dropdownSearch, setDropdownSearch] = useState("");
   const dropdownRefs = useRef({}); // store refs for each dropdown]
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
-
-
 
   //get metrics data
   const getMetrics = async () => {
@@ -104,34 +140,25 @@ const SalesGrowth = ({ moreFilter }) => {
   const handleRadioChange = (e) => {
     setSelectedValue(e.target.value);
   };
-  const formatValue = (value) => {
-    if (value >= 10000000) {
-      return (value / 10000000).toFixed(2) + " Cr"; // Format for crores
-    } else if (value >= 100000) {
-      return (value / 100000).toFixed(2) + " Lakh"; // Format for lakhs
-    } else {
-      return value; // Return as is for smaller values
-    }
-  };
+  
   const NAVBAR_WIDTH = 350;
 
-const handleDropdownClick = (item) => {
-  const element = dropdownRefs.current[item];
-  if (element) {
-    const rect = element.getBoundingClientRect();
-    const screenWidth = window.innerWidth;
+  const handleDropdownClick = (item) => {
+    const element = dropdownRefs.current[item];
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const screenWidth = window.innerWidth;
 
-    const hasNavbar = screenWidth > 768;
-    const calculatedLeft = rect.left  - (hasNavbar ? NAVBAR_WIDTH : 0);
+      const hasNavbar = screenWidth > 768;
+      const calculatedLeft = rect.left - (hasNavbar ? NAVBAR_WIDTH : 0);
 
-    setDropdown(item);
-    setDropdownStyles({
-      top: rect.bottom + window.scrollY,
-      left: Math.max(calculatedLeft, 0), // 👈 clamp to minimum 0
-    });
-  }
-};
-
+      setDropdown(item);
+      setDropdownStyles({
+        top: rect.bottom + window.scrollY,
+        left: Math.max(calculatedLeft, 0), // 👈 clamp to minimum 0
+      });
+    }
+  };
 
   // useEffect(() => {
   //   if (!startDate && !endDate) {
@@ -215,22 +242,25 @@ const handleDropdownClick = (item) => {
               : null;
 
             return (
-              <div key={index} className="dropdown" ref={(el) => (dropdownRefs.current[item] = el)}>
+              <div
+                key={index}
+                className="dropdown"
+                ref={(el) => (dropdownRefs.current[item] = el)}
+              >
                 {dropdown === item ? (
                   <div
                     className="dropdown-content"
                     onClick={() => setDropdown("")}
                   >
-                    {item} <FaChevronUp />
+                    {item.toUpperCase()} <FaChevronUp />
                     {filteredCount > 0 && <span>({filteredCount})</span>}
                   </div>
                 ) : (
                   <div
                     className="dropdown-content"
                     onClick={() => handleDropdownClick(item)}
-
                   >
-                    {item} <FaChevronDown />
+                    {item.toUpperCase()} <FaChevronDown />
                     {filteredCount > 0 && <span>({filteredCount})</span>}
                   </div>
                 )}
@@ -238,12 +268,13 @@ const handleDropdownClick = (item) => {
             );
           })}
           {dropdown && (
-            <div className="dropdown-container"
-            style={{
-              position: "absolute",
-              top: `${dropdownStyles.top}px`,
-              left: `${dropdownStyles.left}px`,
-            }}
+            <div
+              className="dropdown-container"
+              style={{
+                position: "absolute",
+                top: `${dropdownStyles.top}px`,
+                left: `${dropdownStyles.left}px`,
+              }}
             >
               <div className="dropdown-search">
                 <input
@@ -271,7 +302,8 @@ const handleDropdownClick = (item) => {
                           )
                         }
                       >
-                        {item.name}
+                        {item.name}({item.code})
+                        {DropdownItemsCards(item)}
                       </div>
                     ))}
                 </div>
@@ -308,6 +340,7 @@ const handleDropdownClick = (item) => {
                         }
                       >
                         {item.name} ({item.code})
+                        {DropdownItemsCards(item)}
                       </div>
                     ))}
                   <div className="dropdown-actions">

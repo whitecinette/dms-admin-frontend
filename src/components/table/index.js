@@ -8,6 +8,7 @@ import {
   FaTimes,
   FaChevronDown,
   FaChevronUp,
+  FaPlus,
 } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { motion } from "framer-motion";
@@ -20,37 +21,191 @@ function Table({ data, onSort, handleSave, deleteRow }) {
   const [editData, setEditData] = useState({});
   const [expandedRow, setExpandedRow] = useState(null);
   const [focusedPath, setFocusedPath] = useState(null); // ✅ Track the focused field
+  const [addFieldModal, setAddFieldModal] = useState(null); // To store path where we're adding field
+  const [newFieldType, setNewFieldType] = useState("string"); // Type of new field
+  const [newFieldKey, setNewFieldKey] = useState(""); // Key for new field
+  const [newFieldValue, setNewFieldValue] = useState(""); // Value for new field
+  const [showNewField, setShowNewField] = useState(null); // Path of newly added field to highlight
+
   const headers = data.headers || [];
   const rows = data.data || [];
   const currentPage = data.currentPage || 1;
   const limit = 50;
 
+  // Field type options for adding new fields
+  const fieldTypes = [
+    { value: "string", label: "Text" },
+    { value: "number", label: "Number" },
+    { value: "boolean", label: "Boolean" },
+    { value: "object", label: "Object" },
+    { value: "array", label: "Array" },
+  ];
+
+  const handleAddField = (path, title) => {
+    setAddFieldModal({ path, title });
+    setNewFieldKey("");
+    setNewFieldValue("");
+    setNewFieldType("string");
+  };
+
+  const isTargetArray = () => {
+    if (!addFieldModal) return false;
+    const targetObj = getNestedValue(editData, addFieldModal.path);
+    return Array.isArray(targetObj);
+  };
+
+  // Add the new field directly to editData
+  const addNewField = () => {
+    const isArray = isTargetArray();
+
+    // Only validate field name if adding to an object (not an array)
+    if (!isArray && !newFieldKey.trim()) {
+      alert("Field name cannot be empty");
+      return;
+    }
+
+    const updatedData = JSON.parse(JSON.stringify(editData));
+    let value = newFieldValue;
+    let newPath = addFieldModal.path;
+
+    // Convert value based on type
+    switch (newFieldType) {
+      case "number":
+        value = Number(newFieldValue) || 0;
+        break;
+      case "boolean":
+        value = newFieldValue === "true";
+        break;
+      case "object":
+        value = {};
+        break;
+      case "array":
+        value = [];
+        break;
+    }
+
+    // Get the target object to modify
+    const targetObj = addFieldModal.path
+      ? getNestedValue(updatedData, addFieldModal.path)
+      : updatedData;
+
+    // Add new field
+    if (Array.isArray(targetObj)) {
+      targetObj.push(value);
+      newPath = `${addFieldModal.path}[${targetObj.length - 1}]`;
+    } else if (typeof targetObj === "object" && targetObj !== null) {
+      targetObj[newFieldKey] = value;
+      newPath = addFieldModal.path
+        ? `${addFieldModal.path}.${newFieldKey}`
+        : newFieldKey;
+    }
+
+    setEditData(updatedData);
+    setAddFieldModal(null);
+    setShowNewField(newPath); // Track the newly added field to highlight
+
+    // Clear highlight after 3 seconds
+    setTimeout(() => {
+      setShowNewField(null);
+    }, 3000);
+  };
+
   const NestedCard = ({ title, data, path = "", hideTitle = false }) => {
     if (!data || typeof data !== "object") return null;
+    const isEditing = editId === rows[expandedRow]?._id;
 
     return (
       <div className="nested-card">
-        {!hideTitle && <h3 className="nested-title">{title}</h3>}
+        {!hideTitle && (
+          <div className="nested-header">
+            <h3 className="nested-title">{title}</h3>
+            {isEditing && (
+              <button
+                onClick={() => handleAddField(path, title)}
+                className="add-field-btn small"
+                title={`Add field to ${title}`}
+              >
+                <FaPlus />
+              </button>
+            )}
+          </div>
+        )}
         <div className="nested-details">
           {Array.isArray(data) ? (
             data.length > 0 ? (
-              data.map((item, index) => (
-                <div key={index} className="array-card">
-                  <h4 className="array-title">
-                    {title} {index + 1}
-                  </h4>
-                  {Object.entries(item).map(([subKey, value]) => (
-                    <NestedItem
-                      key={subKey}
-                      label={formatHeader(subKey)}
-                      value={value}
-                      path={`${path}[${index}].${subKey}`} // ✅ Correctly track array paths
-                    />
-                  ))}
-                </div>
-              ))
+              typeof data[0] === "object" ? (
+                data.map((item, index) => (
+                  <div key={index} className="array-card">
+                    <div className="array-header">
+                      <h4 className="array-title">
+                        {title} {index + 1}
+                      </h4>
+                      {isEditing && (
+                        <button
+                          onClick={() =>
+                            handleAddField(
+                              `${path}[${index}]`,
+                              `${title} ${index + 1}`
+                            )
+                          }
+                          className="add-field-btn small"
+                          title={`Add field to ${title} ${index + 1}`}
+                        >
+                          <FaPlus />
+                        </button>
+                      )}
+                    </div>
+                    {Object.entries(item).map(([subKey, value]) => (
+                      <NestedItem
+                        key={subKey}
+                        label={formatHeader(subKey)}
+                        value={value}
+                        path={`${path}[${index}].${subKey}`}
+                        isNew={showNewField === `${path}[${index}].${subKey}`}
+                      />
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="array-list-header">
+                    <span>{title} Items</span>
+                    {isEditing && (
+                      <button
+                        onClick={() => handleAddField(path, title)}
+                        className="add-field-btn small"
+                        title={`Add item to ${title} list`}
+                      >
+                        <FaPlus />
+                      </button>
+                    )}
+                  </div>
+                  <div className="array-list">
+                    {data.map((item, index) => (
+                      <NestedItem
+                        key={index}
+                        label={`${formatHeader(title)} ${index + 1}`}
+                        value={item}
+                        path={`${path}[${index}]`}
+                        isNew={showNewField === `${path}[${index}]`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )
             ) : (
-              <p>No records available</p>
+              <div className="empty-array">
+                <p>No records available</p>
+                {isEditing && (
+                  <button
+                    onClick={() => handleAddField(path, title)}
+                    className="add-field-btn"
+                    title={`Add first item to ${title}`}
+                  >
+                    <FaPlus /> Add First Item
+                  </button>
+                )}
+              </div>
             )
           ) : (
             Object.entries(data).map(([subKey, value]) => (
@@ -60,6 +215,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                 value={value}
                 path={path ? `${path}.${subKey}` : subKey} // ✅ Generate correct nested path
                 hideTitle={true}
+                isNew={showNewField === (path ? `${path}.${subKey}` : subKey)}
               />
             ))
           )}
@@ -68,7 +224,13 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     );
   };
 
-  const NestedItem = ({ label, value, path, hideTitle = false }) => {
+  const NestedItem = ({
+    label,
+    value,
+    path,
+    hideTitle = false,
+    isNew = false,
+  }) => {
     const isEditing = editId === rows[expandedRow]?._id;
     const inputRef = useRef(null);
 
@@ -80,16 +242,27 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     }, [focusedPath, value]);
 
     return (
-      <div className="nested-item">
+      <div className={`nested-item ${isNew ? "new-field" : ""}`}>
         <span className="nested-label">{label}:</span>
         <span className="nested-value">
           {typeof value === "object" && value !== null ? (
-            <NestedCard
-              title={label}
-              data={value}
-              path={path}
-              hideTitle={true}
-            />
+            <div className="nested-object-wrapper">
+              <NestedCard
+                title={label}
+                data={value}
+                path={path}
+                hideTitle={true}
+              />
+              {isEditing && typeof value === "object" && (
+                <button
+                  onClick={() => handleAddField(path, label)}
+                  className="add-field-btn small"
+                  title={`Add field to ${label}`}
+                >
+                  <FaPlus />
+                </button>
+              )}
+            </div>
           ) : isEditing ? (
             typeof value === "boolean" ? (
               // ✅ Boolean Select Dropdown
@@ -359,35 +532,49 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                           }}
                           className="expanded-content"
                         >
-                          {Object.entries(row)
-                            .filter(
-                              ([key]) =>
-                                !headers.includes(key) &&
-                                ![
-                                  "_id",
-                                  "password",
-                                  "createdAt",
-                                  "updatedAt",
-                                  "__v",
-                                ].includes(key)
-                            ) // Exclude already visible columns
-                            .map(([key, value]) =>
-                              typeof value === "object" && value !== null ? (
-                                <NestedCard
-                                  key={key}
-                                  title={formatHeader(key)}
-                                  data={value}
-                                  path={key}
-                                />
-                              ) : (
-                                <NestedItem
-                                  key={key}
-                                  label={formatHeader(key)}
-                                  value={value}
-                                  path={key}
-                                />
-                              )
-                            )}
+                          {editId === row._id && (
+                            <div className="root-level-controls">
+                              <h4>Root Level Properties</h4>
+                              <button
+                                onClick={() => handleAddField("", "Root")}
+                                className="add-field-btn"
+                              >
+                                <FaPlus /> Add Field
+                              </button>
+                            </div>
+                          )}
+                          <div className="fields-container">
+                            {Object.entries(editId === row._id ? editData : row)
+                              .filter(
+                                ([key]) =>
+                                  !headers.includes(key) &&
+                                  ![
+                                    "_id",
+                                    "password",
+                                    "createdAt",
+                                    "updatedAt",
+                                    "__v",
+                                  ].includes(key)
+                              ) // Exclude already visible columns
+                              .map(([key, value]) =>
+                                typeof value === "object" && value !== null ? (
+                                  <NestedCard
+                                    key={key}
+                                    title={formatHeader(key)}
+                                    data={value}
+                                    path={key}
+                                  />
+                                ) : (
+                                  <NestedItem
+                                    key={key}
+                                    label={formatHeader(key)}
+                                    value={value}
+                                    path={key}
+                                    isNew={showNewField === key}
+                                  />
+                                )
+                              )}
+                          </div>
                         </motion.div>
                       </div>
                     </td>
@@ -433,6 +620,83 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                   }}
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addFieldModal !== null && (
+        <div className="add-field-modal" onClick={() => setAddFieldModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="add-field-modal-content">
+              <div className="add-field-modal-header">
+                Add New Field to {addFieldModal.title || "Record"}
+                {isTargetArray() && (
+                  <span className="target-type"> (Array)</span>
+                )}
+              </div>
+              <div className="add-field-modal-body">
+                {/* Only show field name input if not adding to an array */}
+                {!isTargetArray() && (
+                  <div className="field-group">
+                    <label>Field Name:</label>
+                    <input
+                      type="text"
+                      value={newFieldKey}
+                      onChange={(e) => setNewFieldKey(e.target.value)}
+                      placeholder="Enter field name"
+                    />
+                  </div>
+                )}
+
+                <div className="field-group">
+                  <label>Field Type:</label>
+                  <select
+                    value={newFieldType}
+                    onChange={(e) => setNewFieldType(e.target.value)}
+                  >
+                    {fieldTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Only show value input for primitive types */}
+                {["string", "number", "boolean"].includes(newFieldType) && (
+                  <div className="field-group">
+                    <label>Field Value:</label>
+                    {newFieldType === "boolean" ? (
+                      <select
+                        value={newFieldValue}
+                        onChange={(e) => setNewFieldValue(e.target.value)}
+                      >
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    ) : (
+                      <input
+                        type={newFieldType === "number" ? "number" : "text"}
+                        value={newFieldValue}
+                        onChange={(e) => setNewFieldValue(e.target.value)}
+                        placeholder={`Enter ${newFieldType} value`}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="add-field-modal-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setAddFieldModal(null)}
+                >
+                  Cancel
+                </button>
+                <button className="add-btn" onClick={addNewField}>
+                  Add Field
                 </button>
               </div>
             </div>

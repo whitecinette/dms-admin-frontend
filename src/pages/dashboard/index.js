@@ -18,7 +18,7 @@ import {
 import { MdPhoneIphone } from "react-icons/md";
 
 import "./style.scss";
-import SalesGrowth from "../../components/salesGrowth";
+import SalesGrowth from "../SalesData/salesGrowth";
 function Dashboard() {
   const extractionData = [
     {
@@ -175,22 +175,22 @@ function Dashboard() {
     { id: "03", name: "Anil Saini", popularity: 18 },
     { id: "04", name: "Sunil Saini", popularity: 25 },
   ];
-  const salesData = [
-    {
-      title: "Total sales",
-      value: 1000,
-      yesterday: "+5%",
-      icon: <VscGraphLine />,
-    },
-    { title: "Total order", value: 300, yesterday: "+5%", icon: <FaFileAlt /> },
-    {
-      title: "Product Sold",
-      value: 5,
-      yesterday: "+5%",
-      icon: <IoPricetagSharp />,
-    },
-    { title: "New Customers", value: 8, yesterday: "+5%", icon: <TiUserAdd /> },
-  ];
+  // const salesData = [
+  //   {
+  //     title: "Total sales",
+  //     value: 1000,
+  //     yesterday: "+5%",
+  //     icon: <VscGraphLine />,
+  //   },
+  //   { title: "Total order", value: 300, yesterday: "+5%", icon: <FaFileAlt /> },
+  //   {
+  //     title: "Product Sold",
+  //     value: 5,
+  //     yesterday: "+5%",
+  //     icon: <IoPricetagSharp />,
+  //   },
+  //   { title: "New Customers", value: 8, yesterday: "+5%", icon: <TiUserAdd /> },
+  // ];
   return (
     <div className="dashboard">
       <div className="dashboard-header">Dashboard</div>
