@@ -8,9 +8,9 @@
 	align-items: center;
 	font-family: 'Jost', sans-serif;
 	background: #e5e2f0;
-  }
-  
-  .main {
+}
+
+.main {
 	width: 70%;
 	height: 550px;
 	position: relative;
@@ -21,87 +21,87 @@
 	padding: 10px;
 	text-align: center;
 	display: flex;
-  }
-  
-  .logo-container {
+}
+
+.logo-container {
 	width: 70%;
 	height: 100%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-  }
-  
-  .form-container {
+}
+
+.form-container {
 	width: 100%;
 	height: 100%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-direction: column;
-  }
-  
-  .form-wrapper {
+}
+
+.form-wrapper {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 20px;
 	width: 100%;
-  }
-  
-  .company-logo {
+}
+
+.company-logo {
 	width: 80%;
 	height: fit-content;
 	border-right: 1px solid #ccc;
-  
+
 	img {
-	  width: 60%;
-	  height: auto;
+		width: 60%;
+		height: auto;
 	}
-  }
-  
-  .signup-form,
-  .login-form {
+}
+
+.signup-form,
+.login-form {
 	text-align: center;
 	width: 100%;
 	height: 100%;
 	padding: 0px;
-  }
-  
-  .signup-form {
+}
+
+.signup-form {
 	transform: translateX(100%);
 	display: flex;
 	justify-content: center;
-  }
-  
-  .login-form {
+}
+
+.login-form {
 	transform: translateX(0);
 	display: flex;
 	justify-content: center;
 	gap: 15px;
-  }
-  
-  .signup-active {
+}
+
+.signup-active {
 	.signup-form {
-	  transform: translateX(0);
+		transform: translateX(0);
 	}
-  
+
 	.login-form {
-	  transform: translateX(-100%);
+		transform: translateX(-100%);
 	}
-  }
-  
-  form {
+}
+
+form {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	width: 100%;
 	max-width: 400px;
 	margin: 0 auto;
-  }
-  
-  .form-input,
-  .form-login-button,
-  .form-signup-button {
+}
+
+.form-input,
+.form-login-button,
+.form-signup-button {
 	width: 100% !important;
 	box-sizing: border-box;
 	padding: 12px;
@@ -110,104 +110,146 @@
 	border-radius: 4px;
 	font-size: 1em;
 	outline: none;
-  }
-  
-  .form-login-button {
+}
+
+.form-login-button {
 	background-color: #195c7a;
 	color: white;
 	cursor: pointer;
 	transition: background-color 0.3s;
 	border: none;
-  
+
 	&:hover {
-	  background-color: #4c90af;
+		background-color: #4c90af;
 	}
-  }
-  
-  .form-signup-button {
+}
+
+.form-signup-button {
 	background-color: #c94f1f;
 	color: white;
 	cursor: pointer;
 	transition: background-color 0.3s;
 	border: none;
-  
+
 	&:hover {
-	  background-color: #ff3806;
+		background-color: #ff3806;
 	}
-  }
-  
-  select.form-input {
+}
+
+select.form-input {
 	appearance: none;
 	background-color: white;
-  }
-  
-  p {
+}
+
+p {
 	text-align: center;
-  
+
 	span {
-	  color: #007bff;
-	  cursor: pointer;
-  
-	  &:hover {
-		text-decoration: underline;
-	  }
+		color: #007bff;
+		cursor: pointer;
+
+		&:hover {
+			text-decoration: underline;
+		}
 	}
-  }
-  
-  h2 {
+}
+
+h2 {
 	font-size: 1.8em;
 	font-weight: bold;
 	color: #000;
 	text-align: center;
 	margin-bottom: 20px;
-  }
-  
-  @media screen and (max-width: 768px) {
+}
+
+@media screen and (max-width: 768px) {
 	.main {
-	  width: 100%;
-	  flex-direction: column;
-	  text-align: center;
-	  display: flex;
-	  align-items: center;
+		width: 100%;
+		flex-direction: column;
+		text-align: center;
+		display: flex;
+		align-items: center;
 	}
-  
+
 	.logo-container {
-	  align-items: start;
+		align-items: start;
 	}
-  
+
 	.company-logo {
-	  border: none;
-	  border-bottom: 1px solid #ccc;
-	  width: 60%;
-  
-	  h2 {
-		font-size: large;
-	  }
+		border: none;
+		border-bottom: 1px solid #ccc;
+		width: 60%;
+
+		h2 {
+			font-size: large;
+		}
 	}
-  
+
 	h2 {
-	  margin: 10px;
+		margin: 10px;
 	}
-  }
-  
-  @media screen and (max-width: 420px) {
+}
+
+@media screen and (max-width: 420px) {
 	.main {
-	  max-width: 95%;
-	  height: 500px;
-	  border-radius: 0px;
+		max-width: 95%;
+		height: 500px;
+		border-radius: 0px;
 	}
-  
+
 	input {
-	  width: 90%;
-	  height: 10px;
+		width: 90%;
+		height: 10px;
 	}
-  
+
 	button {
-	  width: 90%;
+		width: 90%;
 	}
-  
+
 	.company-logo h2 {
-	  font-size: medium;
+		font-size: medium;
 	}
-  }
-  
+}
+
+.forgot-password-link,
+.back-to-login-link {
+	text-align: center;
+	margin-top: 10px;
+
+	span {
+		color: #005bfe;
+		cursor: pointer;
+		text-decoration: underline;
+
+		&:hover {
+			opacity: 0.8;
+		}
+	}
+}
+
+.forgot-password-form {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 20px;
+}
+
+.form-reset-button {
+	background-color: #005bfe;
+	color: white;
+	border: none;
+	padding: 10px;
+	width: 100%;
+	border-radius: 5px;
+	cursor: pointer;
+
+	&:hover {
+		opacity: 0.9;
+	}
+}
+
+.success {
+	color: #4CAF50;
+	text-align: center;
+	margin: 5px 0;
+}

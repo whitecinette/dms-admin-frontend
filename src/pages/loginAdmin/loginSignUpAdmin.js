@@ -1,106 +1,209 @@
-import React, { useState } from 'react';
-import './style.scss';
-import config from '../../config';
-import axios from 'axios';
+import React, { useState } from "react";
+import "./style.scss";
+import config from "../../config";
+import axios from "axios";
 const backend_url = config.backend_url;
 
-const LoginSignUpAdmin = () => {
-  const [isSignup, setIsSignup] = useState(false);
-  const [error, setError] = useState('');
-
-  // Signup form state
-  const [signupData, setSignupData] = useState({
-    username: '',
-    email: '',
-    phoneNumber: '',
-    password: ''
-  });
+const LoginAdmin = () => {
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    code:'',
-    password: ''
+    code: "",
+    password: "",
   });
 
-  // Handle input changes
-  const handleSignupChange = (e) => {
-    const { name, value } = e.target;
-    setSignupData((prevData) => ({
-      ...prevData,
-      [name]: value
-    }));
-  };
+  // Forgot password form state
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    code: "",
+    oldPassword: "",
+    newPassword: "",
+    securityKey: "",
+  });
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
+    }));
+  };
+
+  const handleForgotPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setForgotPasswordData((prevData) => ({
+      ...prevData,
+      [name]: value,
     }));
   };
 
   // Handle Login Submission
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Clear previous error
-  
+    setError(""); // Clear previous error
+
     try {
-      const response = await axios.post(`${backend_url}/app/user/login`, loginData);
-  
+      const response = await axios.post(
+        `${backend_url}/app/user/login`,
+        loginData
+      );
+
       if (response.status === 200) {
         console.log("Login successful:", response.data);
-  
+
         // Store token and authentication state in localStorage
-        localStorage.setItem('authToken', response.data.token);
+        localStorage.setItem("authToken", response.data.token);
         // localStorage.setItem('userRole', response.data.user.role);
         // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
-        
+
         // Redirect to the dashboard
         window.location.href = "/dashboard";
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Invalid email or password.');
+      setError(error.response?.data?.message || "Invalid email or password.");
     }
   };
 
+  // Handle Forgot Password Submission
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+
+    try {
+      const response = await axios.post(
+        `${backend_url}/user/change-password`,
+        forgotPasswordData
+      );
+
+      if (response.status === 200) {
+        setSuccessMsg(
+          "Password reset successful. You can now login with your new password."
+        );
+        // Reset form
+        setForgotPasswordData({
+          code: "",
+          oldPassword: "",
+          newPassword: "",
+          securityKey: "",
+        });
+        // Switch back to login after 3 seconds
+        setTimeout(() => {
+          setShowForgotPassword(false);
+          setSuccessMsg("");
+        }, 3000);
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to reset password. Please try again."
+      );
+    }
+  };
+
+  const toggleForgotPassword = () => {
+    setShowForgotPassword(!showForgotPassword);
+    setError("");
+    setSuccessMsg("");
+  };
+
   return (
-    <div className='login_container'>
+    <div className="login_container">
       <div className="main">
         <div className="logo-container">
           <div className="company-logo">
-            <img src="./sc.jpg" alt="Company Logo" /><h2 style={{ fontFamily: "revert" }}>Welcome To Siddha Connect</h2>
+            <img src="./sc.jpg" alt="Company Logo" />
+            <h2 style={{ fontFamily: "revert" }}>Welcome To Siddha Connect</h2>
           </div>
         </div>
-        <div className={`form-container ${isSignup ? 'signup-active' : 'login-active'}`}>
-          {!isSignup ? (
+        <div className="form-container login-active">
+          {!showForgotPassword ? (
             <form onSubmit={handleLoginSubmit} className="login-form">
               <h2>Login</h2>
-              {/** 
-                <select className="form-input" name="role" required value={loginData.role} onChange={handleLoginChange}>
-                  <option value="" disabled>Select User Role</option>
-                  <option value="super_admin">Super Admin</option>
-                  <option value="admin">Admin</option>
-                </select>
-                */}
-              <input className="form-input" type="text" name="code" placeholder="code" required value={loginData.code} onChange={handleLoginChange} />
-              <input className="form-input" type="password" name="password" placeholder="Password" required value={loginData.password} onChange={handleLoginChange} />
+              <input
+                className="form-input"
+                type="text"
+                name="code"
+                placeholder="Code"
+                required
+                value={loginData.code}
+                onChange={handleLoginChange}
+              />
+              <input
+                className="form-input"
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+                value={loginData.password}
+                onChange={handleLoginChange}
+              />
+              <p className="forgot-password-link">
+                <span onClick={toggleForgotPassword}>Forgot Password?</span>
+              </p>
               {error && <p className="error">{error}</p>}
               <div>
-                <button className="form-login-button" type="submit">Login</button>
-                <p>Don't have an account? <span onClick={() => setIsSignup(true)}>Sign Up</span></p>
+                <button className="form-login-button" type="submit">
+                  Login
+                </button>
               </div>
+              
             </form>
           ) : (
-            <form className="signup-form">
-              <h2>Sign Up</h2>
-              <input className="form-input" type="text" name="username" placeholder="Username" required value={signupData.username} onChange={handleSignupChange} />
-              <input className="form-input" type="email" name="email" placeholder="Email" required value={signupData.email} onChange={handleSignupChange} />
-              <input className="form-input" type="number" name="phoneNumber" placeholder="Phone Number" required value={signupData.phoneNumber} onChange={handleSignupChange} />
-              <input className="form-input" type="password" name="password" placeholder="Password" required value={signupData.password} onChange={handleSignupChange} />
+            <form
+              onSubmit={handleForgotPasswordSubmit}
+              className="forgot-password-form"
+            >
+              <h2>Reset Password</h2>
+              <input
+                className="form-input"
+                type="text"
+                name="code"
+                placeholder="Code"
+                required
+                value={forgotPasswordData.code}
+                onChange={handleForgotPasswordChange}
+              />
+              <input
+                className="form-input"
+                type="password"
+                name="oldPassword"
+                placeholder="Old Password"
+                required
+                value={forgotPasswordData.oldPassword}
+                onChange={handleForgotPasswordChange}
+              />
+              <input
+                className="form-input"
+                type="password"
+                name="newPassword"
+                placeholder="New Password"
+                required
+                value={forgotPasswordData.newPassword}
+                onChange={handleForgotPasswordChange}
+              />
+              <input
+                className="form-input"
+                type="text"
+                name="securityKey"
+                placeholder="Security Key"
+                required
+                value={forgotPasswordData.securityKey}
+                onChange={handleForgotPasswordChange}
+              />
+              <p className="back-to-login-link">
+                <span onClick={toggleForgotPassword}>Back to Login</span>
+              </p>
+              {error && <p className="error">{error}</p>}
+              {successMsg && <p className="success">{successMsg}</p>}
               <div>
-                <button className="form-signup-button" type="submit">Sign Up</button>
-                <p>Already have an account? <span onClick={() => setIsSignup(false)}>Login</span></p>
+                <button className="form-login-button" type="submit">
+                  Reset Password
+                </button>
               </div>
+              
             </form>
           )}
         </div>
@@ -109,4 +212,4 @@ const LoginSignUpAdmin = () => {
   );
 };
 
-export default LoginSignUpAdmin;
+export default LoginAdmin;
