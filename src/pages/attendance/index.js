@@ -19,6 +19,7 @@ const Attendance = () => {
   const [latestAttendance, setLatestAttendance] = useState({});
   const [firmList, setFirmList] = useState([]);
   const [firm, setFirm] = useState({});
+  const [ sliderValue, setSliderValue] = useState("employee"); 
   const limit = 50;
 
   const getAllActorTypes = async () => {
@@ -91,6 +92,7 @@ const Attendance = () => {
           limit,
           search,
           firm,
+          role: sliderValue
         },
       });
       setEmployee(res.data.data || []);
@@ -104,7 +106,7 @@ const Attendance = () => {
     fetchAttendance();
     getAllEmployee();
     getAllActorTypes();
-  }, [currentPage, search, firm]);
+  }, [currentPage, search, firm, sliderValue]);
 
   useEffect(() => {
     getLatestAttendance();
@@ -217,6 +219,24 @@ const Attendance = () => {
         </div>
 
         <div className="attendance-table-container">
+        <div className="slider-container">
+          <div
+            className={`slider-button ${
+              sliderValue === "employee" ? "active" : ""
+            }`}
+            onClick={() => setSliderValue("employee")}
+          >
+            Employee
+          </div>
+          <div
+            className={`slider-button ${
+              sliderValue === "admin" ? "active" : ""
+            }`}
+            onClick={() => setSliderValue("admin")}
+          >
+            Admin
+          </div>
+        </div>
           <div className="attendance-table-filter">
             <div className="search-filter">
               <input

@@ -4,6 +4,8 @@ import axios from "axios";
 import "./style.scss";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import { FaDownload, FaFileUpload } from "react-icons/fa";
+import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { RiDeleteBin6Line } from "react-icons/ri";
 
 const backendUrl = config.backend_url;
 
@@ -13,6 +15,9 @@ function Hierarchy() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hierarchy, setHierarchy] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [editID, setEditId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [deleteId, setDeleteId] = useState(null);
   const limit = 50;
 
   const getAllActorTypes = async () => {
@@ -44,6 +49,47 @@ function Hierarchy() {
       console.log(error);
     }
   };
+
+  const handleEdit = (row) => {
+    setEditId(row._id);
+    setEditData(row);
+  };
+
+  const handleSave = async () => {
+    try {
+      await axios.put(
+        `${backendUrl}/hierarchy-entries/edit-hierarchy-entries-by-admin/${editID}`,
+        editData,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      getHierarchy();
+      setEditId(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const deleteRow = async () => {
+    try {
+      await axios.delete(
+        `${backendUrl}/hierarchy-entries/delete-hierarchy-entries-by-admin/${deleteId}`,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      setDeleteId(null);
+      getHierarchy();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const totalPages = Math.ceil(totalRecords / limit);
   // Handle Previous Page
   const prevPage = () => {
@@ -129,9 +175,8 @@ function Hierarchy() {
                           "updatedAt",
                         ].includes(key)
                     )
-                    .map((key) => (
-                      <th key={key}>{key}</th> // ✅ Displays only the required headers
-                    ))}
+                    .map((key) => <th key={key}>{key}</th>)}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -150,8 +195,55 @@ function Hierarchy() {
                         ].includes(key)
                     )
                     .map((key) => (
-                      <td key={key}>{row[key]}</td> // ✅ Displays only the required values
+                      <td key={key}>
+                        {editID === row._id ? (
+                          <input
+                            type="text"
+                            value={editData[key] || ""}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                [key]: e.target.value,
+                              })
+                            }
+                          />
+                        ) : (
+                          row[key]
+                        )}
+                      </td>
                     ))}
+                  <td>
+                    {editID === row._id ? (
+                      <>
+                        <FaSave
+                          color="green"
+                          style={{ cursor: "pointer", marginRight: "10px" }}
+                          onClick={() => {
+                            handleSave();
+                            setEditId(null);
+                          }}
+                        />
+                        <FaTimes
+                          color="red"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => setEditId(null)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <FaEdit
+                          color="#005bfe"
+                          style={{ cursor: "pointer", marginRight: "10px" }}
+                          onClick={() => handleEdit(row)}
+                        />
+                        <RiDeleteBin6Line
+                          color="#F21E1E"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => setDeleteId(row._id)}
+                        />
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -178,6 +270,30 @@ function Hierarchy() {
           &gt;
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId !== null && (
+        <div className="delete-modal" onClick={() => setDeleteId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-content">
+              <div className="delete-model-header">
+                Are you sure you want to delete this row?
+              </div>
+              <div className="delete-modal-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setDeleteId(null)}
+                >
+                  Cancel
+                </button>
+                <button className="delete-btn" onClick={deleteRow}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

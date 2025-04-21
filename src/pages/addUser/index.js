@@ -288,7 +288,7 @@ export default function AddUser() {
               <FaUserCog />
               Register All User
             </div>
-            <div className="verify-use-btn" onClick={handleRegisterClick}>
+            <div className="verify-use-btn" onClick={handleVerifyClick}>
               <GoVerified />
               Verify All User
             </div>
@@ -372,14 +372,16 @@ export default function AddUser() {
                   onChange={handleChange}
                   required
                 />
-                <input
-                  type="text"
+                <select
                   name="role"
-                  placeholder="Role"
                   value={addData.role}
                   onChange={handleChange}
-                  required
-                />
+                >
+                  <option value="">Select Role</option>
+                  <option value="employee">Employee</option>
+                  <option value="dealer">Dealer</option>
+                  <option value="mdd">MDD</option>
+                </select>
                 <input
                   type="text"
                   name="position"

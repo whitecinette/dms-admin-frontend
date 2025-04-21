@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./style.scss";
 import config from "../../config.js";
 import {
@@ -29,7 +29,11 @@ export default function LatestAttendance() {
   const [status, setStatus] = useState("");
   const [count, setCount] = useState({});
   const [firmList, setFirmList] = useState([]);
-  const [firm, setFirm] = useState({});
+  const [firms, setFirms] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
+  const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef(null);
   const limit = 100;
 
   const getAllActorTypes = async () => {
@@ -58,7 +62,7 @@ export default function LatestAttendance() {
         `${backendUrl}/get-attendance-by-date/${newDate}`,
         {
           params: {
-            firm,
+            firms,
           },
         }
       );
@@ -80,7 +84,7 @@ export default function LatestAttendance() {
             limit,
             search,
             status,
-            firm,
+            firms,
           },
         }
       );
@@ -115,7 +119,7 @@ export default function LatestAttendance() {
             date,
             search,
             status,
-            firm,
+            firms,
           },
           responseType: "blob", // ✅ Important for file downloads
 
@@ -196,11 +200,43 @@ export default function LatestAttendance() {
     }
   };
 
+  const handleDropdownClick = (event) => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownStyles({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleFirmSelect = (firm) => {
+    if (firms.includes(firm._id)) {
+      setFirms(firms.filter((id) => id !== firm._id));
+    } else {
+      setFirms([...firms, firm._id]);
+    }
+    setCurrentPage(1);
+  };
+
+  const handleClearFirms = () => {
+    setFirms([]);
+    setCurrentPage(1);
+  };
+
+  const handleApplyFirms = () => {
+    setDropdownOpen(false);
+    setDropdownSearch("");
+    getAttendance();
+    getAttendanceCount();
+  };
+
   useEffect(() => {
     getAllActorTypes();
     getAttendance();
     getAttendanceCount();
-  }, [currentPage, search, date, status, firm]);
+  }, [currentPage, search, date, status]);
 
   useEffect(() => {
     const total = Object.values(count).reduce((sum, value) => sum + value, 0);
@@ -286,8 +322,8 @@ export default function LatestAttendance() {
             <select
               value={status}
               onChange={(e) => {
-                setCurrentPage(1); // Reset pagination on status change
-                setStatus(e.target.value); // Update status state
+                setCurrentPage(1);
+                setStatus(e.target.value);
               }}
             >
               <option value="">Select Status</option>
@@ -299,21 +335,82 @@ export default function LatestAttendance() {
               <option value="Rejected">Rejected</option>
             </select>
 
-            <select
-              value={firm || ""} // Ensure it's a string
-              onChange={(e) => {
-                setCurrentPage(1);
-                setFirm(e.target.value); // Store firm ID as a string
-              }}
-            >
-              <option value="">Select Firm</option>
-              {firmList.length > 0 &&
-                firmList.map((item, index) => (
-                  <option key={item._id} value={item._id}>
-                    {item.name}
-                  </option>
-                ))}
-            </select>
+            <div className="custom-dropdown" ref={dropdownRef}>
+              <div className="dropdown-header" onClick={handleDropdownClick}>
+                {firms.length > 0 ? (
+                  <span>
+                    {firms.length} firm{firms.length > 1 ? "s" : ""} selected
+                  </span>
+                ) : (
+                  <span>Select Firms</span>
+                )}
+                {dropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
+              </div>
+
+              {dropdownOpen && (
+                <div
+                  className="dropdown-content"
+                  style={{
+                    position: "absolute",
+                  }}
+                >
+                  <div className="dropdown-search">
+                    <input
+                      type="text"
+                      placeholder="Search firms..."
+                      value={dropdownSearch}
+                      onChange={(e) => setDropdownSearch(e.target.value)}
+                    />
+                  </div>
+
+                  {firms.length > 0 && (
+                    <div className="selected-firms">
+                      <div className="selected-firms-header"></div>
+                      {firmList
+                        .filter((firm) => firms.includes(firm._id))
+                        .map((firm) => (
+                          <div
+                            key={firm._id}
+                            className="selected-firm-item"
+                            onClick={() => handleFirmSelect(firm)}
+                          >
+                            {firm.name}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  <div className="firms-list">
+                    {firmList
+                      .filter(
+                        (firm) =>
+                          !firms.includes(firm._id) &&
+                          firm.name
+                            .toLowerCase()
+                            .includes(dropdownSearch.toLowerCase())
+                      )
+                      .map((firm) => (
+                        <div
+                          key={firm._id}
+                          className="firm-item"
+                          onClick={() => handleFirmSelect(firm)}
+                        >
+                          {firm.name}
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="dropdown-actions">
+                    <button className="clear-btn" onClick={handleClearFirms}>
+                      Clear
+                    </button>
+                    <button className="apply-btn" onClick={handleApplyFirms}>
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="latestAttendance-page-button">
             <button
@@ -368,25 +465,85 @@ export default function LatestAttendance() {
                         {new Date(record.date).toISOString().split("T")[0]}
                       </td>
                       <td>
-                        {record.punchIn
-                          ? new Date(record.punchIn).toLocaleTimeString(
-                              "en-IN",
-                              {
-                                timeZone: "Asia/Kolkata",
-                              }
-                            )
-                          : "N/A"}
+                        {editID === record._id ? (
+                          <input
+                            type="time"
+                            value={
+                              editData.punchIn
+                                ? new Date(editData.punchIn).toLocaleTimeString(
+                                    "en-IN",
+                                    {
+                                      timeZone: "Asia/Kolkata",
+                                      hour12: false,
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const [hours, minutes] =
+                                e.target.value.split(":");
+                              const newDate = new Date(
+                                editData.punchIn || new Date()
+                              );
+                              newDate.setHours(hours);
+                              newDate.setMinutes(minutes);
+                              setEditData({
+                                ...editData,
+                                punchIn: newDate.toISOString(),
+                              });
+                            }}
+                          />
+                        ) : record.punchIn ? (
+                          new Date(record.punchIn).toLocaleTimeString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                          })
+                        ) : (
+                          "N/A"
+                        )}
                       </td>
                       <td>{record.punchInName || "N/A"}</td>
                       <td>
-                        {record.punchOut
-                          ? new Date(record.punchOut).toLocaleTimeString(
-                              "en-IN",
-                              {
-                                timeZone: "Asia/Kolkata",
-                              }
-                            )
-                          : "N/A"}
+                        {editID === record._id ? (
+                          <input
+                            type="time"
+                            value={
+                              editData.punchOut
+                                ? new Date(
+                                    editData.punchOut
+                                  ).toLocaleTimeString("en-IN", {
+                                    timeZone: "Asia/Kolkata",
+                                    hour12: false,
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const [hours, minutes] =
+                                e.target.value.split(":");
+                              const newDate = new Date(
+                                editData.punchOut || new Date()
+                              );
+                              newDate.setHours(hours);
+                              newDate.setMinutes(minutes);
+                              setEditData({
+                                ...editData,
+                                punchOut: newDate.toISOString(),
+                              });
+                            }}
+                          />
+                        ) : record.punchOut ? (
+                          new Date(record.punchOut).toLocaleTimeString(
+                            "en-IN",
+                            {
+                              timeZone: "Asia/Kolkata",
+                            }
+                          )
+                        ) : (
+                          "N/A"
+                        )}
                       </td>
                       <td>{record.punchOutName || "N/A"}</td>
 
@@ -401,6 +558,7 @@ export default function LatestAttendance() {
                               })
                             }
                           >
+                            <option value="Present">Present</option>
                             <option value="Pending">Pending</option>
                             <option value="Absent">Absent</option>
                             <option value="Half Day">Half Day</option>

@@ -1,20 +1,25 @@
-.actorTypeHierarchy-page{
-    .actorTypeHierarchy-page-header{
+.actorTypeHierarchy-page {
+    .actorTypeHierarchy-page-header {
         font-size: 1.5rem;
         font-weight: 900;
     }
-    .actorTypeHierarchy-page-container{
+
+    .actorTypeHierarchy-page-container {
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
-        .actorTypeHierarchy-page-first-line{
+
+        .actorTypeHierarchy-page-first-line {
             display: flex;
             justify-content: space-between;
             margin-top: 10px;
-            .actorTypeHierarchy-page-filter{
+
+            .actorTypeHierarchy-page-filter {
                 gap: 5px;
                 display: flex;
-                input, select{
+
+                input,
+                select {
                     // width: 100%;
                     max-width: 60rem;
                     border-radius: 10px;
@@ -24,11 +29,14 @@
                     font-size: 12px;
                 }
             }
-            .actorTypeHierarchy-page-buttons{
+
+            .actorTypeHierarchy-page-buttons {
                 display: flex;
                 gap: 5px;
-                
-                .actorTypeHierarchy-page-add-btn, .actorTypeHierarchy-page-upload-btn, .actorTypeHierarchy-page-download-btn {
+
+                .actorTypeHierarchy-page-add-btn,
+                .actorTypeHierarchy-page-upload-btn,
+                .actorTypeHierarchy-page-download-btn {
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -37,76 +45,85 @@
                     border-radius: 10px;
                     font-size: 15px;
                     cursor: pointer;
-                    &:hover{
+
+                    &:hover {
                         opacity: .9;
                     }
                 }
-                .actorTypeHierarchy-page-upload-btn{
+
+                .actorTypeHierarchy-page-upload-btn {
                     background-color: #6666f2;
-                        .browse-btn{
-                            cursor: pointer;
-                        }
+
+                    .browse-btn {
+                        cursor: pointer;
+                    }
                 }
-                .actorTypeHierarchy-page-download-btn{
+
+                .actorTypeHierarchy-page-download-btn {
                     background-color: #ffcd00;
                     color: black;
                 }
-                .actorTypeHierarchy-page-add-btn{
+
+                .actorTypeHierarchy-page-add-btn {
                     background-color: #4CAF50;
                 }
             }
         }
-        .actorTypeHierarchy-page-table-container{
+
+        .actorTypeHierarchy-page-table-container {
             margin-top: 5px;
             width: 100%;
             overflow-x: auto;
             max-height: 60vh;
             scrollbar-width: thin;
-        
+
             /* Enable vertical scrolling */
             display: block;
             max-width: 100%;
             overflow-y: auto;
+
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 700px; 
-                
+                min-width: 700px;
+
                 thead {
                     position: sticky;
                     top: 0;
                     background-color: #6399f9;
                     color: white;
-                    
-                    th {               
+
+                    th {
                         padding: 0 5px;
                         white-space: nowrap;
                         text-align: center;
                         // padding: 12px;
                     }
-                    
-        
+
+
                     /* Rounded corners for first and last th */
                     th:first-child {
                         border-radius: 5px 0 0 5px;
                     }
-        
+
                     th:last-child {
                         border-radius: 0 5px 5px 0;
                     }
                 }
-        
+
                 tbody {
                     tr {
-                        
+
                         background-color: #f8f8f8;
-        
+
                         &:nth-child(even) {
                             background-color: white;
                         }
-                        .expand-btn{
+
+                        .expand-btn {
                             padding: 2px;
-                            button{
+
+                            button {
                                 padding: 2px;
                                 background-color: #6399f9;
                                 color: white;
@@ -116,16 +133,17 @@
                                 cursor: pointer;
                             }
                         }
+
                         td {
                             font-size: 12px;
                             text-align: center;
-                            white-space: nowrap; 
-        
+                            white-space: nowrap;
+
                             /* Rounded corners */
                             &:first-child {
                                 border-radius: 5px 0 0 5px;
                             }
-        
+
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
                             }
@@ -135,51 +153,61 @@
             }
         }
     }
-    .actorTypeHierarchy-page-add-box{
+
+    .actorTypeHierarchy-page-add-box {
         position: fixed;
         height: 100vh;
         width: 100vw;
         top: 0;
         left: 0;
         z-index: 1000;
-        background: rgb(0 0 0 / 24%); 
+        background: rgb(0 0 0 / 24%);
         backdrop-filter: blur(0px);
-        .actorTypeHierarchy-page-add-container{
+
+        .actorTypeHierarchy-page-add-container {
             position: absolute;
             top: 15%;
             left: 40%;
             background-color: #fff;
             width: 400px;
             border-radius: 10px;
-            .actorTypeHierarchy-page-add-content{
+
+            .actorTypeHierarchy-page-add-content {
                 padding: 15px;
-                .actorTypeHierarchy-page-add-header{
+
+                .actorTypeHierarchy-page-add-header {
                     font-size: 20px;
                     font-weight: 800;
                 }
-                .actorTypeHierarchy-page-add-form{
+
+                .actorTypeHierarchy-page-add-form {
                     margin-top: 20px;
                     display: flex;
                     flex-direction: column;
-                    input,select{
+
+                    input,
+                    select {
                         padding: 10px;
                         margin: 5px;
                         border-radius: 5px;
                     }
                 }
-                .actorTypeHierarchy-page-add-button{
+
+                .actorTypeHierarchy-page-add-button {
                     display: flex;
                     justify-content: end;
                     margin-top: 10px;
                     gap: 10px;
-                    .actorTypeHierarchy-page-submit-btn{
+
+                    .actorTypeHierarchy-page-submit-btn {
                         color: white;
                         border-radius: 5px;
                         border: none;
                         padding: 5px 10px;
                         border-radius: 5px;
                         cursor: pointer;
-                        &:hover{
+
+                        &:hover {
                             opacity: 9;
                         }
 
@@ -189,24 +217,71 @@
             }
         }
     }
-    .error-message{
+
+    .error-message {
         color: rgb(240 28 28);
     }
-    .success-message{
+
+    .success-message {
         color: #4CAF50;
     }
+
+    .hierarchy-edit-container {
+        margin-bottom: 10px;
+    }
+
+    .hierarchy-edit-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+
+        input {
+            margin-right: 5px;
+        }
+    }
+
+    .remove-hierarchy-btn {
+        background: none;
+        border: none;
+        color: #F21E1E;
+        cursor: pointer;
+        padding: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .add-hierarchy-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #005bfe;
+        padding: 5px 0;
+
+        svg {
+            margin-right: 5px;
+        }
+    }
+
+    .hierarchy-actions {
+        display: flex;
+        justify-content: flex-start;
+    }
 }
+
 //responsive
 @media (max-width: 1024px) {
     .actorTypeHierarchy-page-container {
         padding: 15px;
     }
-    
+
     .actorTypeHierarchy-page-first-line {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .actorTypeHierarchy-page-table-container {
         max-height: 50vh;
     }
@@ -222,7 +297,7 @@
     .actorTypeHierarchy-page-header {
         font-size: 1.2rem;
     }
-    
+
     .actorTypeHierarchy-page-table-container table {
         min-width: 100%;
     }
