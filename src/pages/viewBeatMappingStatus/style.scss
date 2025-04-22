@@ -14,96 +14,50 @@
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
-        .viewBeatMappingStatus-calendar-container {
-            max-width: 100vw;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            text-align: center;
-        
-            .viewBeatMappingStatus-calendar-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-        
-                h2 {
-                    font-size: 16px;
-                    font-weight: bold;
-                    margin: 0;
-                    color: #333;
-                }
-        
-                .icon {
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    border-radius: 50%;
-                    transition: background 0.3s;
-                    padding: 5px;
-        
-                    &:hover {
-                        background: #dcdcdc;
-                    }
-                }
-            }
-        
-            .viewBeatMappingStatus-calendar-body {
-                .viewBeatMappingStatus-calendar-days {
-                    display: grid;
-                    grid-template-columns: repeat(8, 1fr);
-                    gap: 10px;
-                    margin-top: 10px;
-                    
-                    .day {
-                        width: 100%;
-                        height: 30px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border-radius: 10px;
-                        font-weight: bold;
-                        cursor: pointer;
-                        transition: background 0.3s ease;
-                        color: #333;
-                        background: #f8f8f8;
-                        border: 1px solid #ddd;
-                        font-size: 14px;
-        
-                        &:hover {
-                            background: #e0e0e0;
-                        }
-        
-                        &.selected {
-                            background: #6399f9;
-                            color: white;
-                        }
-        
-                        &.today {
-                            border: 2px solid #6399f9;
-                        }
-                    }
-                }
-            }
-        }
         .viewBeatMapping-first-line{
             display: flex;
             justify-content: space-between;
             margin-top: 10px;
+
             .viewBeatMappingStatus-filter{
                 gap: 5px;
                 display: flex;
+                
                 input, select{
                     // width: 100%;
+                    margin-top: 2px;
                     max-width: 60rem;
                     border-radius: 10px;
                     border: 2px solid #808080;
                     color: #808080;
                     padding: 5px;
                     font-size: 12px;
+                }
+            }
+            .viewBeatMappingStatus-date-filter {
+                margin-left: 10px;
+                font-size: 0.9rem;
+                display: flex;
+                gap: 20px;
+    
+                .date {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 5px;
+    
+                    input {
+                        width: 100%;
+                        border-radius: 10px;
+                        border: 2px solid #808080;
+                        color: #808080;
+                        padding: 5px;
+                        font-size: 12px;
+    
+                        &::-webkit-calendar-picker-indicator {
+                            filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+                        }
+                    }
                 }
             }
             .viewBeatMapping-buttons{
@@ -150,9 +104,10 @@
                     top: 0;
                     z-index: 1000;
                     background-color: #6399f9;
-                    color: white;
+                    color: white; 
                     
-                    th {               
+                    th {       
+                              
                         padding: 0 5px;
                         white-space: nowrap;
                         text-align: center;
@@ -202,67 +157,11 @@
                                 border-radius: 0 5px 5px 0;
                             }
                         }
+                        
                     }
                 }
             }
-            .schedule{
-                background-color: #e0e0e0 !important;
-                padding: 5px;
-                .schedule-title{
-                    font-size: 1.3rem;
-                    font-weight: 600;
-                }
-                .schedule-add-button{
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 12px;
-                    color: #4CAF50;
-                    cursor: pointer;
-                    gap: 5px;
-                }
-            }
-            .expand-container{
-                overflow: auto;
-                max-height: 30vh;
-                max-width: 100vw;
-                margin-bottom: 20px;
-                .expanded-table{
-                    // border-radius: 40%;
-                    
-                    thead {
-                        position: sticky;
-                        top: 0;
-                        
-                        th {               
-                            padding: 0 5px;
-                            white-space: nowrap;
-                            text-align: center;
-                            background-color: #9bb5e2;
-                            // padding: 12px;
-                        }
-                        
-                        
             
-                        /* Rounded corners for first and last th */
-                        th:first-child {
-                            border-radius: 5px 0 0 5px;
-                        }
-            
-                        th:last-child {
-                            border-radius: 0 5px 5px 0;
-                        }
-                    }
-                    .remove-schedule-row{
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        color: rgb(229, 70, 70);
-                        cursor: pointer;
-                        gap: 5px;
-                    }
-                }
-            }
         }
     }
     .error-message{

@@ -645,12 +645,16 @@ export default function LatestAttendance() {
                                   {address}
                                 </td>
                                 <td className="inner-table-map">
+                                {record.latitude && record.longitude ? (
                                   <iframe
                                     loading="lazy"
                                     referrerPolicy="no-referrer-when-downgrade"
                                     src={`https://maps.google.com/maps?q=${record.latitude},${record.longitude}&z=16&output=embed`}
                                     title="Google Map"
                                   ></iframe>
+                                ) : (
+                                  "N/A"
+                                )}
                                 </td>
                                 <td>
                                   {record.punchInImage ? (
