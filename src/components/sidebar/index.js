@@ -184,6 +184,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Hierarchy", to: "/hierarchy" },
         { name: "Actor Type Hierarchy", to: "/actorTypeHierarchy" },
         { name: "Add User", to: "/addUser" },
+        { name: "Alpha Messages", to: "/alphaMessages" },
       ],
     },
     {

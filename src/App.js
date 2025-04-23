@@ -19,6 +19,7 @@ import Attendance from "./pages/attendance";
 import ViewAttendance from "./pages/viewAttendance";
 import LatestAttendance from "./pages/latestAttendance";
 import Hierarchy from "./pages/hierarchy";
+import AlphaMessages from "./pages/alphaMessages";
 
 function App() {
   const token = localStorage.getItem("authToken");
@@ -78,6 +79,7 @@ function App() {
             <Route path="/attendance/:code" element={<ViewAttendance/>} />
             <Route path="/attendance/allAttendance" element={<LatestAttendance/>} />
             <Route path="/hierarchy" element={<Hierarchy/>} />
+            <Route path="/alphaMessages" element={<AlphaMessages/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
