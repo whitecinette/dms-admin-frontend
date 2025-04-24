@@ -2,18 +2,18 @@ import React, { useState } from "react";
 import axios from "axios";
 import Papa from "papaparse";
 import "./style.scss"; // Import SCSS file for styling
-import config from "../../config.js";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate/index.jsx";
+import config from "../../config.js";
 
 const backendUrl = config.backend_url;
 const headers = [
   "Dealer Code",
   "Dealer Name",
+  "Phone Number",
   "10k SP Target",
   "10k SP Ach",
   "Black Box Target",
   "Black Box Ach",
-  "Phone Number",
 ];
 
 export default function AlphaMessages() {

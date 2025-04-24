@@ -1,0 +1,155 @@
+.employee-schedule {
+    .employee-schedule-header {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+
+        .header-link {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    .employee-schedule-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 10px;
+
+
+
+        .employee-schedule-filter {
+            display: flex;
+            gap: 5px;
+
+            input,
+            select {
+                // width: 100%;
+                margin-top: 2px;
+                max-width: 60rem;
+                border-radius: 10px;
+                border: 2px solid #808080;
+                color: #808080;
+                padding: 5px;
+                font-size: 12px;
+            }
+        }
+
+        .employee-schedule-date {
+            margin-left: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 20px;
+
+            .date {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 5px;
+
+                input {
+                    width: 100%;
+                    border-radius: 10px;
+                    border: 2px solid #808080;
+                    color: #808080;
+                    padding: 5px;
+                    font-size: 12px;
+
+                    &::-webkit-calendar-picker-indicator {
+                        filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+                    }
+                }
+            }
+        }
+
+        .employee-schedule-table {
+            margin-top: 5px;
+            width: 100%;
+            overflow-x: auto;
+            max-height: 60vh;
+            scrollbar-width: thin;
+
+            /* Enable vertical scrolling */
+            display: block;
+            max-width: 100%;
+            overflow-y: auto;
+
+            /* Custom scrollbar for better UX */
+            &::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 700px;
+
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #6399f9;
+                    color: white;
+
+                    th {
+                        padding: 0 5px;
+                        white-space: nowrap;
+                        text-align: center;
+                        // padding: 12px;
+                    }
+
+
+                    /* Rounded corners for first and last th */
+                    th:first-child {
+                        border-radius: 5px 0 0 5px;
+                    }
+
+                    th:last-child {
+                        border-radius: 0 5px 5px 0;
+                    }
+                }
+
+                tbody {
+                    tr {
+
+                        background-color: #f8f8f8;
+
+                        &:nth-child(even) {
+                            background-color: white;
+                        }
+
+                        .expand-btn {
+                            padding: 2px;
+
+                            button {
+                                padding: 2px;
+                                background-color: #6399f9;
+                                color: white;
+                                border: none;
+                                font-size: 12px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                            }
+                        }
+
+                        td {
+                            font-size: 12px;
+                            text-align: center;
+                            white-space: nowrap;
+
+                            /* Rounded corners */
+                            &:first-child {
+                                border-radius: 5px 0 0 5px;
+                            }
+
+                            &:last-child {
+                                border-radius: 0 5px 5px 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

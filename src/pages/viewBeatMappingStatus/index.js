@@ -32,6 +32,7 @@ const ViewBeatMappingStatus = () => {
   const [expandedRow, setExpandedRow] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+
   const [startDay, setStartDay] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() - 1);
@@ -67,6 +68,8 @@ const ViewBeatMappingStatus = () => {
       console.log(err);
     }
   };
+
+  
   
 
   useEffect(() => {
@@ -131,11 +134,6 @@ const ViewBeatMappingStatus = () => {
               value={search}
               onChange={(e) => setsearch(e.target.value)}
             />
-            <select value={status} onChange={(e) => setstatus(e.target.value)}>
-              <option value="">Select Status</option>
-              <option value="done">Done</option>
-              <option value="pending">Pending</option>
-            </select>
             <div className="viewBeatMappingStatus-date-filter">
               <div className="date">
                 <label>From:</label>
@@ -211,9 +209,9 @@ const ViewBeatMappingStatus = () => {
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
-                      <td>{item.done}</td>
-                      <td>{item.pending}</td>
-                      <td>{item.total}</td>
+                      <td style={{color: "green"}}>{item.done}</td>
+                      <td style={{color: "#f0b862"}}>{item.pending}</td>
+                      <td style={{color: "#6666f2"}}>{item.total}</td>
                       <td className="expand-btn">
                         <button onClick={()=>navigation(`schedules/${item.code}`)}>View Detail</button>
                       </td>
