@@ -204,7 +204,16 @@ export default function EmployeesSchedules() {
                                 minWidth: "200px",
                                 fontSize: "14px",
                               }),
+                              menu: (provided) => ({
+                                ...provided,
+                                zIndex: 9999, // Boost menu z-index
+                              }),
+                              menuPortal: (base) => ({
+                                ...base,
+                                zIndex: 9999, // Boost portal z-index
+                              }),
                             }}
+                            menuPortalTarget={document.body} // important if using portals
                           />
                         ) : (
                           dealer.name
