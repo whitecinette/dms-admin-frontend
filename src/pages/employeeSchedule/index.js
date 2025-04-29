@@ -22,7 +22,6 @@ export default function EmployeesSchedules() {
   const [editedDealer, setEditedDealer] = useState({});
 
   const getEmployeeSchedule = async () => {
-    console.log("Fetching employee schedule...");
 
     const reqBody = {
       startDate,
@@ -95,9 +94,8 @@ export default function EmployeesSchedules() {
         }
       );
 
-      const updatedData = [...dealerData];
-      updatedData[editRowIndex] = editedDealer;
-      setDealerData(updatedData);
+      setEditedDealer({})
+      getEmployeeSchedule();     
       setEditRowIndex(null); // exit edit mode
     } catch (err) {
       console.error("Error updating schedule:", err);
