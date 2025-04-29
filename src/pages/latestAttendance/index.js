@@ -64,6 +64,9 @@ export default function LatestAttendance() {
           params: {
             firms,
           },
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
         }
       );
       setCount(response.data.attendanceCount);
@@ -85,6 +88,9 @@ export default function LatestAttendance() {
             search,
             status,
             firms,
+          },
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
           },
         }
       );

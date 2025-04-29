@@ -83,11 +83,25 @@ export default function EmployeesSchedules() {
     setEditedDealer({ ...row });
   };
 
-  const handleSave = () => {
-    const updatedData = [...dealerData];
-    updatedData[editRowIndex] = editedDealer;
-    setDealerData(updatedData);
-    setEditRowIndex(null); // exit edit mode
+  const handleSave = async () => {
+    try {
+      const response = await axios.put(
+        `${backendUrl}/edit-weekly-beat-mapping-schedule-for-admin-by-code/${code}`,
+        editedDealer,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
+      const updatedData = [...dealerData];
+      updatedData[editRowIndex] = editedDealer;
+      setDealerData(updatedData);
+      setEditRowIndex(null); // exit edit mode
+    } catch (err) {
+      console.error("Error updating schedule:", err);
+    }
   };
 
   useEffect(() => {

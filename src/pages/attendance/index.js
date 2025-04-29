@@ -48,10 +48,14 @@ const Attendance = () => {
 
     const selectedDate = getDateDaysAgo(attempt);
     setDateToFetch(selectedDate);
-    const apiUrl = `${backendUrl}/get-attendance-by-date/${selectedDate}`;
+    const apiUrl = `${backendUrl}/get-attendance-by-date/${selectedDate},`;
 
     try {
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(apiUrl,{
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
       console.log(response)
 
 
