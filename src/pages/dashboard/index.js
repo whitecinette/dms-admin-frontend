@@ -175,49 +175,13 @@ function Dashboard() {
     { id: "03", name: "Anil Saini", popularity: 18 },
     { id: "04", name: "Sunil Saini", popularity: 25 },
   ];
-  // const salesData = [
-  //   {
-  //     title: "Total sales",
-  //     value: 1000,
-  //     yesterday: "+5%",
-  //     icon: <VscGraphLine />,
-  //   },
-  //   { title: "Total order", value: 300, yesterday: "+5%", icon: <FaFileAlt /> },
-  //   {
-  //     title: "Product Sold",
-  //     value: 5,
-  //     yesterday: "+5%",
-  //     icon: <IoPricetagSharp />,
-  //   },
-  //   { title: "New Customers", value: 8, yesterday: "+5%", icon: <TiUserAdd /> },
-  // ];
+  
   return (
     <div className="dashboard">
       <div className="dashboard-header">Dashboard</div>
       <div className="first-line">
         <div className="today-sales">
           <SalesGrowth />
-          {/**
-                    <div className="content">
-                        <div className="title">
-                            Todays Sales
-                        </div>
-                        <div className="sales-data">
-                            {salesData.map((item, index) => (
-                                <div className={`sales-card ${color[index % color.length]}`} key={index}>
-                                    <div className={`sale-icon ${color[index % color.length]}`}>
-                                        {item.icon}
-                                    </div>
-                                    <div className="info">
-                                        <div className="sale-value">{item.value}</div>
-                                        <div className="sale-title">{item.title}</div>
-                                        <div className="sale-yesterday">{item.yesterday}from yesterday</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                     */}
         </div>
         <div className="extraction-insights-graph">
           <div className="extraction-header">Extraction Insights</div>
