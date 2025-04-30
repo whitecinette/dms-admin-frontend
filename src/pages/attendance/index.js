@@ -79,6 +79,9 @@ const Attendance = () => {
           params: {
             date: new Date(),
           },
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
         }
       );
       setLatestAttendance(res.data.data);
