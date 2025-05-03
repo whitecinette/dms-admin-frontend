@@ -6,6 +6,8 @@ import { IoIosArrowBack } from "react-icons/io";
 import "./style.scss";
 import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import Select from "react-select";
+import CustomAlert from "../../components/CustomAlert";
+import { RiDeleteBin6Line } from "react-icons/ri";
 
 const backendUrl = config.backend_url;
 
@@ -20,20 +22,29 @@ export default function EmployeesSchedules() {
   const [dealerList, setDealerList] = useState([]);
   const [editRowIndex, setEditRowIndex] = useState(null);
   const [editedDealer, setEditedDealer] = useState({});
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteDealerId, setDeleteDealerId] = useState(null);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [securityKey, setSecurityKey] = useState("");
+  const [alert, setAlert] = useState({ show: false, type: "", message: "" });
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const getEmployeeSchedule = async () => {
-
     const reqBody = {
       startDate,
       endDate,
       search,
       status,
+      code,
     };
     try {
       const res = await axios.get(
-        `${backendUrl}/get-weekly-beat-mapping-schedule-for-admin-by-code/${code}`,
+        `${backendUrl}/get-weekly-beat-mapping-schedule-for-admin-by-code`,
         {
           params: reqBody,
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
         }
       );
       setEmployeeData(res.data.employee);
@@ -94,11 +105,63 @@ export default function EmployeesSchedules() {
         }
       );
 
-      setEditedDealer({})
-      getEmployeeSchedule();     
+      setEditedDealer({});
+      getEmployeeSchedule();
       setEditRowIndex(null); // exit edit mode
     } catch (err) {
       console.error("Error updating schedule:", err);
+    }
+  };
+
+  const handleDeleteClick = (scheduleId, dealerId) => {
+    setDeleteId(scheduleId);
+    setDeleteDealerId(dealerId);
+    setShowConfirmDelete(true);
+    setShowDeletePopup(false);
+    setSecurityKey("");
+  };
+
+  const handleConfirmDelete = () => {
+    setShowConfirmDelete(false);
+    setShowDeletePopup(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowConfirmDelete(false);
+    setShowDeletePopup(false);
+    setDeleteId(null);
+    setDeleteDealerId(null);
+    setSecurityKey("");
+  };
+
+  const handleDeleteDealer = async () => {
+    try {
+      const res = await axios.delete(
+        `${backendUrl}/delete-dealer-from-schedule/${deleteId}/${deleteDealerId}`,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+          params: {
+            securityKey,
+          },          
+        }
+      );
+      setAlert({
+        show: true,
+        type: "success",
+        message: res.data.message || "Dealer deleted successfully",
+      });
+      setShowDeletePopup(false);
+      setDeleteId(null);
+      setDeleteDealerId(null);
+      getEmployeeSchedule();
+    } catch (err) {
+      setAlert({
+        show: true,
+        type: "error",
+        message: err.response?.data?.message || "Failed to delete dealer",
+      });
     }
   };
 
@@ -109,6 +172,13 @@ export default function EmployeesSchedules() {
 
   return (
     <div className="employee-schedule">
+      {alert.show && (
+        <CustomAlert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert({ show: false, type: "", message: "" })}
+        />
+      )}
       <div className="employee-schedule-header">
         <Link className="header-link" to="/viewBeatMappingStatus">
           <IoIosArrowBack size={24} />
@@ -177,7 +247,7 @@ export default function EmployeesSchedules() {
             <tbody>
               {dealerData.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center" }}>
+                  <td colSpan="12x" style={{ textAlign: "center" }}>
                     No data available
                   </td>
                 </tr>
@@ -187,7 +257,6 @@ export default function EmployeesSchedules() {
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td>
-                        {" "}
                         {editRowIndex === index ? (
                           <input
                             type="text"
@@ -278,11 +347,23 @@ export default function EmployeesSchedules() {
                             />
                           </>
                         ) : (
-                          <FaEdit
-                            onClick={() => handleEditRow(dealer, index)}
-                            color="#6666f2"
-                            style={{ cursor: "pointer" }}
-                          />
+                          <>
+                            <FaEdit
+                              onClick={() => handleEditRow(dealer, index)}
+                              color="#6666f2"
+                              style={{ cursor: "pointer", marginRight: "10px" }}
+                            />
+                            <RiDeleteBin6Line
+                              color="red"
+                              style={{ cursor: "pointer" }}
+                              onClick={() =>
+                                handleDeleteClick(
+                                  dealer.scheduleId,
+                                  dealer.dealerId
+                                )
+                              }
+                            />
+                          </>
                         )}
                       </td>
                     </tr>
@@ -293,6 +374,63 @@ export default function EmployeesSchedules() {
           </table>
         </div>
       </div>
+      {showConfirmDelete && (
+        <div className="security-key-popup">
+          <div className="popup-content">
+            <div className="popup-header">
+              <div>Are you sure you want to delete this row?</div>
+              <button className="close-btn" onClick={handleCancelDelete}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-actions">
+              <button className="cancel-btn" onClick={handleCancelDelete}>
+                Cancel
+              </button>
+              <button className="delete-btn" onClick={handleConfirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeletePopup && (
+        <div className="security-key-popup">
+          <div className="popup-content">
+            <div className="popup-header">
+              <h2>Enter Security Key to Delete</h2>
+              <button className="close-btn" onClick={handleCancelDelete}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="form-group">
+              <label htmlFor="securityKey">Security Key</label>
+              <input
+                type="password"
+                id="securityKey"
+                name="securityKey"
+                className="security-key-input"
+                value={securityKey}
+                onChange={(e) => setSecurityKey(e.target.value)}
+                placeholder="Enter security key"
+                required
+              />
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button
+                className="submit-btn"
+                onClick={handleDeleteDealer}
+                disabled={!securityKey}
+              >
+                Delete
+              </button>
+              <button className="close-btn" onClick={handleCancelDelete}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  FaDownload,
-  FaFileUpload,
-  FaEdit,
-} from "react-icons/fa";
+import { FaDownload, FaFileUpload } from "react-icons/fa";
 import config from "../../config.js";
 import axios from "axios";
 import "./style.scss"; // Import SCSS file for styling
@@ -17,6 +13,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
+import CustomAlert from "../../components/CustomAlert/index.js";
+import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
 
 const backendUrl = config.backend_url;
 
@@ -27,11 +25,10 @@ const ViewBeatMappingStatus = () => {
   const [search, setsearch] = useState("");
   const [status, setstatus] = useState("");
   const [data, setData] = useState([]);
-  const [editRow, setEditRow] = useState({});
-  const [editId, setEditId] = useState("");
-  const [expandedRow, setExpandedRow] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [alert, setAlert] = useState({ show: false, type: "", message: "" });
+  const [showSecurityKeyPopup, setShowSecurityKeyPopup] = useState(false);
 
   const [startDay, setStartDay] = useState(() => {
     const date = new Date();
@@ -46,7 +43,7 @@ const ViewBeatMappingStatus = () => {
       console.warn("Start and End dates are required.");
       return;
     }
-  
+
     try {
       const res = await axios.get(
         `${backendUrl}/get-weekly-beat-mapping-schedule-for-admin`,
@@ -69,8 +66,22 @@ const ViewBeatMappingStatus = () => {
     }
   };
 
-  
-  
+  //add daily beat mapping
+  const addDailyBeatMapping = async () => {
+    try {
+      const res = await axios.put(`${backendUrl}/add-daily-beat-mapping`);
+      setAlert({
+        show: true,
+        type: "success",
+        message: res.data.message || "Daily Beat Mapping Added Successfully",
+      });
+      setSuccess(res.data.message || "Daily Beat Mapping Added Successfully");
+    } catch (err) {
+      setErrorMessage(
+        err.response.data.message || "Failed to Add Daily Beat Mapping"
+      );
+    }
+  };
 
   useEffect(() => {
     const shouldFetch = startDay && endDay;
@@ -78,7 +89,6 @@ const ViewBeatMappingStatus = () => {
       getbeatmapping();
     }
   }, [currentPage, search, status, startDay, endDay]);
-  
 
   const totalPages = Math.ceil(totalRecords / 50);
 
@@ -97,6 +107,13 @@ const ViewBeatMappingStatus = () => {
 
   return (
     <div className="viewBeatMappingStatus-page">
+      {alert.show && (
+        <CustomAlert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert({ show: false, type: "", message: "" })}
+        />
+      )}
       <div className="viewBeatMappingStatus-page-header">
         View Beat Mapping Status
       </div>
@@ -156,18 +173,25 @@ const ViewBeatMappingStatus = () => {
             </div>
           </div>
           {/* Buttons */}
+          {localStorage.getItem("role") === "super_admin" && (
+            <div className="edit-security-key">
+              <button
+                className="edit-security-key-btn"
+                onClick={() => setShowSecurityKeyPopup(true)}
+              >
+                Edit Security Key
+              </button>
+            </div>
+          )}
           <div className="viewBeatMapping-buttons">
-            <div className="viewBeatMappingStatus-upload-btn">
+            <div
+              className="viewBeatMappingStatus-upload-btn"
+              onClick={addDailyBeatMapping}
+            >
               <label htmlFor="file-upload" className="browse-btn">
                 <FaFileUpload />
-                Upload Beat Mapping CSV
+                Add Daily Beat Mapping
               </label>
-              <input
-                type="file"
-                id="file-upload"
-                hidden
-                // onChange={handleFileChange}
-              />
             </div>
             <div className="viewBeatMappingStatus-download-btn">
               <div
@@ -209,13 +233,16 @@ const ViewBeatMappingStatus = () => {
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
-                      <td style={{color: "green"}}>{item.done}</td>
-                      <td style={{color: "#f0b862"}}>{item.pending}</td>
-                      <td style={{color: "#6666f2"}}>{item.total}</td>
+                      <td style={{ color: "green" }}>{item.done}</td>
+                      <td style={{ color: "#f0b862" }}>{item.pending}</td>
+                      <td style={{ color: "#6666f2" }}>{item.total}</td>
                       <td className="expand-btn">
-                        <button onClick={()=>navigation(`schedules/${item.code}`)}>View Detail</button>
+                        <button
+                          onClick={() => navigation(`schedules/${item.code}`)}
+                        >
+                          View Detail
+                        </button>
                       </td>
-                      
                     </tr>
                   </>
                 ))
@@ -247,6 +274,16 @@ const ViewBeatMappingStatus = () => {
       {/* Error and Success Message */}
       {errorMessage && <div className="error-message">{errorMessage}</div>}
       {success && <div className="success-message">{success}</div>}
+
+      {showSecurityKeyPopup && (
+        <SecurityKeyPopup
+          onClose={() => setShowSecurityKeyPopup(false)}
+          onSuccess={(msg) => {
+            setAlert({ show: true, type: "success", message: msg });
+            setShowSecurityKeyPopup(false);
+          }}
+        />
+      )}
     </div>
   );
 };

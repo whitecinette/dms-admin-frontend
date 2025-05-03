@@ -1,30 +1,39 @@
-.viewBeatMappingStatus-page{
+.viewBeatMappingStatus-page {
     padding: 10px;
-    .viewBeatMappingStatus-page-header{
+
+    .viewBeatMappingStatus-page-header {
         font-size: 1.5rem;
         font-weight: 900;
     }
-    .viewBeatMapping-page-graph{
+
+    .viewBeatMapping-page-graph {
         background-color: #fff;
         margin: 10px;
         padding: 20px;
-        border-radius: 10px;    
+        border-radius: 10px;
     }
-    .viewBeatMappingStatus-page-container{
+
+    .viewBeatMappingStatus-page-container {
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
-        .viewBeatMapping-first-line{
+
+        .viewBeatMapping-first-line {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
             margin-top: 10px;
 
-            .viewBeatMappingStatus-filter{
+            .viewBeatMappingStatus-filter {
                 gap: 5px;
                 display: flex;
-                
-                input, select{
-                    // width: 100%;
+                flex-wrap: wrap;
+                align-items: center;
+
+                input,
+                select {
                     margin-top: 2px;
                     max-width: 60rem;
                     border-radius: 10px;
@@ -34,18 +43,20 @@
                     font-size: 12px;
                 }
             }
+
             .viewBeatMappingStatus-date-filter {
                 margin-left: 10px;
                 font-size: 0.9rem;
                 display: flex;
                 gap: 20px;
-    
+                flex-wrap: wrap;
+
                 .date {
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     gap: 5px;
-    
+
                     input {
                         width: 100%;
                         border-radius: 10px;
@@ -53,89 +64,126 @@
                         color: #808080;
                         padding: 5px;
                         font-size: 12px;
-    
+
                         &::-webkit-calendar-picker-indicator {
                             filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
                         }
                     }
                 }
             }
-            .viewBeatMapping-buttons{
+
+            .edit-security-key {
+                margin: 0;
                 display: flex;
-                gap: 5px;
-                
-                .viewBeatMappingStatus-upload-btn, .viewBeatMappingStatus-download-btn {
+                align-items: center;
+                justify-content: center;
+
+                .edit-security-key-btn {
+                    padding: 10px 20px;
+                    background-color: #4a90e2;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                    white-space: nowrap;
+
+                    &:hover {
+                        background-color: #357abd;
+                    }
+                }
+            }
+
+            .viewBeatMapping-buttons {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+
+                .viewBeatMappingStatus-upload-btn,
+                .viewBeatMappingStatus-download-btn {
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     color: white;
-                    padding: 5px 10px;
+                    padding: 12px 18px;
                     border-radius: 10px;
                     font-size: 15px;
                     cursor: pointer;
-                    &:hover{
+                    min-width: 160px;
+
+                    &:hover {
                         opacity: .9;
                     }
                 }
-                .viewBeatMappingStatus-upload-btn{
+
+                .viewBeatMappingStatus-upload-btn {
                     background-color: #6666f2;
-                        .browse-btn{
-                            cursor: pointer;
-                        }
+
+                    .browse-btn {
+                        cursor: pointer;
+                    }
                 }
-                .viewBeatMappingStatus-download-btn{
+
+                .viewBeatMappingStatus-download-btn {
                     background-color: #ffcd00;
                     color: black;
                 }
             }
         }
-        .viewBeatMapping-table-container{
+
+        .viewBeatMapping-table-container {
             overflow: auto;
             max-height: 60vh;
             max-width: 100vw;
             margin-top: 10px;
+
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 700px; 
-                
+                min-width: 700px;
+
                 thead {
                     position: sticky;
                     top: 0;
                     z-index: 1000;
                     background-color: #6399f9;
-                    color: white; 
-                    
-                    th {       
-                              
+                    color: white;
+
+                    th {
+
                         padding: 0 5px;
                         white-space: nowrap;
                         text-align: center;
                         // padding: 12px;
                     }
-                    
-        
+
+
                     /* Rounded corners for first and last th */
                     th:first-child {
                         border-radius: 5px 0 0 5px;
                     }
-        
+
                     th:last-child {
                         border-radius: 0 5px 5px 0;
                     }
                 }
-        
+
                 tbody {
                     tr {
-                        
+
                         background-color: #f8f8f8;
-        
+
                         &:nth-child(even) {
                             background-color: white;
                         }
-                        .expand-btn{
+
+                        .expand-btn {
                             padding: 2px;
-                            button{
+
+                            button {
                                 padding: 2px;
                                 background-color: #6399f9;
                                 color: white;
@@ -145,86 +193,164 @@
                                 cursor: pointer;
                             }
                         }
+
                         td {
                             font-size: 12px;
                             text-align: center;
-                            white-space: nowrap; 
+                            white-space: nowrap;
+
                             &:first-child {
                                 border-radius: 5px 0 0 5px;
                             }
-        
+
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
                             }
                         }
-                        
+
                     }
                 }
             }
-            
+
         }
     }
-    .error-message{
+
+    .error-message {
         color: rgb(240 28 28);
     }
-    .success-message{
+
+    .success-message {
         color: #4CAF50;
     }
 }
-    /* ====== Media Queries for Responsiveness ====== */
 
-    /* 🔹 Tablets (max-width: 1024px) */
-    @media (max-width: 1024px) {
-        .viewBeatMappingStatus-page-container {
-            padding: 15px;
+/* ====== Media Queries for Responsiveness ====== */
 
-            .viewBeatMappingStatus-calendar-container {
-                padding: 15px;
-            }
-
-            .viewBeatMappingStatus-calendar-body .viewBeatMappingStatus-calendar-days {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 5px;
-            }
-        }
-
-        .viewBeatMapping-table-container {
-            table {
-                min-width: 100%;
-            }
-        }
-    }
-
-    /* 🔹 Mobile (max-width: 768px) */
-    @media (max-width: 768px) {
-
-        .viewBeatMappingStatus-page-header {
-            font-size: 1.2rem;
-        }
-
-        .viewBeatMappingStatus-page-container {
-            padding: 10px;
-        }
-
-        .viewBeatMappingStatus-calendar-container {
-            padding: 10px;
-        }
-
-        .viewBeatMappingStatus-calendar-body .viewBeatMappingStatus-calendar-days {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-        }
+/* 🔹 Tablets (max-width: 1024px) */
+@media (max-width: 1024px) {
+    .viewBeatMappingStatus-page-container {
+        padding: 15px;
 
         .viewBeatMapping-first-line {
             flex-direction: column;
-            align-items: center;
-            .ViewAttendance-filter{
-                max-width: 4rem;
+            align-items: stretch;
+            gap: 18px;
+
+            .viewBeatMappingStatus-filter {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+
+                input,
+                select {
+                    width: 100%;
+                    min-width: 0;
+                }
+            }
+
+            .viewBeatMappingStatus-date-filter {
+                flex-direction: column;
+                gap: 10px;
+                margin-left: 0;
+
+                .date {
+                    width: 100%;
+
+                    input {
+                        width: 100%;
+                    }
+                }
+            }
+
+            .edit-security-key {
+                width: 100%;
+                justify-content: flex-start;
+
+                .edit-security-key-btn {
+                    width: 100%;
+                }
+            }
+
+            .viewBeatMapping-buttons {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+
+                .viewBeatMappingStatus-upload-btn,
+                .viewBeatMappingStatus-download-btn {
+                    width: 100%;
+                    min-width: 0;
+                    justify-content: center;
+                }
             }
         }
+    }
+}
 
-        .viewBeatMapping-buttons {
-            flex-direction: column;
-            gap: 8px;
+/* 🔹 Mobile (max-width: 768px) */
+@media (max-width: 768px) {
+
+    .viewBeatMappingStatus-page-header {
+        font-size: 1.2rem;
+    }
+
+    .viewBeatMappingStatus-page-container {
+        padding: 10px;
+    }
+
+    .viewBeatMappingStatus-calendar-container {
+        padding: 10px;
+    }
+
+    .viewBeatMappingStatus-calendar-body .viewBeatMappingStatus-calendar-days {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+
+    .viewBeatMapping-first-line {
+        flex-direction: column;
+        align-items: center;
+
+        .ViewAttendance-filter {
+            max-width: 4rem;
         }
     }
+
+    .viewBeatMapping-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .viewBeatMappingStatus-page-container {
+        padding: 8px;
+
+        .viewBeatMapping-first-line {
+            gap: 12px;
+
+            .viewBeatMappingStatus-filter,
+            .viewBeatMappingStatus-date-filter,
+            .edit-security-key,
+            .viewBeatMapping-buttons {
+                width: 100%;
+            }
+
+            .edit-security-key {
+                .edit-security-key-btn {
+                    font-size: 0.95rem;
+                    padding: 10px 0;
+                }
+            }
+
+            .viewBeatMapping-buttons {
+
+                .viewBeatMappingStatus-upload-btn,
+                .viewBeatMappingStatus-download-btn {
+                    font-size: 1rem;
+                    padding: 12px 0;
+                }
+            }
+        }
+    }
+}

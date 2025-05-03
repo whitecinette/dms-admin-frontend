@@ -1,0 +1,122 @@
+.custom-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+
+    &.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+
+        .alert-icon {
+            color: #28a745;
+        }
+    }
+
+    &.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+
+        .alert-icon {
+            color: #dc3545;
+        }
+    }
+
+    &.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+
+        .alert-icon {
+            color: #ffc107;
+        }
+    }
+
+    &.info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+
+        .alert-icon {
+            color: #17a2b8;
+        }
+    }
+
+    .alert-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .alert-message {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            svg {
+                font-size: 16px;
+            }
+        }
+    }
+
+    @media (max-width: 600px) {
+        top: 10px;
+        right: 10px;
+        min-width: 90vw;
+        max-width: 95vw;
+        border-radius: 6px;
+
+        .alert-content {
+            padding: 10px;
+        }
+
+        .alert-message {
+            font-size: 13px;
+        }
+
+        .mui-alert-icon {
+            font-size: 20px;
+        }
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

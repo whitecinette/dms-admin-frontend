@@ -192,7 +192,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       to: "/",
       icon: <MdLogout size={20} />,
       onClick: () => {
-        localStorage.removeItem("authToken");
+        localStorage.clear();
         window.location.href = "/login";
       },
     },

@@ -55,7 +55,7 @@ const LoginAdmin = () => {
 
         // Store token and authentication state in localStorage
         localStorage.setItem("authToken", response.data.token);
-        // localStorage.setItem('userRole', response.data.user.role);
+        localStorage.setItem('role', response.data.user.role);
         // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
 
         // Redirect to the dashboard

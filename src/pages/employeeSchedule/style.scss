@@ -152,4 +152,35 @@
             }
         }
     }
+    .security-key-popup{
+        .form-group{
+            input{
+                width: 90%;
+                border-radius: 10px;
+                border: 2px solid #808080;
+                color: #808080;
+                padding: 5px;
+            }
+        }
+        .popup-actions{
+            display: flex;
+            gap: 10px;
+            justify-content: end;
+            align-items: center;
+            .cancel-btn{
+                background-color: #6399f9;
+                color: white;
+                border: none;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .delete-btn{
+                background-color: red;
+                color: white;
+                border: none;
+                padding: 5px;
+                border-radius: 5px;
+            }
+        }
+    }
 }
