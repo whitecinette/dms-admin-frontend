@@ -8,8 +8,8 @@ const Page404 = () => {
       <p style={{ fontSize: '1.5rem' }}>
         Oops! The page you're looking for doesn't exist.
       </p>
-      <Link to="/login" style={{ fontSize: '1.25rem', color: 'blue' }}>
-        Go back to Login
+      <Link to="/" style={{ fontSize: '1.25rem', color: 'blue' }}>
+        Go back to Dashboard
       </Link>
     </div>
   );

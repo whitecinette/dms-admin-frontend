@@ -554,6 +554,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                                     "createdAt",
                                     "updatedAt",
                                     "__v",
+                                    "securityKey"
                                   ].includes(key)
                               ) // Exclude already visible columns
                               .map(([key, value]) =>

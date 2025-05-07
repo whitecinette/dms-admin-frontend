@@ -1,0 +1,251 @@
+.Admin-page {
+    // padding: 20px;
+
+    .Admin-page-header {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .Admin-page-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+
+        .Admin-page-first-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+
+            .Admin-page-filter {
+                display: flex;
+                gap: 15px;
+                align-items: center;
+
+                input {
+                    padding: 8px 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    width: 300px;
+
+                    &:focus {
+                        outline: none;
+                        border-color: #6399f9;
+                    }
+                }
+
+            }
+            .Admin-page-add-button {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background-color: #6399f9;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+
+                &:hover {
+                    background-color: #4a86f7;
+                }
+
+                svg {
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+
+    .error-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #ff4d4d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+    }
+
+    .add-admin-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+            .modal-content {
+                padding: 20px;
+
+                .modal-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+
+                    h3 {
+                        margin: 0;
+                        font-size: 20px;
+                        color: #333;
+                    }
+
+                    .close-btn {
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #666;
+                        padding: 0;
+                        line-height: 1;
+
+                        &:hover {
+                            color: #333;
+                        }
+                    }
+                }
+
+                .form-group {
+                    margin-bottom: 15px;
+
+                    label {
+                        display: block;
+                        margin-bottom: 5px;
+                        font-weight: 500;
+                        color: #555;
+                    }
+
+                    input {
+                        width: 90%;
+                        padding: 8px 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-size: 14px;
+
+                        &:focus {
+                            outline: none;
+                            border-color: #6399f9;
+                        }
+                    }
+                }
+
+                .modal-buttons {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    margin-top: 20px;
+
+                    button {
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        border: none;
+                        cursor: pointer;
+                        font-size: 14px;
+                        transition: background-color 0.3s;
+
+                        &.cancel-btn {
+                            background-color: #8a8eff;
+                            color: white;
+
+                            &:hover {
+                                background-color: #6399f9;
+                            }
+                        }
+
+                        &.submit-btn {
+                            background-color: #4CAF50;
+                            color: white;
+
+                            &:hover {
+                                background-color: #3e8e41;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* 📌 Responsive Styling */
+@media (max-width: 768px) {
+    .Admin-page-header {
+        font-size: 1.2rem;
+    }
+
+    .Admin-page-content {
+        padding: 15px;
+        border-radius: 8px;
+
+        .Admin-page-first-line {
+            // flex-direction: column;
+            align-items: start;
+        }
+
+        .Admin-page-filter {
+            flex-direction: column;
+            justify-content: end;
+            gap: 5px;
+
+            input {
+                width: 90%;
+            }
+
+            .Admin-page-Admin-count {
+                // justify-content: center;
+                gap: 5px;
+            }
+
+            .Admin-page-add-button {
+                align-self: center;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .Admin-page-header {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .Admin-page-content {
+        padding: 10px;
+
+        .Admin-page-filter {
+            // align-items: normal;
+            // flex-direction: column;
+            // align-items: center;
+
+            input {
+                width: 100%;
+            }
+
+            .Admin-page-Admin-count {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .Admin-page-add-button {
+                width: 100%;
+                max-width: 150px;
+            }
+        }
+    }
+}

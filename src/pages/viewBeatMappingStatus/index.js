@@ -12,23 +12,25 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useNavigate } from "react-router-dom";
+import { GiPathDistance } from "react-icons/gi";
 import CustomAlert from "../../components/CustomAlert/index.js";
 import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
 
 const backendUrl = config.backend_url;
 
 const ViewBeatMappingStatus = () => {
-  const navigation = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [success, setSuccess] = useState("");
-  const [search, setsearch] = useState("");
-  const [status, setstatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [showSecurityKeyPopup, setShowSecurityKeyPopup] = useState(false);
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [expandedRowData, setExpandedRowData] = useState([]);
+  const [expandedSearch, setExpandedSearch] = useState("");
 
   const [startDay, setStartDay] = useState(() => {
     const date = new Date();
@@ -84,6 +86,9 @@ const ViewBeatMappingStatus = () => {
   };
 
   useEffect(() => {
+    if (expandedRow) {
+      setExpandedRow(null);
+    }
     const shouldFetch = startDay && endDay;
     if (shouldFetch) {
       getbeatmapping();
@@ -103,6 +108,24 @@ const ViewBeatMappingStatus = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
     }
+  };
+
+  const handleExpandedSearch = (e) => {
+    setExpandedSearch(e.target.value);
+  };
+
+  const getFilteredSchedule = (schedule) => {
+    if (!expandedSearch) return schedule;
+    const searchTerm = expandedSearch.toLowerCase();
+    return schedule.filter(
+      (item) =>
+        item.code.toLowerCase().includes(searchTerm) ||
+        item.name.toLowerCase().includes(searchTerm) ||
+        item.district.toLowerCase().includes(searchTerm) ||
+        item.taluka.toLowerCase().includes(searchTerm) ||
+        item.zone.toLowerCase().includes(searchTerm) ||
+        item.position.toLowerCase().includes(searchTerm)
+    );
   };
 
   return (
@@ -143,47 +166,53 @@ const ViewBeatMappingStatus = () => {
       <div className="viewBeatMappingStatus-page-container">
         {/* Filter Section */}
         <div className="viewBeatMapping-first-line">
-          <div className="viewBeatMappingStatus-filter">
-            <input
-              type="text"
-              placeholder="Search Employee Code"
-              name="search"
-              value={search}
-              onChange={(e) => setsearch(e.target.value)}
-            />
-            <div className="viewBeatMappingStatus-date-filter">
-              <div className="date">
-                <label>From:</label>
-                <input
-                  type="date"
-                  name="startDay"
-                  value={startDay ? startDay.toISOString().split("T")[0] : ""}
-                  onChange={(e) => setStartDay(new Date(e.target.value))}
-                />
+          <div className="filters-container">
+            <div className="viewBeatMappingStatus-filter">
+              <input
+                type="text"
+                placeholder="Search Employee Code"
+                name="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="viewBeatMappingStatus-date-filter">
+                <div className="date">
+                  <label>From:</label>
+                  <input
+                    type="date"
+                    name="startDay"
+                    value={startDay ? startDay.toISOString().split("T")[0] : ""}
+                    onChange={(e) => setStartDay(new Date(e.target.value))}
+                  />
+                </div>
+                <div className="date">
+                  <label>To:</label>
+                  <input
+                    type="date"
+                    name="endDay"
+                    value={endDay ? endDay.toISOString().split("T")[0] : ""}
+                    onChange={(e) => setEndDay(new Date(e.target.value))}
+                  />
+                </div>
               </div>
-              <div className="date">
-                <label>To:</label>
-                <input
-                  type="date"
-                  name="endDay"
-                  value={endDay ? endDay.toISOString().split("T")[0] : ""}
-                  onChange={(e) => setEndDay(new Date(e.target.value))}
-                />
+            </div>
+            <div className="viewBeatMapping-status-filter">
+              <div className="viewBeatMapping-status-filter-item">
+                <label>Status</label>
+                <select
+                  name="status"
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="done">Done</option>
+                  <option value="pending">Pending</option>
+                </select>
               </div>
             </div>
           </div>
-          {/* Buttons */}
-          {localStorage.getItem("role") === "super_admin" && (
-            <div className="edit-security-key">
-              <button
-                className="edit-security-key-btn"
-                onClick={() => setShowSecurityKeyPopup(true)}
-              >
-                Edit Security Key
-              </button>
-            </div>
-          )}
-          <div className="viewBeatMapping-buttons">
+
+          {/* Buttons Section */}
+          <div className="buttons-container">
             <div
               className="viewBeatMappingStatus-upload-btn"
               onClick={addDailyBeatMapping}
@@ -202,6 +231,16 @@ const ViewBeatMappingStatus = () => {
                 Download CSV
               </div>
             </div>
+            {localStorage.getItem("role") === "super_admin" && (
+              <div className="edit-security-key">
+                <button
+                  className="edit-security-key-btn"
+                  onClick={() => setShowSecurityKeyPopup(true)}
+                >
+                  Edit Security Key
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -213,39 +252,158 @@ const ViewBeatMappingStatus = () => {
                 <th>S.NO</th>
                 <th>Employee Code</th>
                 <th>Employee Name</th>
-                <th>Done</th>
-                <th>Pending</th>
+                <th>Route</th>
                 <th>Total</th>
+                <th>Pending</th>
+                <th>Done</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
                 <th>View</th>
               </tr>
             </thead>
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: "center" }}>
+                  <td colSpan="11" style={{ textAlign: "center" }}>
                     No data available
                   </td>
                 </tr>
               ) : (
-                data.map((item, index) => (
-                  <>
-                    <tr key={item._id || index}>
+                data.map((item, index) => {
+                  const isExpanded = expandedRow === index;
+                  return [
+                    <tr key={item._id || `row-${index}`}>
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
-                      <td style={{ color: "green" }}>{item.done}</td>
-                      <td style={{ color: "#f0b862" }}>{item.pending}</td>
+                      <td>{item.routeName || "N/A"}</td>
                       <td style={{ color: "#6666f2" }}>{item.total}</td>
-                      <td className="expand-btn">
-                        <button
-                          onClick={() => navigation(`schedules/${item.code}`)}
+                      <td style={{ color: "#f0b862" }}>{item.pending}</td>
+                      <td style={{ color: "green" }}>{item.done}</td>
+                      <td>{item.startDate.split("T")[0]}</td>
+                      <td>{item.endDate.split("T")[0]}</td>
+                      <td style={{ color: item.routeStatus === "active" ? "green" : "red" }}>{item.routeStatus || "N/A"}</td>
+                      <td>
+                        <div
+                          className="expand-btn"
+                          onClick={() => {
+                            setExpandedRow(isExpanded ? null : index);
+                            setExpandedRowData(item.schedule || []);
+                            setExpandedSearch("");
+                          }}
                         >
-                          View Detail
-                        </button>
+                          Expand
+                        </div>
                       </td>
-                    </tr>
-                  </>
-                ))
+                    </tr>,
+                    isExpanded && (
+                      <tr
+                        key={`expanded-${index}`}
+                        className="expand-container-row"
+                      >
+                        <td colSpan="11" className="expand-container">
+                          <div className="expand-container-filter">
+                            <input
+                              type="text"
+                              placeholder="Search by code, name, district, taluka, zone or position"
+                              value={expandedSearch}
+                              onChange={handleExpandedSearch}
+                            />
+                          </div>
+                          <div className="expand-container-body">
+                            <div className="schedule-cards">
+                              {getFilteredSchedule(expandedRowData).map(
+                                (scheduleItem, sIndex) => {
+                                  const isDone = scheduleItem.status === "done";
+                                  const isPending =
+                                    scheduleItem.status === "pending";
+                                  return (
+                                    <div
+                                      key={
+                                        scheduleItem._id || `schedule-${sIndex}`
+                                      }
+                                      className={`schedule-card ${
+                                        isDone ? "done" : "pending"
+                                      }`}
+                                    >
+                                      <div className="card-top-row">
+                                        <span className="card-code">
+                                          {scheduleItem.code}
+                                        </span>
+                                        {scheduleItem.visitCount > 0 && (
+                                          <span className="visit-badge">
+                                            {scheduleItem.visitCount}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="card-name">
+                                        {scheduleItem.name}
+                                      </div>
+                                      <div className="card-tags">
+                                        {scheduleItem.zone && (
+                                          <span className="tag">
+                                            {scheduleItem.zone}
+                                          </span>
+                                        )}
+                                        {scheduleItem.district && (
+                                          <span className="tag">
+                                            {scheduleItem.district}
+                                          </span>
+                                        )}
+                                        {scheduleItem.taluka && (
+                                          <span className="tag">
+                                            {scheduleItem.taluka}
+                                          </span>
+                                        )}
+                                        {scheduleItem.position && (
+                                          <span className="tag">
+                                            {scheduleItem.position}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="card-bottom-row">
+                                        {scheduleItem.distance ? (
+                                          <span className="distance-icon">
+                                            <GiPathDistance size={24} />
+                                            {scheduleItem.distance.slice(
+                                              0,
+                                              4
+                                            )}{" "}
+                                            Km
+                                          </span>
+                                        ) : (
+                                          <span className="distance-icon">
+                                            <GiPathDistance size={24} />
+                                            N/A
+                                          </span>
+                                        )}
+                                        <div className="card-status-row">
+                                          {isDone ? (
+                                            <span className="status-pill done">
+                                              Done
+                                              <span className="checkmark">
+                                                ✔
+                                              </span>
+                                            </span>
+                                          ) : (
+                                            <span className="status-pill pending">
+                                              Pending
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  ];
+                })
               )}
             </tbody>
           </table>

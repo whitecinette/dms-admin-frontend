@@ -23,6 +23,7 @@ import "./style.scss";
 
 function Sidebar({ isCollapsed, open, toggleSidebar }) {
   const [openDropdowns, setOpenDropdowns] = useState({});
+  const role = localStorage.getItem("role");
 
   const toggleDropdown = (index) => {
     setOpenDropdowns((prev) => ({
@@ -41,11 +42,29 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     {
       name: "Sales Dashboard",
       to: "/salesDashboard",
-      icon: <svg width="20" height="20" viewBox="0 0 53 62" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M26.2083 2.90045L49.9167 16.8465V44.8201L26.2083 58.7662L2.5 44.8201V16.8465L26.2083 2.90045Z" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
-      <path d="M26.2083 27.75V40.0834M38.5417 21.5834V40.0834M13.875 33.9167V40.0834" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      ,
+      icon: (
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 53 62"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M26.2083 2.90045L49.9167 16.8465V44.8201L26.2083 58.7662L2.5 44.8201V16.8465L26.2083 2.90045Z"
+            stroke="currentColor"
+            stroke-width="5"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M26.2083 27.75V40.0834M38.5417 21.5834V40.0834M13.875 33.9167V40.0834"
+            stroke="currentColor"
+            stroke-width="5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      ),
     },
     { name: "Extraction", to: "/extraction", icon: <LuPickaxe size={20} /> },
     { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
@@ -107,7 +126,9 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Dealer", to: "/dealer" },
         { name: "Employee", to: "/employee" },
         { name: "MDD", to: "/mdd" },
+        ...(role === "super_admin" ? [{ name: "Admin", to: "/admin" }] : []),
       ],
+      onClick: () => open(),
     },
     {
       name: "Inventory",
