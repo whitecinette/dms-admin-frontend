@@ -209,7 +209,9 @@ const ViewBeatMappingStatus = () => {
                 <label>Status</label>
                 <select
                   name="status"
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => {setStatus(e.target.value)
+                    setExpandedRow(null)
+                  }}
                 >
                   <option value="">All</option>
                   <option value="done">Done</option>
