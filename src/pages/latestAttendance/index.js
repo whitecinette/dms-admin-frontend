@@ -25,7 +25,9 @@ export default function LatestAttendance() {
   const [editData, setEditData] = useState({});
   const [date, setdate] = useState("");
   const [expand, setExpand] = useState("");
-  const [address, setAddresses] = useState("");
+  const [punchInAddress, setPunchInAddress] = useState({});
+  const [punchOutAddress, setPunchOutAddress] = useState({});
+  const [loadingAddresses, setLoadingAddresses] = useState({});
   const [status, setStatus] = useState("");
   const [count, setCount] = useState({});
   const [firmList, setFirmList] = useState([]);
@@ -104,14 +106,25 @@ export default function LatestAttendance() {
   };
 
   const fetchAddress = async (lat, lon) => {
+    if (!lat || !lon) return "N/A";
     try {
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-      );
+      // Convert MongoDB decimal to string if needed
+      const latitude =
+        typeof lat === "object" && lat.$numberDecimal
+          ? lat.$numberDecimal
+          : lat;
+      const longitude =
+        typeof lon === "object" && lon.$numberDecimal
+          ? lon.$numberDecimal
+          : lon;
 
-      setAddresses(response.data.display_name);
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      return response.data.display_name;
     } catch (error) {
       console.error("Error fetching address:", error);
+      return "N/A";
     }
   };
 
@@ -236,6 +249,27 @@ export default function LatestAttendance() {
     setDropdownSearch("");
     getAttendance();
     getAttendanceCount();
+  };
+
+  const handleExpand = async (record) => {
+    const newExpandState = expand === record._id ? null : record._id;
+    setExpand(newExpandState);
+
+    if (newExpandState) {
+      setLoadingAddresses((prev) => ({ ...prev, [record._id]: true }));
+      try {
+        const [inAddress, outAddress] = await Promise.all([
+          fetchAddress(record.punchInLatitude, record.punchInLongitude),
+          fetchAddress(record.punchOutLatitude, record.punchOutLongitude),
+        ]);
+        setPunchInAddress((prev) => ({ ...prev, [record._id]: inAddress }));
+        setPunchOutAddress((prev) => ({ ...prev, [record._id]: outAddress }));
+      } catch (error) {
+        console.error("Error fetching addresses:", error);
+      } finally {
+        setLoadingAddresses((prev) => ({ ...prev, [record._id]: false }));
+      }
+    }
   };
 
   useEffect(() => {
@@ -579,14 +613,7 @@ export default function LatestAttendance() {
                       <td>{record.hoursWorked || "N/A"}</td>
 
                       <td className="expand-btn">
-                        <button
-                          onClick={() => {
-                            setExpand(
-                              expand === record._id ? null : record._id
-                            );
-                            fetchAddress(record.latitude, record.longitude);
-                          }}
-                        >
+                        <button onClick={() => handleExpand(record)}>
                           {expand === record._id ? (
                             <>
                               Collapse <FaChevronUp />
@@ -639,28 +666,45 @@ export default function LatestAttendance() {
                           <table className="expanded-table">
                             <thead>
                               <tr>
-                                <th>Address</th>
+                                <th>Punch In Address</th>
                                 <th>Map</th>
                                 <th>Punch In Image</th>
+                                <th>Punch Out Address</th>
+                                <th>Map</th>
                                 <th>Punch Out Image</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr>
                                 <td className="inner-table-address">
-                                  {address}
+                                  {loadingAddresses[record._id]
+                                    ? "Loading..."
+                                    : punchInAddress[record._id] || "N/A"}
                                 </td>
                                 <td className="inner-table-map">
-                                {record.latitude && record.longitude ? (
-                                  <iframe
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    src={`https://maps.google.com/maps?q=${record.latitude},${record.longitude}&z=16&output=embed`}
-                                    title="Google Map"
-                                  ></iframe>
-                                ) : (
-                                  "N/A"
-                                )}
+                                  {record.punchInLatitude &&
+                                  record.punchInLongitude ? (
+                                    <iframe
+                                      loading="lazy"
+                                      referrerPolicy="no-referrer-when-downgrade"
+                                      src={`https://maps.google.com/maps?q=${
+                                        typeof record.punchInLatitude ===
+                                        "object"
+                                          ? record.punchInLatitude
+                                              .$numberDecimal
+                                          : record.punchInLatitude
+                                      },${
+                                        typeof record.punchInLongitude ===
+                                        "object"
+                                          ? record.punchInLongitude
+                                              .$numberDecimal
+                                          : record.punchInLongitude
+                                      }&z=16&output=embed`}
+                                      title="Google Map"
+                                    ></iframe>
+                                  ) : (
+                                    "N/A"
+                                  )}
                                 </td>
                                 <td>
                                   {record.punchInImage ? (
@@ -668,6 +712,36 @@ export default function LatestAttendance() {
                                       src={record.punchInImage}
                                       alt="Punch In"
                                     />
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </td>
+                                <td className="inner-table-address">
+                                  {loadingAddresses[record._id]
+                                    ? "Loading..."
+                                    : punchOutAddress[record._id] || "N/A"}
+                                </td>
+                                <td className="inner-table-map">
+                                  {record.punchOutLatitude &&
+                                  record.punchOutLongitude ? (
+                                    <iframe
+                                      loading="lazy"
+                                      referrerPolicy="no-referrer-when-downgrade"
+                                      src={`https://maps.google.com/maps?q=${
+                                        typeof record.punchOutLatitude ===
+                                        "object"
+                                          ? record.punchOutLatitude
+                                              .$numberDecimal
+                                          : record.punchOutLatitude
+                                      },${
+                                        typeof record.punchOutLongitude ===
+                                        "object"
+                                          ? record.punchOutLongitude
+                                              .$numberDecimal
+                                          : record.punchOutLongitude
+                                      }&z=16&output=embed`}
+                                      title="Google Map"
+                                    ></iframe>
                                   ) : (
                                     "N/A"
                                   )}

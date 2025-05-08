@@ -34,11 +34,19 @@ const ViewBeatMappingStatus = () => {
 
   const [startDay, setStartDay] = useState(() => {
     const date = new Date();
-    date.setDate(date.getDate() - 1);
-    return date;
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const monday = new Date(date.setDate(diff));
+    return monday;
   });
 
-  const [endDay, setEndDay] = useState(new Date());
+  const [endDay, setEndDay] = useState(() => {
+    const date = new Date();
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? 0 : 7); // adjust when day is sunday
+    const sunday = new Date(date.setDate(diff));
+    return sunday;
+  });
 
   const getbeatmapping = async () => {
     if (!startDay || !endDay) {
@@ -280,10 +288,17 @@ const ViewBeatMappingStatus = () => {
                       <td>{item.routeName || "N/A"}</td>
                       <td style={{ color: "#6666f2" }}>{item.total}</td>
                       <td style={{ color: "#f0b862" }}>{item.pending}</td>
-                      <td style={{ color: "green" }}>{item.done}</td>
+                      <td style={{ color: "#00c853" }}>{item.done}</td>
                       <td>{item.startDate.split("T")[0]}</td>
                       <td>{item.endDate.split("T")[0]}</td>
-                      <td style={{ color: item.routeStatus === "active" ? "green" : "red" }}>{item.routeStatus || "N/A"}</td>
+                      <td
+                        style={{
+                          color:
+                            item.routeStatus === "active" ? "green" : "red",
+                        }}
+                      >
+                        {item.routeStatus || "N/A"}
+                      </td>
                       <td>
                         <div
                           className="expand-btn"
