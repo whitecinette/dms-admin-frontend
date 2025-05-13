@@ -24,7 +24,7 @@ function Employees() {
           sort: String(sort),
           order: order,
           search: search,
-          role: "employee",
+          role: ["employee", 'hr'],
         },
         headers: {
           Authorization: localStorage.getItem("authToken"),

@@ -19,7 +19,7 @@ const Attendance = () => {
   const [latestAttendance, setLatestAttendance] = useState({});
   const [firmList, setFirmList] = useState([]);
   const [firm, setFirm] = useState({});
-  const [ sliderValue, setSliderValue] = useState("employee"); 
+  const [sliderValue, setSliderValue] = useState("employee");
   const limit = 50;
 
   const getAllActorTypes = async () => {
@@ -51,13 +51,12 @@ const Attendance = () => {
     const apiUrl = `${backendUrl}/get-attendance-by-date/${selectedDate},`;
 
     try {
-      const response = await axios.get(apiUrl,{
+      const response = await axios.get(apiUrl, {
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
       });
-      console.log(response)
-
+      console.log(response);
 
       if (response.data.attendanceCount !== null) {
         setCounts(response.data.attendanceCount);
@@ -99,7 +98,7 @@ const Attendance = () => {
           limit,
           search,
           firm,
-          role: sliderValue
+          role: sliderValue,
         },
       });
       setEmployee(res.data.data || []);
@@ -121,12 +120,16 @@ const Attendance = () => {
       getLatestAttendance();
     }, 60000);
   }, []);
-  useEffect(()=>{
-    console.log(counts)
-  })
+  useEffect(() => {
+    console.log(counts);
+  });
 
   const chartData = [
-    { name: "Present", value: (counts.present || 0) + (counts.pending || 0), color: "#2ecc71" }, // Bright Green
+    {
+      name: "Present",
+      value: (counts.present || 0) + (counts.pending || 0),
+      color: "#2ecc71",
+    }, // Bright Green
     { name: "Absent", value: counts.absent, color: "#e74c3c" }, // Vibrant Red
     { name: "Leave", value: counts.leave, color: "#f39c12" }, // Warm Orange
     { name: "Half Day", value: counts.halfDay, color: "#3498db" }, // Bright Blue
@@ -164,7 +167,7 @@ const Attendance = () => {
               Attendance Overview
             </div>
 
-            {counts  ? (
+            {counts ? (
               <>
                 <div className="attendance-page-chart-date">{dateToFetch}</div>
                 <div className="attendance-page-donutChart">
@@ -226,24 +229,24 @@ const Attendance = () => {
         </div>
 
         <div className="attendance-table-container">
-        <div className="slider-container">
-          <div
-            className={`slider-button ${
-              sliderValue === "employee" ? "active" : ""
-            }`}
-            onClick={() => setSliderValue("employee")}
-          >
-            Employee
+          <div className="slider-container">
+            <div
+              className={`slider-button ${
+                sliderValue === "employee" ? "active" : ""
+              }`}
+              onClick={() => setSliderValue("employee")}
+            >
+              Employee
+            </div>
+            <div
+              className={`slider-button ${
+                sliderValue === "admin" ? "active" : ""
+              }`}
+              onClick={() => setSliderValue("admin")}
+            >
+              Admin
+            </div>
           </div>
-          <div
-            className={`slider-button ${
-              sliderValue === "admin" ? "active" : ""
-            }`}
-            onClick={() => setSliderValue("admin")}
-          >
-            Admin
-          </div>
-        </div>
           <div className="attendance-table-filter">
             <div className="search-filter">
               <input

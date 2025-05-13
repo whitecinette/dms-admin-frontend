@@ -1,88 +1,93 @@
-.attendance-page{
-    .attendance-header{
+.attendance-page {
+    .attendance-header {
         font-size: 1.5rem;
         font-weight: 900;
     }
-    .attendance-page-container{
+
+    .attendance-page-container {
         // background-color: #fff;
         // padding: 20px;
         // border-radius: 10px;
-       
+
         .attendance-page-firstLine {
-         display: flex;
-         width: 100%;
-         gap: 20px; /* Adds spacing between chart and table */
-     
-         .attendance-page-chart {
-             width: 50%;
-             background-color: #fff;
-             padding: 20px;
-             border-radius: 10px;
-             .attendance-page-chart-header{
-                font-size: 1rem;
-                 font-weight: 900;
-                 margin-bottom: 10px;
-             }
-         }
-     
-         .attendance-recent-activities {
-             width: 50%;
-             background-color: #fff;
-             padding: 20px;
-             border-radius: 10px;
-     
-             .recent-activities-header {
-                 font-size: 1rem;
-                 font-weight: 900;
-                 margin-bottom: 10px;
-             }
-             .recent-activities-first-line{
-                display: flex;
-                justify-content: space-between;
-                font-size: .9rem;
-             }
-     
-             .recent-activities-content {
-                 max-height: 300px; 
-                 overflow-y: auto;
-     
-                 table {
-                     width: 100%;
-                     border-collapse: collapse;
-     
-                     thead {
-                         background-color: #6399f9;
-                         color: #fff;
-     
-                         th {
-                             padding: 8px;
-                             text-align: center;
-                         }
-                     }
-     
-                     tbody {
-                         tr {
-                             &:nth-child(even) {
-                                 background-color: #f8f8f8;
-                             }
-     
-                             td {
-                                 padding: 8px;
-                                 text-align: center;
-                                 font-size: 12px;
-                             }
-                         }
-                     }
-                 }
-             }
-         }
-     }
-     
-        .attendance-table-container{
+            display: flex;
+            width: 100%;
+            gap: 20px;
+            /* Adds spacing between chart and table */
+
+            .attendance-page-chart {
+                width: 50%;
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+
+                .attendance-page-chart-header {
+                    font-size: 1rem;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                }
+            }
+
+            .attendance-recent-activities {
+                width: 50%;
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+
+                .recent-activities-header {
+                    font-size: 1rem;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                }
+
+                .recent-activities-first-line {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: .9rem;
+                }
+
+                .recent-activities-content {
+                    max-height: 300px;
+                    overflow-y: auto;
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+
+                        thead {
+                            background-color: #6399f9;
+                            color: #fff;
+
+                            th {
+                                padding: 8px;
+                                text-align: center;
+                            }
+                        }
+
+                        tbody {
+                            tr {
+                                &:nth-child(even) {
+                                    background-color: #f8f8f8;
+                                }
+
+                                td {
+                                    padding: 8px;
+                                    text-align: center;
+                                    font-size: 12px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .attendance-table-container {
             margin-top: 10px;
             background-color: #fff;
             padding: 20px;
             border-radius: 10px;
+
             .slider-container {
                 display: flex;
                 justify-content: end;
@@ -92,7 +97,7 @@
                 border-radius: 8px;
                 margin: 10px;
                 height: 30px;
-    
+
                 .slider-button {
                     padding: 10px 15px;
                     cursor: pointer;
@@ -101,14 +106,14 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
-    
+
                     /* Hover effect */
                     &:hover {
                         background-color: #e0e0e0;
                         transform: scale(1.05);
                         /* Slightly enlarge the button on hover */
                     }
-    
+
                     /* Active state */
                     &.active {
                         background-color: #005bfe;
@@ -118,13 +123,15 @@
                         /* Slight enlargement for active button */
                     }
                 }
-    
+
             }
-            .attendance-table-filter{
+
+            .attendance-table-filter {
                 display: flex;
                 justify-content: space-between;
-                .search-filter{
-                    input{
+
+                .search-filter {
+                    input {
                         border-radius: 10px;
                         border: 2px solid #808080;
                         color: #808080;
@@ -132,67 +139,73 @@
                         font-size: 12px;
                     }
                 }
-                .firm-filter{
+
+                .firm-filter {
                     display: flex;
                     gap: 5px;
                     align-items: center;
-                    select{
+
+                    select {
                         width: 100%;
                         border-radius: 10px;
                         border: 2px solid #808080;
                         color: #808080;
-                        padding:5px 0px;
+                        padding: 5px 0px;
                         font-size: 12px;
                     }
                 }
             }
-            .table-scroll{
+
+            .table-scroll {
                 margin-top: 5px;
                 width: 100%;
                 overflow-x: auto;
                 max-height: 60vh;
                 scrollbar-width: thin;
+
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    min-width: 700px; 
-                    
+                    min-width: 700px;
+
                     thead {
                         position: sticky;
                         top: 0;
                         background-color: #6399f9;
                         color: white;
-                        
-                        th {               
+
+                        th {
                             padding: 0 5px;
                             white-space: nowrap;
                             text-align: center;
                             // padding: 12px;
                         }
-                        
-            
+
+
                         /* Rounded corners for first and last th */
                         th:first-child {
                             border-radius: 5px 0 0 5px;
                         }
-            
+
                         th:last-child {
                             border-radius: 0 5px 5px 0;
                         }
                     }
-                    
-            
+
+
                     tbody {
                         tr {
-                            
+
                             background-color: #f8f8f8;
-            
+
                             &:nth-child(even) {
                                 background-color: white;
                             }
-                            .view-button{
+
+                            .view-button {
                                 padding: 2px;
-                                button{
+
+                                button {
                                     padding: 2px;
                                     background-color: #6399f9;
                                     color: white;
@@ -202,23 +215,23 @@
                                     cursor: pointer;
                                 }
                             }
-                            
-                            
+
+
                             td {
                                 font-size: 12px;
                                 text-align: center;
-                                white-space: nowrap; 
-                                
-                                
+                                white-space: nowrap;
+
+
                                 /* Rounded corners */
                                 &:first-child {
                                     border-radius: 5px 0 0 5px;
                                 }
-            
+
                                 &:last-child {
                                     border-radius: 0 5px 5px 0;
                                 }
-                                
+
                             }
                         }
                     }
@@ -226,6 +239,7 @@
             }
         }
     }
+
     .pagination {
         display: flex;
         justify-content: end;
@@ -236,47 +250,50 @@
         gap: 10px;
         flex-wrap: wrap;
         margin-bottom: 50px;
-     
+
         .page-btn,
         .prev-block-btn,
         .next-block-btn {
-          border: 1px solid #ddd;
-          background-color: white;
-          cursor: pointer;
-          border-radius: 5px;
-          transition: background-color 0.3s;
-     
-          &:disabled {
-            background-color: #f4f4f4;
-            color: #999;
-            cursor: not-allowed;
-          }
+            border: 1px solid #ddd;
+            background-color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+
+            &:disabled {
+                background-color: #f4f4f4;
+                color: #999;
+                cursor: not-allowed;
+            }
         }
-      }
+    }
 }
+
 //responsive
-@media (max-width: 768px) { 
+@media (max-width: 768px) {
     .attendance-page {
         .attendance-page-firstLine {
             flex-wrap: wrap;
-            .attendance-page-chart{
+
+            .attendance-page-chart {
                 width: 100% !important;
                 // .attendance-page-donutChart{
                 //     height: 100rem;
                 // } 
             }
-            .attendance-recent-activities{
+
+            .attendance-recent-activities {
                 width: 100% !important;
             }
         }
-        
+
     }
 }
 
 @media (max-width:425px) {
-    .attendance-page{
+    .attendance-page {
 
-        .attendance-table-filter{
+        .attendance-table-filter {
             flex-wrap: wrap;
             gap: 10px;
         }

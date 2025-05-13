@@ -22,6 +22,7 @@ import Hierarchy from "./pages/hierarchy";
 import AlphaMessages from "./pages/alphaMessages";
 import EmployeesSchedules from "./pages/employeeSchedule";
 import AdminPage from "./pages/admin";  
+import GeoTagging  from "./pages/GeoTagging";
 function App() {
   const token = localStorage.getItem("authToken");
 
@@ -83,6 +84,7 @@ function App() {
             <Route path="/alphaMessages" element={<AlphaMessages/>} />
             <Route path="/viewBeatMappingStatus/schedules/:code" element={<EmployeesSchedules/>} />
             <Route path="/admin" element={<AdminPage/>} />
+            <Route path="/geoTagging" element={<GeoTagging/>} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

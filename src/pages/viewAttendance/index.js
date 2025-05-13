@@ -83,6 +83,7 @@ export default function ViewAttendance() {
                 <th>Shop Name</th>
                 <th>Status</th>
                 <th>Hours Worked</th>
+                <th>Remarks</th>
                 {/* <th>Action</th> */}
               </tr>
             </thead>
@@ -125,6 +126,7 @@ export default function ViewAttendance() {
                     <td>{record.punchOutName || "N/A "}</td>
                     <td>{record.status}</td>
                     <td>{record.hoursWorked || "N/A"}</td>
+                    <td>{record.remark || "N/A"}</td>
                     {/* <td>
                       <FaEdit
                         color="#005bfe"

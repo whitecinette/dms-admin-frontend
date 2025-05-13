@@ -6,6 +6,7 @@ import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import { FaDownload, FaFileUpload } from "react-icons/fa";
 import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import CustomAlert from "../../components/CustomAlert";
 
 const backendUrl = config.backend_url;
 
@@ -19,6 +20,60 @@ function Hierarchy() {
   const [editData, setEditData] = useState({});
   const [deleteId, setDeleteId] = useState(null);
   const limit = 50;
+  const [alert, setAlert] = useState(null);
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if file is CSV
+    if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+      setAlert({
+        type: "error",
+        message: "Please upload a CSV file",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("hierarchy_name", firm);
+
+    try {
+      const response = await axios.post(
+        `${backendUrl}/update-hierarchy-entries`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setAlert({
+          type: "success",
+          message: "File uploaded successfully",
+        });
+        getHierarchy(); // Refresh the hierarchy data
+      } else {
+        setAlert({
+          type: "error",
+          message: response.data.message || "Failed to upload file",
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setAlert({
+        type: "error",
+        message: error.response?.data?.message || "Failed to upload file",
+      });
+    }
+
+    // Reset file input
+    event.target.value = "";
+  };
 
   const getAllActorTypes = async () => {
     try {
@@ -115,6 +170,13 @@ function Hierarchy() {
 
   return (
     <div className="hierarchy-page">
+      {alert && (
+        <CustomAlert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <div className="hierarchy-page-header">Hierarchy</div>
       <div className="hierarchy-page-container">
         <div className="hierarchy-page-first-line">
@@ -146,7 +208,7 @@ function Hierarchy() {
                 type="file"
                 id="file-upload"
                 hidden
-                // onChange={handleFileChange}
+                onChange={handleFileChange}
               />
             </div>
             <div

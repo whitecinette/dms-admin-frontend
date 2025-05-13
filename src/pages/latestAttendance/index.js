@@ -12,8 +12,122 @@ import {
 } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { Link } from "react-router-dom";
+import CustomAlert from "../../components/CustomAlert";
 
 const backendUrl = config.backend_url;
+
+const AddAttendancePopup = ({
+  showAddAttendance,
+  setShowAddAttendance,
+  newAttendance,
+  setNewAttendance,
+  handleAddAttendance,
+}) => {
+  if (!showAddAttendance) return null;
+
+  return (
+    <div
+      className="add-attendance-modal"
+      onClick={() => setShowAddAttendance(false)}
+    >
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Add Attendance</h2>
+          <button
+            className="close-btn"
+            onClick={() => setShowAddAttendance(false)}
+          >
+            <FaTimes />
+          </button>
+        </div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label>Employee Code</label>
+            <input
+              type="text"
+              value={newAttendance.code}
+              onChange={(e) =>
+                setNewAttendance({ ...newAttendance, code: e.target.value })
+              }
+              placeholder="Enter employee code"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={newAttendance.date}
+              onChange={(e) =>
+                setNewAttendance({ ...newAttendance, date: e.target.value })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label>Punch In Time</label>
+            <input
+              type="time"
+              value={newAttendance.punchIn}
+              onChange={(e) =>
+                setNewAttendance({
+                  ...newAttendance,
+                  punchIn: e.target.value,
+                })
+              }
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Punch Out Time</label>
+            <input
+              type="time"
+              value={newAttendance.punchOut}
+              onChange={(e) =>
+                setNewAttendance({
+                  ...newAttendance,
+                  punchOut: e.target.value,
+                })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={newAttendance.status}
+              onChange={(e) =>
+                setNewAttendance({ ...newAttendance, status: e.target.value })
+              }
+            >
+              <option value="Present">Present</option>
+              <option value="Half Day">Half Day</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Remark</label>
+            <textarea
+              value={newAttendance.remark}
+              onChange={(e) =>
+                setNewAttendance({ ...newAttendance, remark: e.target.value })
+              }
+              placeholder="Enter any remarks"
+            />
+          </div>
+          <div className="modal-footer">
+            <button
+              className="cancel-btn"
+              onClick={() => setShowAddAttendance(false)}
+            >
+              Cancel
+            </button>
+            <button className="submit-btn" onClick={handleAddAttendance}>
+              Add Attendance
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LatestAttendance() {
   const [deleteId, setDeleteId] = useState(null);
@@ -35,8 +149,26 @@ export default function LatestAttendance() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState("");
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+  const [showAddAttendance, setShowAddAttendance] = useState(false);
+  const [newAttendance, setNewAttendance] = useState({
+    code: "",
+    date: new Date().toISOString().split("T")[0],
+    punchIn: "",
+    punchOut: "",
+    status: "Present",
+    latitude: null,
+    longitude: null,
+    remark: "",
+    punchOutLatitude: null,
+    punchOutLongitude: null,
+  });
   const dropdownRef = useRef(null);
   const limit = 100;
+  const [alert, setAlert] = useState({
+    show: false,
+    message: "",
+    type: "info",
+  });
 
   const getAllActorTypes = async () => {
     try {
@@ -161,9 +293,10 @@ export default function LatestAttendance() {
 
       // Cleanup Blob URL
       window.URL.revokeObjectURL(url);
+      showAlert("Attendance data downloaded successfully!", "success");
     } catch (error) {
       console.error("Download failed:", error);
-      alert("Error downloading the file. Please try again.");
+      showAlert("Error downloading the file. Please try again.", "error");
     }
   };
 
@@ -181,8 +314,10 @@ export default function LatestAttendance() {
 
       setDeleteId(null); // Reset deleteId after successful deletion
       getAttendance(); // Refresh data
+      showAlert("Attendance deleted successfully!", "success");
     } catch (error) {
       console.error("Error deleting attendance record:", error);
+      showAlert("Error deleting attendance record", "error");
     }
   };
 
@@ -195,8 +330,14 @@ export default function LatestAttendance() {
         },
       });
       getAttendance();
+      showAlert("Attendance updated successfully!", "success");
     } catch (error) {
       console.log(error);
+      showAlert(
+        error.response?.data.message ||
+          "Error adding attendance. Please try again.",
+        "error"
+      );
     }
   };
   //Handle edit
@@ -272,6 +413,78 @@ export default function LatestAttendance() {
     }
   };
 
+  const handleAddAttendance = async () => {
+    if (!newAttendance.code || !newAttendance.remark) {
+      showAlert("Please fill in Code and Remark fields", "error");
+      return;
+    }
+
+    try {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const updatedAttendance = {
+              ...newAttendance,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              punchOutLatitude: newAttendance.punchOut
+                ? position.coords.latitude
+                : null,
+              punchOutLongitude: newAttendance.punchOut
+                ? position.coords.longitude
+                : null,
+            };
+
+            try {
+              await axios.post(
+                `${backendUrl}/add-attendance-by-admin`,
+                updatedAttendance,
+                {
+                  headers: {
+                    Authorization: localStorage.getItem("authToken"),
+                  },
+                }
+              );
+
+              setShowAddAttendance(false);
+              setNewAttendance({
+                code: "",
+                date: new Date().toISOString().split("T")[0],
+                punchIn: "",
+                punchOut: "",
+                status: "Present",
+                latitude: null,
+                longitude: null,
+                remark: "",
+                punchOutLatitude: null,
+                punchOutLongitude: null,
+              });
+              getAttendance();
+              getAttendanceCount();
+              showAlert("Attendance added successfully!", "success");
+            } catch (error) {
+              console.error("Error adding attendance:", error.response?.data);
+              showAlert(
+                error.response?.data.message ||
+                  "Error adding attendance. Please try again.",
+                "error"
+              );
+            }
+          }
+        );
+      } else {
+        showAlert("Geolocation is not supported by your browser", "error");
+      }
+    } catch (error) {
+      console.error("Error in handleAddAttendance:", error.response?.data);
+      showAlert(
+        error.response?.data.message ||
+          "Error adding attendance. Please try again.",
+        "error"
+      );
+    }
+  };
+
   useEffect(() => {
     getAllActorTypes();
     getAttendance();
@@ -286,8 +499,23 @@ export default function LatestAttendance() {
     // console.log(count);
   }, [count]);
 
+  const showAlert = (message, type = "info") => {
+    setAlert({ show: true, message, type });
+  };
+
+  const hideAlert = () => {
+    setAlert({ show: false, message: "", type: "info" });
+  };
+
   return (
     <div className="latestAttendance-page">
+      {alert.show && (
+        <CustomAlert
+          message={alert.message}
+          type={alert.type}
+          onClose={hideAlert}
+        />
+      )}
       <div className="latestAttendance-page-header">
         <Link to="/attendance">Attendance</Link> &#47;
         <span>All Attendance</span>
@@ -459,6 +687,12 @@ export default function LatestAttendance() {
             >
               <FaDownload />
               Download All Attendance
+            </button>
+            <button
+              className="add-attendance-button"
+              onClick={() => setShowAddAttendance(true)}
+            >
+              Add Attendance
             </button>
           </div>
         </div>
@@ -816,6 +1050,15 @@ export default function LatestAttendance() {
             </div>
           </div>
         </div>
+      )}
+      {showAddAttendance && (
+        <AddAttendancePopup
+          showAddAttendance={showAddAttendance}
+          setShowAddAttendance={setShowAddAttendance}
+          newAttendance={newAttendance}
+          setNewAttendance={setNewAttendance}
+          handleAddAttendance={handleAddAttendance}
+        />
       )}
     </div>
   );

@@ -17,7 +17,7 @@ import {
 import { RxHamburgerMenu } from "react-icons/rx";
 import { BsCloudUpload } from "react-icons/bs";
 import { TbTargetArrow, TbHierarchy3 } from "react-icons/tb";
-import { RiTimeLine } from "react-icons/ri";
+import { RiTimeLine, RiPinDistanceFill } from "react-icons/ri";
 import logo from "../../assets/images/company-logo.png";
 import "./style.scss";
 
@@ -150,6 +150,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       name: "Employee Time Line",
       to: "/segment",
       icon: <RiTimeLine size={20} />,
+    },
+    {
+      name: "Geo Tagging",
+      to: "/geoTagging",
+      icon: <RiPinDistanceFill size={20} />,
     },
     {
       name: "Configuration",

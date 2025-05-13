@@ -1,33 +1,42 @@
-.hierarchy-page{
-    .hierarchy-page-header{
+.hierarchy-page {
+    padding: 10px;
+
+    .hierarchy-page-header {
         font-size: 1.5rem;
         font-weight: 900;
     }
-    .hierarchy-page-container{
+
+    .hierarchy-page-container {
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
-        .hierarchy-page-first-line{
+
+        .hierarchy-page-first-line {
             display: flex;
             justify-content: space-between;
-            .hierarchy-page-filter{
-                .firm-filter{
+
+            .hierarchy-page-filter {
+                .firm-filter {
                     color: #808080;
-                    select{
+
+                    select {
                         width: 100%;
                         border-radius: 10px;
                         border: 2px solid #808080;
                         color: #808080;
-                        padding:5px 15px;
+                        padding: 5px 15px;
                         font-size: 12px;
                     }
                 }
             }
-            .hierarchy-page-buttons{
+
+            .hierarchy-page-buttons {
                 display: flex;
                 gap: 5px;
                 margin-top: 1rem;
-                .hierarchy-upload-btn, .hierarchy-download-btn{
+
+                .hierarchy-upload-btn,
+                .hierarchy-download-btn {
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -36,81 +45,88 @@
                     border-radius: 10px;
                     font-size: 15px;
                     cursor: pointer;
-                    &:hover{
+
+                    &:hover {
                         opacity: .9;
                     }
                 }
-                .hierarchy-upload-btn{
+
+                .hierarchy-upload-btn {
                     background-color: #6666f2;
-                    .browse-btn{
+
+                    .browse-btn {
                         cursor: pointer;
                     }
                 }
-                .hierarchy-download-btn{
+
+                .hierarchy-download-btn {
                     background-color: #ffcd00;
                     color: black;
                 }
-                
+
             }
         }
-        .hierarchy-page-table-container{
+
+        .hierarchy-page-table-container {
             margin-top: 5px;
             width: 100%;
             overflow-x: auto;
             max-height: 60vh;
             scrollbar-width: thin;
-        
+
             /* Enable vertical scrolling */
             display: block;
             max-width: 100%;
             overflow-y: auto;
-        
+
             /* Custom scrollbar for better UX */
             &::-webkit-scrollbar {
                 width: 8px;
                 height: 8px;
             }
-        
+
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 700px; 
-                
+                min-width: 700px;
+
                 thead {
                     position: sticky;
                     top: 0;
                     background-color: #6399f9;
                     color: white;
-                    
-                    th {               
+
+                    th {
                         padding: 0 5px;
                         white-space: nowrap;
                         text-align: center;
                         // padding: 12px;
                     }
-                    
-        
+
+
                     /* Rounded corners for first and last th */
                     th:first-child {
                         border-radius: 5px 0 0 5px;
                     }
-        
+
                     th:last-child {
                         border-radius: 0 5px 5px 0;
                     }
                 }
-        
+
                 tbody {
                     tr {
-                        
+
                         background-color: #f8f8f8;
-        
+
                         &:nth-child(even) {
                             background-color: white;
                         }
-                        .expand-btn{
+
+                        .expand-btn {
                             padding: 2px;
-                            button{
+
+                            button {
                                 padding: 2px;
                                 background-color: #6399f9;
                                 color: white;
@@ -120,16 +136,17 @@
                                 cursor: pointer;
                             }
                         }
+
                         td {
                             font-size: 12px;
                             text-align: center;
-                            white-space: nowrap; 
-        
+                            white-space: nowrap;
+
                             /* Rounded corners */
                             &:first-child {
                                 border-radius: 5px 0 0 5px;
                             }
-        
+
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
                             }
@@ -140,19 +157,22 @@
         }
     }
 }
+
 //responsive
 @media (max-width: 768px) {
-    .hierarchy-page{
-        .hierarchy-page-container{
-            .hierarchy-page-first-line{
+    .hierarchy-page {
+        .hierarchy-page-container {
+            .hierarchy-page-first-line {
                 flex-wrap: wrap;
             }
-            .hierarchy-page-buttons{
-                .hierarchy-upload-btn, .hierarchy-download-btn{
+
+            .hierarchy-page-buttons {
+
+                .hierarchy-upload-btn,
+                .hierarchy-download-btn {
                     font-size: .6rem !important;
                 }
             }
         }
     }
-    
 }

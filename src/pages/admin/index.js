@@ -32,7 +32,7 @@ function AdminPage() {
           sort: String(sort),
           order: order,
           search: search,
-          role: "admin",
+          role: ["admin"],
         },
         headers: {
           Authorization: localStorage.getItem("authToken"),
