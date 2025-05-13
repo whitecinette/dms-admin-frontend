@@ -216,10 +216,15 @@ function Geotagging() {
   useEffect(() => {
     getAllActorTypes();
     getUpdateCount();
-    setTimeout(() => {
+  
+    const intervalId = setInterval(() => {
       getUpdateCount();
-    }, 60000);
+    }, 60000); // 60 seconds
+  
+    // Clean up on component unmount
+    return () => clearInterval(intervalId);
   }, []);
+  
 
   useEffect(() => {
     fetchGeotagData();
