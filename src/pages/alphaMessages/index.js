@@ -10,10 +10,14 @@ const headers = [
   "Dealer Code",
   "Dealer Name",
   "Phone Number",
-  "10k SP Target",
-  "10k SP Ach",
-  "Black Box Target",
-  "Black Box Ach",
+  "10k SP Tgt May 25",
+  "10k SP Ach May 25",
+  "Black Box Tgt May 25",
+  "Black Box Ach May 25",
+  "10k SP Tgt Q2 25",
+  "10k SP Ach Q2 25",
+  "Black Box Tgt Q2 25",
+  "Black Box Ach Q2 25",
 ];
 
 export default function AlphaMessages() {
