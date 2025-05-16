@@ -19,7 +19,7 @@ const Attendance = () => {
   const [latestAttendance, setLatestAttendance] = useState({});
   const [firmList, setFirmList] = useState([]);
   const [firm, setFirm] = useState({});
-  const [sliderValue, setSliderValue] = useState("employee");
+  const [sliderValue, setSliderValue] = useState("All");
   const limit = 50;
 
   const getAllActorTypes = async () => {
@@ -98,7 +98,7 @@ const Attendance = () => {
           limit,
           search,
           firm,
-          role: sliderValue,
+          role: sliderValue === "All" ? ["employee", "admin"] : sliderValue,
         },
       });
       setEmployee(res.data.data || []);
@@ -230,6 +230,14 @@ const Attendance = () => {
 
         <div className="attendance-table-container">
           <div className="slider-container">
+            <div
+              className={`slider-button ${
+                sliderValue === "All" ? "active" : ""
+              }`}
+              onClick={() => setSliderValue("All")}
+            >
+              All
+            </div>
             <div
               className={`slider-button ${
                 sliderValue === "employee" ? "active" : ""

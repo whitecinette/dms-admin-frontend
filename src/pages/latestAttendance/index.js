@@ -169,6 +169,9 @@ export default function LatestAttendance() {
     message: "",
     type: "info",
   });
+  const [punchInImage, setPunchInImage] = useState({});
+  const [punchOutImage, setPunchOutImage] = useState({});
+  const [loadingImages, setLoadingImages] = useState({});
 
   const getAllActorTypes = async () => {
     try {
@@ -398,6 +401,7 @@ export default function LatestAttendance() {
 
     if (newExpandState) {
       setLoadingAddresses((prev) => ({ ...prev, [record._id]: true }));
+      setLoadingImages((prev) => ({ ...prev, [record._id]: true }));
       try {
         const [inAddress, outAddress] = await Promise.all([
           fetchAddress(record.punchInLatitude, record.punchInLongitude),
@@ -405,11 +409,46 @@ export default function LatestAttendance() {
         ]);
         setPunchInAddress((prev) => ({ ...prev, [record._id]: inAddress }));
         setPunchOutAddress((prev) => ({ ...prev, [record._id]: outAddress }));
+
+        // Load images only when expanding
+        if (record.punchInImage) {
+          const inImage = new Image();
+          inImage.src = record.punchInImage;
+          inImage.onload = () => {
+            setPunchInImage((prev) => ({
+              ...prev,
+              [record._id]: record.punchInImage,
+            }));
+          };
+        }
+        if (record.punchOutImage) {
+          const outImage = new Image();
+          outImage.src = record.punchOutImage;
+          outImage.onload = () => {
+            setPunchOutImage((prev) => ({
+              ...prev,
+              [record._id]: record.punchOutImage,
+            }));
+          };
+        }
       } catch (error) {
         console.error("Error fetching addresses:", error);
       } finally {
         setLoadingAddresses((prev) => ({ ...prev, [record._id]: false }));
+        setLoadingImages((prev) => ({ ...prev, [record._id]: false }));
       }
+    } else {
+      // Clear images when collapsing
+      setPunchInImage((prev) => {
+        const newState = { ...prev };
+        delete newState[record._id];
+        return newState;
+      });
+      setPunchOutImage((prev) => {
+        const newState = { ...prev };
+        delete newState[record._id];
+        return newState;
+      });
     }
   };
 
@@ -421,57 +460,55 @@ export default function LatestAttendance() {
 
     try {
       if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const updatedAttendance = {
-              ...newAttendance,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              punchOutLatitude: newAttendance.punchOut
-                ? position.coords.latitude
-                : null,
-              punchOutLongitude: newAttendance.punchOut
-                ? position.coords.longitude
-                : null,
-            };
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const updatedAttendance = {
+            ...newAttendance,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            punchOutLatitude: newAttendance.punchOut
+              ? position.coords.latitude
+              : null,
+            punchOutLongitude: newAttendance.punchOut
+              ? position.coords.longitude
+              : null,
+          };
 
-            try {
-              await axios.post(
-                `${backendUrl}/add-attendance-by-admin`,
-                updatedAttendance,
-                {
-                  headers: {
-                    Authorization: localStorage.getItem("authToken"),
-                  },
-                }
-              );
+          try {
+            await axios.post(
+              `${backendUrl}/add-attendance-by-admin`,
+              updatedAttendance,
+              {
+                headers: {
+                  Authorization: localStorage.getItem("authToken"),
+                },
+              }
+            );
 
-              setShowAddAttendance(false);
-              setNewAttendance({
-                code: "",
-                date: new Date().toISOString().split("T")[0],
-                punchIn: "",
-                punchOut: "",
-                status: "Present",
-                latitude: null,
-                longitude: null,
-                remark: "",
-                punchOutLatitude: null,
-                punchOutLongitude: null,
-              });
-              getAttendance();
-              getAttendanceCount();
-              showAlert("Attendance added successfully!", "success");
-            } catch (error) {
-              console.error("Error adding attendance:", error.response?.data);
-              showAlert(
-                error.response?.data.message ||
-                  "Error adding attendance. Please try again.",
-                "error"
-              );
-            }
+            setShowAddAttendance(false);
+            setNewAttendance({
+              code: "",
+              date: new Date().toISOString().split("T")[0],
+              punchIn: "",
+              punchOut: "",
+              status: "Present",
+              latitude: null,
+              longitude: null,
+              remark: "",
+              punchOutLatitude: null,
+              punchOutLongitude: null,
+            });
+            getAttendance();
+            getAttendanceCount();
+            showAlert("Attendance added successfully!", "success");
+          } catch (error) {
+            console.error("Error adding attendance:", error.response?.data);
+            showAlert(
+              error.response?.data.message ||
+                "Error adding attendance. Please try again.",
+              "error"
+            );
           }
-        );
+        });
       } else {
         showAlert("Geolocation is not supported by your browser", "error");
       }
@@ -941,9 +978,11 @@ export default function LatestAttendance() {
                                   )}
                                 </td>
                                 <td>
-                                  {record.punchInImage ? (
+                                  {loadingImages[record._id] ? (
+                                    "Loading..."
+                                  ) : punchInImage[record._id] ? (
                                     <img
-                                      src={record.punchInImage}
+                                      src={punchInImage[record._id]}
                                       alt="Punch In"
                                     />
                                   ) : (
@@ -981,9 +1020,11 @@ export default function LatestAttendance() {
                                   )}
                                 </td>
                                 <td>
-                                  {record.punchOutImage ? (
+                                  {loadingImages[record._id] ? (
+                                    "Loading..."
+                                  ) : punchOutImage[record._id] ? (
                                     <img
-                                      src={record.punchOutImage}
+                                      src={punchOutImage[record._id]}
                                       alt="Punch Out"
                                     />
                                   ) : (

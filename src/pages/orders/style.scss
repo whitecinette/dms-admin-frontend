@@ -1,380 +1,510 @@
-.order-page{
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    
-    .order-page-filter{
+// Variables
+$primary-color: #1976d2;
+$secondary-color: #f5f5f5;
+$success-color: #4caf50;
+$warning-color: #ff9800;
+$danger-color: #f44336;
+$text-color: #333;
+$border-color: #e0e0e0;
+$shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+$border-radius: 8px;
+$transition: all 0.3s ease;
+
+// Mixins
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin card {
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: $shadow;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+@mixin button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: $transition;
+
+    &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+}
+
+// Main container
+.order-page {
+    padding: 1rem;
+
+    // Filter section
+    .order-page-filter {
+        @include card;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        select{
-            // width: 100%;
-            height: 30px;
-            border-radius: 10px;
-            border: 2px solid #808080;
-            color: #808080;
-            padding:5px 15px;
-            font-size: 12px;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+
+        input,
+        select {
+            padding: 0.5rem;
+            border: 1px solid $border-color;
+            border-radius: 4px;
+            min-width: 200px;
+
+            &:focus {
+                outline: none;
+                border-color: $primary-color;
+            }
         }
-        input{
-            // width: 100%;
-            height: 15px;
-            border-radius: 10px;
-            border: 2px solid #808080;
-            color: #808080;
-            padding: 5px;
-            font-size: 12px;
-        }
-        .order-page-filter-date{
-            font-size: .9rem;
+
+        .order-page-filter-date {
             display: flex;
-            gap: 20px;
-            .date{
-                display: flex;  
-                flex-direction: column;
-                input{
-                    width: 100%;
-                    border-radius: 10px;
-                    border: 2px solid #808080;
-                    color: #808080;
-                    padding: 5px;
-                    font-size: 12px;
-                    &::-webkit-calendar-picker-indicator {
-                        filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
-                      }
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+
+            .date {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                label {
+                    font-weight: 500;
+                    color: $text-color;
                 }
             }
-            .order-page-button{
-                display: flex;
-                gap: 5px;
+        }
+
+        .order-page-button {
+            display: flex;
+            gap: 0.5rem;
+
+            button {
+                @include button;
+
+                &.order-page-apply-filter {
+                    background-color: $primary-color;
+                    color: white;
+                }
+
+                &.order-page-Reset-filter {
+                    background-color: $secondary-color;
+                    color: $text-color;
+                }
             }
-            .order-page-Reset-filter, .order-page-apply-filter{
-                border: none;
-                margin-top: 20px;
-                border-radius: 5px;
-                height: 30px;
-                padding: 5px;
-                cursor: pointer;
-            }
-            .order-page-Reset-filter{
-                background-color: #c1c1c1;
-                color: #fff;
-            }
-            .order-page-apply-filter{
-                background-color: #f78562;
-                color: #fff;
+        }
+    }
+
+    // Main content area
+    .order-page-cards {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        height: calc(100vh - 300px);
+
+        @media (max-width: 1024px) {
+            grid-template-columns: 1fr;
+            height: auto;
+            gap: 1rem;
+        }
+
+        // Order card
+        .order-page-order-card {
+            @include card;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+
+            .order-page-card-header {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid $primary-color;
+                flex-shrink: 0;
             }
 
-        }
-        
-    }
-    .order-page-cards{
-        margin-top: 10px;
-        display: flex;
-        background-color: rgb(245 245 245 / 75%);
-        padding: 10px;
-        border-radius: 5px;
-        gap: 15px;
-        .order-page-order-card{
-            width: 70%;
-            .order-page-card-header{
-                font-size: 1.5rem;
-                font-weight: 900;
+            .order-page-order-card-body {
+                flex: 1;
+                overflow-y: auto;
+                padding-right: 0.5rem;
+
+                &::-webkit-scrollbar {
+                    width: 6px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: $secondary-color;
+                    border-radius: 3px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: rgba($primary-color, 0.3);
+                    border-radius: 3px;
+
+                    &:hover {
+                        background: rgba($primary-color, 0.5);
+                    }
+                }
             }
-            .order-page-order-list{
-                scrollbar-width: thin;
-                overflow-x: auto;
-                max-height: 60vh;
-                background-color: #fff;
-                padding: 10px;
-                border-radius: 5px;
-                .order-page-action-buttons{
+
+            .order-page-order-list {
+                @include card;
+                margin-bottom: 1.5rem;
+
+                .order-page-action-buttons {
                     display: flex;
-                    justify-content: end;
-                    gap: 5px;
-                    .order-list-edit-btn{
-                        background-color: #007bff;
-                        color: #fff;
-                        padding: 5px;
-                        border-radius: 5px;
-                        cursor: pointer;
+                    gap: 0.5rem;
+                    margin-bottom: 1rem;
+
+                    .order-list-edit-btn,
+                    .order-list-delete-btn {
+                        @include button;
+                        padding: 0.25rem 0.75rem;
+                        font-size: 0.875rem;
                     }
-                    .order-list-delete-btn{
-                        background-color: #e95866;
-                        color: #fff;
-                        padding: 5px;
-                        border-radius: 5px;
-                        cursor: pointer;
+
+                    .order-list-edit-btn {
+                        background-color: $primary-color;
+                        color: white;
+                    }
+
+                    .order-list-delete-btn {
+                        background-color: $danger-color;
+                        color: white;
                     }
                 }
-                .order-page-details{
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 20px;
-                    align-items: center;
-                    padding: 10px 0;
+
+                .order-page-details {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 1rem;
+                    margin-bottom: 1rem;
+
+                    span {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.25rem;
+
+                        b {
+                            color: $text-color;
+                            font-weight: 500;
+                        }
+                    }
+
                     .status {
-                        padding: 5px;
-                        border-radius: 5px;
-                        font-weight: bold;
+                        display: inline-block;
+                        padding: 0.25rem 0.75rem;
+                        border-radius: 4px;
+                        font-size: 0.875rem;
+                        font-weight: 500;
+
+                        &.pending {
+                            background-color: $warning-color;
+                            color: white;
+                        }
+
+                        &.confirmed {
+                            background-color: $primary-color;
+                            color: white;
+                        }
+
+                        &.shipped {
+                            background-color: #2196f3;
+                            color: white;
+                        }
+
+                        &.delivered {
+                            background-color: $success-color;
+                            color: white;
+                        }
+
+                        &.cancelled {
+                            background-color: $danger-color;
+                            color: white;
+                        }
                     }
-                    .pending {
-                        background-color: #ff9800;
-                        color: #fff;
-                    }
-                    .confirmed {
-                        background-color: #90be6d;
-                        color: #fff;
-                    }
-                    .shipped {
-                        background-color: #f8961e;
-                        color: #fff;
-                      }
-                      .delivered {
-                        background-color: #43aa8b;
-                        color: #fff;
-                      }
-                      .cancelled {
-                        background-color: #f94144;
-                        color: #fff;
-                      }
                 }
+
                 .product-page-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin:15px 0;
-                    th, td {
-                      border: 1px solid #ddd;
-                      text-align: center;
+                    margin: 1rem 0;
+
+                    th,
+                    td {
+                        padding: 0.75rem;
+                        text-align: left;
+                        border-bottom: 1px solid $border-color;
                     }
+
                     th {
-                        background-color: #6666f2;
-                        font-weight: bold;
-                        border: none;
-                        color: #fff;
-                      }
-                  }
-                .product-total{
+                        background-color: $secondary-color;
+                        font-weight: 500;
+                    }
+
+                    select,
+                    input {
+                        width: 100%;
+                        padding: 0.5rem;
+                        border: 1px solid $border-color;
+                        border-radius: 4px;
+
+                        &:focus {
+                            outline: none;
+                            border-color: $primary-color;
+                        }
+                    }
+                }
+
+                .product-total {
+                    font-size: 1.125rem;
+                    margin: 1rem 0;
+                    text-align: right;
+                }
+
+                .product-remark {
+                    padding: 0.75rem;
+                    background-color: $secondary-color;
+                    border-radius: 4px;
+                    margin-bottom: 1rem;
+                }
+
+                .order-page-action-buttons {
                     display: flex;
-                    justify-content: end;
+                    gap: 1rem;
+                    justify-content: flex-end;
+
+                    button {
+                        @include button;
+
+                        &.order-page-add-product {
+                            background-color: $success-color;
+                            color: white;
+                        }
+
+                        &.order-page-save {
+                            background-color: $primary-color;
+                            color: white;
+                        }
+                    }
                 }
             }
-            .order-page-action-buttons{
-             .order-page-add-product{
-                background-color: #4CAF50;
-                color: #fff;
-                padding: 5px;
-                border-radius: 5px;
-                cursor: pointer;
-                border: none;
-             } 
-             .order-page-save{
-                background-color: #007bff;
-                color: #fff;
-                padding: 5px;
-                border-radius: 5px;
-                cursor: pointer;
-                border: none;
-             }  
-            }
         }
-        .order-page-dealer-card{
-            width: 30%;
-            height: 70vh;
-            .order-page-dealer-card-header{
-                font-size: 1.5rem;
-                font-weight: 900;
+
+        // Dealer card
+        .order-page-dealer-card {
+            @include card;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+
+            .order-page-dealer-card-header {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid $primary-color;
+                flex-shrink: 0;
             }
-            input{
-                height: 15px;
-                border-radius: 10px;
-                border: 2px solid #808080;
-                color: #808080;
-                padding: 5px;
-                font-size: 12px;
+
+            .order-page-dealer-filter {
+                margin-bottom: 1rem;
+                flex-shrink: 0;
+
+                input {
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid $border-color;
+                    border-radius: 4px;
+
+                    &:focus {
+                        outline: none;
+                        border-color: $primary-color;
+                    }
+                }
             }
-            .order-page-dealer-card{
-                scrollbar-width: thin;
-                margin-top: 10px;
-                width: 100%;
-                background-color: #fff;
-                overflow-x: auto;
-                max-height: 60vh;
-                .order-page-dealer{
-                    display: flex;
-                    flex-direction: column;
-                    margin: 2px;
-                    padding: 5px;
-                    border-radius: 5px;
-                    background-color: #efeff8e0;
-                    cursor: pointer;
+
+            .order-page-dealer-list {
+                flex: 1;
+                overflow-y: auto;
+                padding-right: 0.5rem;
+
+                &::-webkit-scrollbar {
+                    width: 6px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: $secondary-color;
+                    border-radius: 3px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: rgba($primary-color, 0.3);
+                    border-radius: 3px;
+
                     &:hover {
-                        background-color: #f5f5f5;
-                      }
-                    &.active {
-                        background-color: #007bff; // Change background color for active dealer
-                        color: #fff;
-                        font-weight: bold;
-                        border-color: #0056b3;
-                      }
+                        background: rgba($primary-color, 0.5);
+                    }
+                }
+            }
+
+            .order-page-dealer {
+                padding: 1rem;
+                border: 1px solid $border-color;
+                border-radius: 4px;
+                margin-bottom: 0.5rem;
+                cursor: pointer;
+                transition: $transition;
+
+                &:hover {
+                    background-color: $secondary-color;
+                }
+
+                &.active {
+                    background-color: rgba($primary-color, 0.1);
+                    border-color: $primary-color;
+                }
+
+                span {
+                    display: block;
+                    margin-bottom: 0.5rem;
+
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+
+                    b {
+                        color: $text-color;
+                        font-weight: 500;
+                    }
                 }
             }
         }
     }
 }
-//responsive
-@media (max-width: 1024px) {
-    .order-page {
-        padding: 15px;
 
-        .order-page-filter {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-
-            .order-page-filter-date {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        .order-page-cards {
-            flex-direction: column;
-            gap: 10px;
-
-            .order-page-order-card {
-                width: 100%;
-            }
-
-            .order-page-dealer-card {
-                width: 100%;
-                height: auto;
-            }
-        }
-    }
-}
-
+// Mobile-specific styles
 @media (max-width: 768px) {
     .order-page {
-        padding: 10px;
-
-        .order-page-filter {
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-
-            select, input {
-                width: 100%;
-            }
-
-            .order-page-filter-date {
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-                width: 100%;
-            }
-        }
-
         .order-page-cards {
+            display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 1rem;
+            height: auto;
 
             .order-page-order-card {
-                width: 100%;
+                order: 2;
+                height: auto;
 
-                .order-page-card-header {
-                    font-size: 1.3rem;
-                    text-align: center;
-                }
-
-                .order-page-order-list {
-                    max-height: 50vh;
-                    overflow-y: auto;
-                }
-
-                .order-page-action-buttons {
-                    justify-content: center;
+                .order-page-order-card-body {
+                    max-height: 60vh;
                 }
             }
 
             .order-page-dealer-card {
-                width: 100%;
-                height: auto;
+                order: 1;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: white;
+                margin-bottom: 1rem;
 
-                .order-page-dealer-card-header {
-                    font-size: 1.3rem;
-                    text-align: center;
-                }
-            }
-        }
-    }
-}
-
-@media (max-width: 480px) {
-    .order-page {
-        padding: 8px;
-
-        .order-page-filter {
-            flex-direction: column;
-            gap: 10px;
-
-            select, input {
-                width: 100%;
-                font-size: 10px;
-                padding: 4px;
-            }
-
-            .order-page-filter-date {
-                width: 100%;
-                align-items: center;
-            }
-
-            .order-page-button {
-                flex-direction: column;
-                gap: 5px;
-                width: 100%;
-
-                .order-page-Reset-filter,
-                .order-page-apply-filter {
-                    width: 100%;
-                }
-            }
-        }
-
-        .order-page-cards {
-            flex-direction: column;
-            gap: 8px;
-
-            .order-page-order-card {
-                width: 100%;
-
-                .order-page-card-header {
-                    font-size: 1.2rem;
-                }
-
-                .order-page-order-list {
-                    max-height: 45vh;
+                .order-page-dealer-list {
+                    max-height: 200px;
                     overflow-y: auto;
-                }
-
-                .order-page-action-buttons {
-                    flex-direction: column;
-                    align-items: center;
-                }
-            }
-
-            .order-page-dealer-card {
-                width: 100%;
-                height: auto;
-
-                .order-page-dealer-card-header {
-                    font-size: 1.2rem;
                 }
 
                 .order-page-dealer {
-                    flex-direction: row;
+                    display: flex;
                     flex-wrap: wrap;
-                    justify-content: center;
+                    gap: 0.5rem;
+                    align-items: center;
+                    padding: 0.75rem;
+
+                    span {
+                        margin-bottom: 0;
+                        flex: 1;
+                        min-width: 150px;
+                        font-size: 0.875rem;
+                    }
+                }
+            }
+        }
+
+        .order-page-filter {
+            flex-direction: column;
+            gap: 0.75rem;
+
+            input,
+            select {
+                width: 100%;
+            }
+
+            .order-page-filter-date {
+                flex-direction: column;
+                width: 100%;
+
+                .date {
+                    width: 100%;
+                }
+            }
+
+            .order-page-button {
+                width: 100%;
+                display: flex;
+                gap: 0.5rem;
+
+                button {
+                    flex: 1;
+                }
+            }
+        }
+    }
+}
+
+// Small mobile devices
+@media (max-width: 480px) {
+    .order-page {
+        .order-page-cards {
+            .order-page-order-card {
+                .order-page-order-list {
+                    .order-page-action-buttons {
+
+                        .order-list-edit-btn,
+                        .order-list-delete-btn {
+                            padding: 0.5rem;
+                            text-align: center;
+                        }
+                    }
+
+                    .product-page-table {
+
+                        th,
+                        td {
+                            padding: 0.5rem;
+                            font-size: 0.875rem;
+                        }
+                    }
+                }
+            }
+
+            .order-page-dealer-card {
+                .order-page-dealer {
+                    padding: 0.75rem;
+
+                    span {
+                        font-size: 0.875rem;
+                    }
                 }
             }
         }

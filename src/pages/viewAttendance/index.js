@@ -74,17 +74,14 @@ export default function ViewAttendance() {
               </tr>
               <tr>
                 <th>SNo.</th>
-                <th>Image</th>
                 <th>Date</th>
                 <th>Time</th>
                 <th>Shop Name</th>
-                <th>Image</th>
                 <th>Time</th>
                 <th>Shop Name</th>
                 <th>Status</th>
                 <th>Hours Worked</th>
                 <th>Remarks</th>
-                {/* <th>Action</th> */}
               </tr>
             </thead>
 
@@ -93,13 +90,6 @@ export default function ViewAttendance() {
                 attendance.map((record, index) => (
                   <tr key={index}>
                     <td>{index + 1}</td>
-                    <td>
-                      {record.punchInImage ? (
-                        <img src={record.punchInImage} />
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
                     <td>{new Date(record.date).toLocaleDateString()}</td>
                     <td>
                       {new Date(record.punchIn).toLocaleTimeString("en-IN", {
@@ -107,13 +97,6 @@ export default function ViewAttendance() {
                       })}
                     </td>
                     <td>{record.punchInName || "N/A "}</td>
-                    <td>
-                      {record.punchOutImage ? (
-                        <img src={record.punchOutImage} />
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
                     <td>
                       {record.punchOut
                         ? new Date(record.punchOut).toLocaleTimeString(
@@ -137,7 +120,7 @@ export default function ViewAttendance() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="11" style={{ textAlign: "center" }}>
+                  <td colSpan="9" style={{ textAlign: "center" }}>
                     No attendance records found.
                   </td>
                 </tr>

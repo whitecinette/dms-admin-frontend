@@ -1,61 +1,64 @@
 .default-layout {
-  display: flex;
-  height: 100vh;
-  position: relative;
+    display: flex;
+    height: 100vh;
+    position: relative;
 
-  .main-content {
-      margin-left: 18rem;
-      width: calc(100% - 18rem);
-      height: 100vh;
-      transition: margin-left 0.3s ease, width 0.3s ease;
-      position: relative;
-    //   z-index: 5; 
+    .main-content {
+        margin-left: 18rem;
+        width: calc(100% - 18rem);
+        height: 100vh;
+        transition: margin-left 0.3s ease, width 0.3s ease;
+        position: relative;
+        //   z-index: 5; 
 
-      .page-content {
-        padding: 80px 20px 10px 20px;
-        flex-grow: 1;
-      }
-  }
+        .page-content {
+            padding: 80px 20px 10px 20px;
+            flex-grow: 1;
+        }
+    }
 
-  &.collapsed {
-      .main-content {
-          margin-left: 4rem;
-          width: calc(100% - 4rem);
-      }
-  }
+    &.collapsed {
+        .main-content {
+            margin-left: 4rem;
+            width: calc(100% - 4rem);
+        }
+    }
 
-  // When sidebar is open, blur the entire page
-  &.sidebar-open {
-      .main-content, .header {
-          filter: blur(8px); // Blur the page content
-          pointer-events: none; // Prevent interactions with blurred content
-      }
+    // When sidebar is open, blur the entire page
+    &.sidebar-open {
 
-      .overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgb(0 0 0 / 24%); // Dark semi-transparent background
-          backdrop-filter: blur(0px); // Apply blur effect
-          z-index: 9; // Keep above content but below sidebar
-          transition: opacity 0.3s ease;
-      }
-  }
+        .main-content,
+        .header {
+            filter: blur(8px); // Blur the page content
+            pointer-events: none; // Prevent interactions with blurred content
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgb(0 0 0 / 24%); // Dark semi-transparent background
+            backdrop-filter: blur(0px); // Apply blur effect
+            z-index: 9; // Keep above content but below sidebar
+            transition: opacity 0.3s ease;
+        }
+    }
 }
 
 // Responsive styles for smaller screens
 @media (max-width: 1024px) {
-  .default-layout {
-      .main-content {
-          margin-left: 0 !important;
-          width: 100% !important;
-      }
-  }
-  .page-content {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-  }
+    .default-layout {
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
+
+    .page-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 }
