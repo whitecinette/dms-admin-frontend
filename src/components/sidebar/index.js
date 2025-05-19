@@ -14,6 +14,7 @@ import {
   MdMenuOpen,
   MdOutlineInventory2,
 } from "react-icons/md";
+import { BsCashCoin } from "react-icons/bs";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { BsCloudUpload } from "react-icons/bs";
 import { TbTargetArrow, TbHierarchy3 } from "react-icons/tb";
@@ -141,9 +142,18 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Stock", to: "/" },
       ],
     },
+    {
+      name: "Finance",
+      to: "#",
+      icon: <BsCashCoin  size={20} />,
+      onClick: () => open(),
+      children: [
+        { name: "Upload Data", to: "/finance/upload-data" },
+      ],
+    },
     // { name: "Beat Mapping", to: "/segment", icon: <LuMapPinHouse size={20} /> },
-    { name: "Upload", to: "/segment", icon: <BsCloudUpload size={20} /> },
     { name: "Format", to: "/segment", icon: <FaFileAlt size={20} /> },
+    { name: "Upload", to: "/segment", icon: <BsCloudUpload size={20} /> },
     { name: "Target", to: "/segment", icon: <TbTargetArrow size={20} /> },
     // { name: "Hierarchy", to: "/segment", icon: <TbHierarchy3 size={20} /> },
     {

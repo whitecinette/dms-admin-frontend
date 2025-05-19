@@ -20,6 +20,7 @@
     "react-select": "^5.10.0",
     "recharts": "^2.15.1",
     "sass": "^1.85.1",
+    "xlsx": "^0.18.5",
     "yocto-queue": "^1.2.0"
   },
   "scripts": {

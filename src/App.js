@@ -23,6 +23,7 @@ import AlphaMessages from "./pages/alphaMessages";
 import EmployeesSchedules from "./pages/employeeSchedule";
 import AdminPage from "./pages/admin";  
 import GeoTagging  from "./pages/GeoTagging";
+import FinanceDataUpload from "./pages/finance/dataUpload";
 function App() {
   const token = localStorage.getItem("authToken");
 
@@ -85,6 +86,7 @@ function App() {
             <Route path="/viewBeatMappingStatus/schedules/:code" element={<EmployeesSchedules/>} />
             <Route path="/admin" element={<AdminPage/>} />
             <Route path="/geoTagging" element={<GeoTagging/>} />
+            <Route path="/finance/upload-data" element={<FinanceDataUpload /> } />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
