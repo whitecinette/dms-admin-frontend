@@ -20,22 +20,43 @@ function FinanceDataUpload() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
+    const fileExt = file.name.split(".").pop().toLowerCase();
 
-      const parsedSheets = workbook.SheetNames.map((name) => {
-        const worksheet = workbook.Sheets[name];
-        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        return {
-          name,
-          data: json,
+    if (fileExt === "csv") {
+            const text = event.target.result;
+            const workbook = XLSX.read(text, { type: "string" });
+
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            setSheetsData([
+            {
+                name: file.name.replace(".csv", ""),
+                data: json,
+            },
+            ]);
+    } else {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+
+            const parsedSheets = workbook.SheetNames.map((name) => {
+            const worksheet = workbook.Sheets[name];
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            return {
+                name,
+                data: json,
+            };
+            });
+
+            setSheetsData(parsedSheets);
+        }
         };
-      });
 
-      setSheetsData(parsedSheets);
-    };
-
-    reader.readAsArrayBuffer(file);
+        if (file.name.endsWith(".csv")) {
+        reader.readAsText(file); // read CSV as text
+        } else {
+        reader.readAsArrayBuffer(file); // read Excel as array buffer
+        }
   };
 
 
@@ -87,35 +108,57 @@ const resetUpload = () => {
         {sheetsData.map((sheet, idx) => (
           <div className="sheet-preview-card" key={idx}>
             <div className="sheet-header">
-              <div>
+                <div>
                 <h4>{sheet.name}</h4>
                 <p style={{ fontSize: "12px", margin: 0, textAlign: "left" }}>
-                  Total Rows: {sheet.data.length - 1}
+                    Total Rows: {sheet.data.length - 1}
                 </p>
-              </div>
-              <button onClick={() => removeSheet(sheet.name)}>❌</button>
+
+                {/* New Inputs */}
+                <div className="sheet-meta">
+                    <input
+                    type="text"
+                    placeholder="Enter label / name"
+                    className="sheet-input"
+                    />
+                    <select className="sheet-dropdown">
+                    <option>Credit Note Voucher</option>
+                    <option>Credit Note Working</option>
+                    <option>Debit Note Voucher</option>
+                    <option>Debit Note Working</option>
+                    </select>
+                    <div className="sheet-date-range">
+                    <input type="date" defaultValue="2025-05-18" />
+                    <span>to</span>
+                    <input type="date" defaultValue="2025-05-18" />
+                    </div>
+                </div>
             </div>
-            <div className="sheet-table">
-              <table>
-                <thead>
-                  <tr>
-                    {sheet.data[0]?.map((col, i) => (
-                      <th key={i}>{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sheet.data.slice(1, 6).map((row, i) => (
-                    <tr key={i}>
-                      {row.map((cell, j) => (
-                        <td key={j}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+    <button onClick={() => removeSheet(sheet.name)}>❌</button>
           </div>
+
+  <div className="sheet-table">
+    <table>
+      <thead>
+        <tr>
+          {sheet.data[0]?.map((col, i) => (
+            <th key={i}>{col}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {sheet.data.slice(1, 6).map((row, i) => (
+          <tr key={i}>
+            {row.map((cell, j) => (
+              <td key={j}>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
         ))}
       </div>
     </div>
