@@ -307,14 +307,25 @@ $transition: all 0.3s ease;
             flex-direction: column;
             height: 100%;
             overflow: hidden;
-
-            .order-page-dealer-card-header {
-                font-size: 1.25rem;
-                font-weight: 600;
-                margin-bottom: 1.5rem;
-                padding-bottom: 0.5rem;
+            .order-page-dealer-card-header-line{
+                display: flex;
+                justify-content: space-between;
                 border-bottom: 2px solid $primary-color;
+                margin-bottom: 1.5rem;
+                padding-bottom: 0.5rem;                
                 flex-shrink: 0;
+
+                .order-page-dealer-card-header {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                }
+                .order-page-dealer-card-pendings{
+
+                    font-weight: 600;
+                    span{
+                        color: $warning-color;
+                    }
+                }
             }
 
             .order-page-dealer-filter {
@@ -322,7 +333,7 @@ $transition: all 0.3s ease;
                 flex-shrink: 0;
 
                 input {
-                    width: 100%;
+                    width: 90%;
                     padding: 0.75rem;
                     border: 1px solid $border-color;
                     border-radius: 4px;
@@ -359,33 +370,36 @@ $transition: all 0.3s ease;
             }
 
             .order-page-dealer {
-                padding: 1rem;
-                border: 1px solid $border-color;
-                border-radius: 4px;
-                margin-bottom: 0.5rem;
+                @include card;
                 cursor: pointer;
+                position: relative;
                 transition: $transition;
-
-                &:hover {
-                    background-color: $secondary-color;
-                }
-
+                
                 &.active {
-                    background-color: rgba($primary-color, 0.1);
-                    border-color: $primary-color;
+                    border: 2px solid $primary-color;
                 }
-
+                
+                &:hover {
+                    transform: translateY(-2px);
+                }
+                
                 span {
                     display: block;
                     margin-bottom: 0.5rem;
-
-                    &:last-child {
-                        margin-bottom: 0;
-                    }
-
-                    b {
-                        color: $text-color;
+                    
+                    &.pending-orders-count {
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        padding: 0.25rem 0.5rem;
+                        border-radius: 4px;
+                        background-color: $warning-color;
+                        color: white;
                         font-weight: 500;
+                        
+                        b {
+                            color: $text-color;
+                        }
                     }
                 }
             }

@@ -19,9 +19,14 @@ function Orders() {
   const [productList, setProductList] = useState([]);
   const [editingOrder, setEditingOrder] = useState(null);
   const [deleteId, setDeleteId] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDealersLoading, setIsDealersLoading] = useState(false);
+  const [filteredDealers, setFilteredDealers] = useState([]);
+  const [totalPendingCount, setTotalPendingCount] = useState(0);
 
   const fetchOrderData = async () => {
     if (!dealer) return; // Prevent API call if dealer is not set
+    setIsLoading(true);
     try {
       const response = await axios.get(`${backendUrl}/order/get-order`, {
         params: {
@@ -36,6 +41,8 @@ function Orders() {
     } catch (err) {
       console.log(err);
       setOrderData("");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,13 +65,16 @@ function Orders() {
         return;
       }
 
-      const response = await axios.get(`${backendUrl}/user/get-by-admins`, {
-        params: { role: "dealer", search: dealerSearch },
-        headers: { Authorization: authToken },
-      });
+      const response = await axios.get(
+        `${backendUrl}/order/get-order-by-dealer`,
+        {
+          headers: { Authorization: authToken },
+        }
+      );
 
       const dealers = response.data.data; // Store the fetched dealers
       setDealerList(dealers);
+      setTotalPendingCount(response.data.totalDealersWithPendingOrders);
 
       if (dealers.length > 0) {
         setDealer(dealers[0]._id);
@@ -73,6 +83,8 @@ function Orders() {
       }
     } catch (err) {
       console.error("Error fetching dealers:", err);
+    } finally {
+      setIsDealersLoading(false);
     }
   };
   const handleModelChange = (index, productId) => {
@@ -177,7 +189,13 @@ function Orders() {
 
   useEffect(() => {
     fetchAllDealers();
-  }, [dealerSearch]);
+    const interval = setInterval(() => {
+      fetchAllDealers();
+    }, 60000); // fetch every 60 seconds
+  
+    return () => clearInterval(interval); // cleanup on unmount
+  }, []);
+  
 
   useEffect(() => {
     fetchProducts();
@@ -189,6 +207,13 @@ function Orders() {
       fetchOrderData();
     }
   }, [startDate, endDate]); // Runs when startDate or endDate changes
+
+  useEffect(() => {
+    const filtered = dealerList.filter((dealer) =>
+      dealer.name.toLowerCase().includes(dealerSearch.toLowerCase())
+    );
+    setFilteredDealers(filtered);
+  }, [dealerSearch, dealerList]);
 
   // ✅ Apply Filter Handler
   const handleApplyFilter = () => {
@@ -272,7 +297,9 @@ function Orders() {
         <div className="order-page-order-card">
           <div className="order-page-card-header">Order</div>
           <div className="order-page-order-card-body">
-            {orderData.length > 0 ? (
+            {isLoading ? (
+              <div className="loading-spinner">Loading orders...</div>
+            ) : orderData.length > 0 ? (
               orderData.map((order, index) => {
                 const isEditing =
                   editingOrder &&
@@ -488,7 +515,10 @@ function Orders() {
         </div>
 
         <div className="order-page-dealer-card">
-          <div className="order-page-dealer-card-header">Dealer</div>
+          <div className="order-page-dealer-card-header-line">
+            <div className="order-page-dealer-card-header">Dealer</div>
+            <div className="order-page-dealer-card-pendings">Pending Orders: <span>{totalPendingCount}</span></div>
+          </div>
           <div className="order-page-dealer-filter">
             <input
               type="text"
@@ -498,8 +528,10 @@ function Orders() {
             />
           </div>
           <div className="order-page-dealer-list">
-            {dealerList.length > 0 ? (
-              dealerList.map((dealers) => (
+            {isDealersLoading ? (
+              <div className="loading-spinner">Loading dealers...</div>
+            ) : filteredDealers.length > 0 ? (
+              filteredDealers.map((dealers) => (
                 <div
                   key={dealers._id}
                   className={`order-page-dealer ${
@@ -513,6 +545,11 @@ function Orders() {
                   <span>
                     <b>Dealer Name:</b> {dealers?.name || "N/A"}
                   </span>
+                  {dealers?.pendingOrdersCount > 0 && (
+                    <span className="pending-orders-count">
+                      {dealers?.pendingOrdersCount || 0}
+                    </span>
+                  )}
                 </div>
               ))
             ) : (
