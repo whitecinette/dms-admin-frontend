@@ -1,0 +1,204 @@
+.finance-data-container {
+  padding: 24px;
+  background-color: #f9f9f9;
+  font-family: 'Inter', sans-serif;
+  color: #333;
+
+  .popup-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+
+  h3 {
+    margin: 0;
+    color: #333;
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #ff7f27;
+  }
+}
+
+.popup-search {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.popup-content {
+  overflow: auto;
+  flex-grow: 1;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ff7f27;
+      color: white;
+    }
+  }
+}
+
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    input[type="text"],
+    input[type="date"],
+    select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+      color: #333;
+      min-width: 180px;
+
+      &:focus {
+        outline: 2px solid #ff7f27;
+      }
+    }
+  }
+
+  .loader {
+    text-align: center;
+    font-size: 16px;
+    margin-top: 40px;
+    color: #333;
+  }
+
+  .finance-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    overflow: hidden;
+
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #ff7f27;
+      color: white;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .action-btn {
+      margin-right: 8px;
+      padding: 6px 12px;
+      border: none;
+      background-color: #f1f1f1;
+      color: #333;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+
+      &.orange {
+        background-color: #ff7f27;
+        color: white;
+
+        &:hover {
+          background-color: #e76f1a;
+        }
+      }
+
+      &:hover {
+        background-color: #ddd;
+      }
+    }
+
+    .delete-btn {
+      background-color: #ff4d4d;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+
+      &:hover {
+        background-color: #cc0000;
+      }
+    }
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 20px;
+
+    button {
+      padding: 6px 12px;
+      background-color: #ff7f27;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    }
+
+    span {
+      font-size: 14px;
+      color: #333;
+    }
+  }
+}

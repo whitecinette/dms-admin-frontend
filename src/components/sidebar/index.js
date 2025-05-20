@@ -149,6 +149,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       onClick: () => open(),
       children: [
         { name: "Upload Data", to: "/finance/upload-data" },
+        { name: "View Data", to: "/finance/data" },
       ],
     },
     // { name: "Beat Mapping", to: "/segment", icon: <LuMapPinHouse size={20} /> },
