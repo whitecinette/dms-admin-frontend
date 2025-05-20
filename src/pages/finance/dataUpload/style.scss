@@ -5,6 +5,25 @@
     margin-bottom: 20px;
   }
 
+  .upload-all-btn{
+    margin-top: 20px;
+    background-color: #f8bbb734;
+    color: #f44336;
+    border: 2px solid #f44336;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      background-color: #d32f2f;
+      color: #ffffff;
+    }
+
+  }
+
   .upload-header {
   display: flex;
   justify-content: space-between;
