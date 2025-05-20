@@ -7,9 +7,33 @@
 
         // padding: 10px;
     }
-
-    &-header {
+    .latestAttendance-page-header-line{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 24px;
+        .add-attendance-button {
+            background: #005bfe;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+            margin-left: 1rem;
+        
+            &:hover {
+                background: #0046cc;
+            }
+        }
+    }
+    &-header {
+        
         font-size: 16px;
         color: #666;
 
@@ -97,21 +121,41 @@
                         opacity: .9;
                     }
                 }
+                .show-add-attendance-button {
+                    background: linear-gradient(135deg, #4CAF50, #45a049);
+                    color: white;
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  
+                  }
             }
 
 
             .latestAttendance-page-filters {
                 display: flex;
-                gap: 10px;
+                gap: 8px;
+                align-items: center;
 
                 input,
                 select {
-                    // width: 100%;
-                    border-radius: 10px;
-                    border: 2px solid #808080;
+                    border-radius: 8px;
+                    border: 1.5px solid #808080;
                     color: #808080;
-                    padding: 5px;
-                    font-size: 12px;
+                    padding: 2px 8px;
+                    font-size: 13px;
+                    height: 28px;
+                    min-width: 100px;
+                    min-height: 28px;
+                    box-sizing: border-box;
                 }
 
                 .custom-dropdown {
@@ -119,6 +163,8 @@
 
 
                     .dropdown-header {
+                        min-height: 28px;
+                        box-sizing: border-box;
                         padding: 0 5px;
                         gap: 5px;
                         border: 2px solid #808080;
@@ -128,9 +174,8 @@
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        min-height: 38px;
                         color: #808080;
-                        font-size: 12px;
+                        font-size: 13px;
                         display: flex;
                         justify-content: center;
                         align-items: center;
@@ -493,6 +538,182 @@
             }
         }
     }
+    .AddedAttendance-table-container {
+
+        width: 100%;
+        overflow-x: auto;
+        max-height: 65vh;
+        scrollbar-width: thin;
+       margin-top: 5px;
+
+        /* Enable vertical scrolling */
+        display: block;
+        max-width: 100%;
+        overflow-y: auto;
+
+        table {
+            width: 100%;
+            // border-collapse: collapse;
+            border-collapse: separate;
+            min-width: 700px;
+
+            thead {
+                position: sticky;
+                top: 0;
+                background-color: #6399f9;
+                color: white;
+
+
+                th {
+                    white-space: nowrap;
+                    text-align: center;
+                }
+
+                // // Rounded corners for the first and last th in the main-header row
+                .main-header th:first-child {
+                    border-radius: 5px 0 0 5px;
+                }
+
+                .main-header th:last-child {
+                    border-radius: 0 5px 5px 0;
+                }
+            }
+
+            tbody {
+                tr {
+
+                    background-color: #f8f8f8;
+
+                    &:nth-child(even) {
+                        background-color: white;
+                    }
+
+                    .expand-btn {
+                        padding: 2px;
+
+                        button {
+                            padding: 2px;
+                            background-color: #6399f9;
+                            color: white;
+                            border: none;
+                            font-size: 12px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                        }
+                    }
+
+                    td {
+                        padding: 10px;
+                        font-size: 12px;
+                        text-align: center;
+                        white-space: nowrap;
+
+                        /* Rounded corners */
+                        &:first-child {
+                            border-radius: 5px 0 0 5px;
+                        }
+
+                        &:last-child {
+                            border-radius: 0 5px 5px 0;
+                        }
+                    }
+
+                    .inner-code {
+                        margin-top: 5px;
+                        width: 100%;
+                        overflow-x: auto;
+                        max-height: 60vh;
+                        scrollbar-width: thin;
+
+                        /* Enable vertical scrolling */
+                        // display: block;
+                        max-width: 100%;
+                        overflow-y: auto;
+
+                        .expanded-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            min-width: 700px;
+
+                            thead {
+                                position: sticky;
+                                top: 0;
+                                background-color: #fff;
+
+                                color: white;
+
+                                th {
+                                    padding: 0 5px;
+                                    white-space: nowrap;
+                                    text-align: center;
+                                    background-color: #6399f9;
+                                    // padding: 12px;
+                                }
+
+
+                                /* Rounded corners for first and last th */
+                                // // Rounded corners for the first and last th in the main-header row
+                                .main-header th:first-child {
+                                    border-radius: 5px 0 0 5px;
+                                }
+
+                                .main-header th:last-child {
+                                    border-radius: 0 5px 5px 0;
+                                }
+                            }
+
+                            tbody {
+                                tr {
+
+                                    background-color: #f8f8f8;
+
+                                    &:nth-child(even) {
+                                        background-color: white;
+                                    }
+
+                                    .inner-table-address {
+                                        white-space: pre-wrap;
+                                        width: 10rem;
+                                    }
+
+                                    .inner-table-map {
+                                        white-space: pre-wrap;
+                                        width: 20rem;
+                                        height: 10rem;
+
+                                        iframe {
+                                            border: none;
+                                        }
+                                    }
+
+                                    td {
+                                        font-size: 12px;
+                                        text-align: center;
+                                        white-space: nowrap;
+
+                                        /* Rounded corners */
+                                        &:first-child {
+                                            border-radius: 5px 0 0 5px;
+                                        }
+
+                                        &:last-child {
+                                            border-radius: 0 5px 5px 0;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    img {
+                        width: 10rem;
+                        height: 10rem;
+                        border-radius: 50%;
+                    }
+                }
+            }
+        }
+    }
 }
 
 //responsive
@@ -837,25 +1058,7 @@
 }
 
 // Add Attendance Button Styles
-.add-attendance-button {
-    background: #005bfe;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: background-color 0.2s;
-    margin-left: 1rem;
 
-    &:hover {
-        background: #0046cc;
-    }
-}
 
 // Responsive Styles
 @media screen and (max-width: 768px) {

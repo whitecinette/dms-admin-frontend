@@ -105,6 +105,11 @@ export default function EmployeesSchedules() {
         }
       );
 
+      setAlert({
+        show: true,
+        type: "success",
+        message: response.data.message || "Schedule updated successfully",
+      });
       setEditedDealer({});
       getEmployeeSchedule();
       setEditRowIndex(null); // exit edit mode

@@ -1,58 +1,92 @@
-.ViewAttendance-page{
-    .ViewAttendance-header{
+.ViewAttendance-page {
+    .ViewAttendance-header {
         font-size: 1rem;
         font-weight: 900;
     }
-    .ViewAttendance-container{
+
+    .ViewAttendance-container {
         // background-color: #fff;
         padding: 15px;
+
         // border-radius: 10px;
-        .ViewAttendance-page-firstLine{
+        .ViewAttendance-page-firstLine {
             display: flex;
-            justify-content: space-between;
-            .ViewAttendance-count{
+            justify-content: flex-start;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+
+            .ViewAttendance-count {
                 display: flex;
                 gap: 5px;
-                .attendance-item{
+
+                .attendance-item {
                     padding: 5px;
-                    color: #fff;
-                    // border-radius: 5px;
-                }
-                .red{
-                    background-color: #ffa3ac;
+                    // color: #fff;
                     border-radius: 5px;
                 }
-                .yellow{
-                    background-color: #f8dda8;
-                    border-radius: 5px;
+
+                .red {
+                    background: #FFE2E5;
+                    border: 1px solid #FFCCD1;
+
+                    .label {
+                        color: #931B1B;
+                    }
+
+                    .value {
+                        color: #FF3B30;
+                    }
                 }
-                .green{
-                    background-color: #a0fabf;
-                    border-radius: 5px;
+
+                .yellow {
+                    background: #FFF4DE;
+                    border: 1px solid #FFE5BC;
+
+                    .label {
+                        color: #946200;
+                    }
+
+                    .value {
+                        color: #FF9F0A;
+                    }
                 }
-                .orange{
-                 background-color: #e67e22;
-                 border-radius: 5px;
+
+                .green {
+                    background: #E2F9F3;
+                    border: 1px solid #C6F4E4;
+                    .label { color: #0C6B58; }
+                    .value { color: #34C759; }
+                }
+
+                .orange {
+                    background: #FFF0E8;
+                    border: 1px solid #FFE0CC;
+                    .label { color: #8B4000; }
+                    .value { color: #FF9500; }
                 }
             }
-            .ViewAttendance-filter{
-                display: flex;  
-                flex-direction: column;
-                input{
+
+            .ViewAttendance-filter {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+
+                input,
+                select {
                     width: 100%;
                     border-radius: 10px;
                     border: 2px solid #808080;
                     color: #808080;
                     padding: 5px;
                     font-size: 12px;
-                    &::-webkit-calendar-picker-indicator {
-                        filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
-                    }
                 }
-                
+
             }
         }
-        .ViewAttendance-table-container{
+
+        .ViewAttendance-table-container {
             margin-top: 5px;
             width: 100%;
             overflow-x: auto;
@@ -63,56 +97,59 @@
             display: block;
             max-width: 100%;
             overflow-y: auto;
+
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 700px; 
-                
+                min-width: 700px;
+
                 thead {
                     position: sticky;
                     top: 0;
                     background-color: #6399f9;
                     color: white;
-                    
-                    th {   
+
+                    th {
                         // border: 2px solid gray;          
                         white-space: nowrap;
                         text-align: center;
                     }
-                
+
                     // Rounded corners for the first and last th in the main-header row
                     .main-header th:first-child {
-                        border-radius: 5px 0 0 5px;
+                        border-radius: 5px 0 0 0px;
                     }
-                
+
                     .main-header th:last-child {
-                        border-radius: 0 5px 5px 0;
+                        border-radius: 0 5px 0px 0;
                     }
                 }
-        
+
                 tbody {
                     tr {
-                        
+
                         background-color: #f8f8f8;
-        
+
                         &:nth-child(even) {
                             background-color: white;
                         }
+
                         td {
                             padding: 12px;
                             font-size: 12px;
                             text-align: center;
-                            white-space: nowrap; 
-        
+                            white-space: nowrap;
+
                             /* Rounded corners */
                             &:first-child {
                                 border-radius: 5px 0 0 5px;
                             }
-        
+
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
                             }
-                            img{
+
+                            img {
                                 width: 5rem;
                                 height: 5rem;
                                 border-radius: 50%;
@@ -123,37 +160,172 @@
             }
         }
     }
-}
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-        .ViewAttendance-page-firstLine {
-            flex-direction: column;
-            align-items: center;
-        }
-        .ViewAttendance-table-container {
-            max-height: 50vh;
-        }
-    }
-    @media (max-width: 600px) {
-        .ViewAttendance-header {
-            font-size: 0.9rem;
-        }
-        .ViewAttendance-page-firstLine {
-            flex-direction: column;
-            align-items: stretch;
-            .ViewAttendance-count{
-                flex-wrap: wrap;
-            }
-        }
-        .ViewAttendance-filter {
-            margin-top: 10px;
-            max-width: 10rem;
-        }
-        .ViewAttendance-table-container {
-            max-height: 40vh;
+    .ViewAttendance-table-container {
+            margin-top: 5px;
+            width: 100%;
+            overflow-x: auto;
+            max-height: 60vh;
+            scrollbar-width: thin;
+
+            /* Enable vertical scrolling */
+            display: block;
+            max-width: 100%;
+            overflow-y: auto;
+
             table {
-                min-width: 100%;
-                font-size: 10px;
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 700px;
+
+                thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #6399f9;
+                    color: white;
+
+                    th {
+                        // border: 2px solid gray;          
+                        white-space: nowrap;
+                        text-align: center;
+                    }
+
+                    // Rounded corners for the first and last th in the main-header row
+                    .main-header th:first-child {
+                        border-radius: 5px 0 0 0px;
+                    }
+
+                    .main-header th:last-child {
+                        border-radius: 0 5px 0px 0;
+                    }
+                }
+
+                tbody {
+                    tr {
+
+                        background-color: #f8f8f8;
+
+                        &:nth-child(even) {
+                            background-color: white;
+                        }
+
+                        td {
+                            padding: 12px;
+                            font-size: 12px;
+                            text-align: center;
+                            white-space: nowrap;
+
+                            /* Rounded corners */
+                            &:first-child {
+                                border-radius: 5px 0 0 5px;
+                            }
+
+                            &:last-child {
+                                border-radius: 0 5px 5px 0;
+                            }
+
+                            img {
+                                width: 5rem;
+                                height: 5rem;
+                                border-radius: 50%;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .ViewAttendance-page-firstLine {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ViewAttendance-table-container {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 600px) {
+    .ViewAttendance-header {
+        font-size: 0.9rem;
+    }
+
+    .ViewAttendance-page-firstLine {
+        flex-direction: column;
+        align-items: stretch;
+
+        .ViewAttendance-count {
+            flex-wrap: wrap;
+        }
+    }
+
+    .ViewAttendance-filter {
+        margin-top: 10px;
+        max-width: 10rem;
+    }
+
+    .ViewAttendance-table-container {
+        max-height: 40vh;
+
+        table {
+            min-width: 100%;
+            font-size: 10px;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .ViewAttendance-page {
+        .ViewAttendance-header {
+            font-size: 1.1rem;
+        }
+
+        .ViewAttendance-container {
+            padding: 8px;
+
+            .ViewAttendance-page-firstLine {
+                flex-direction: column;
+                gap: 10px;
+
+                .ViewAttendance-count,
+                .ViewAttendance-filter {
+                    width: 100%;
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+
+                .ViewAttendance-filter {
+
+                    input,
+                    select {
+                        width: 100%;
+                        min-width: 100px;
+                        font-size: 12px;
+                        height: 28px;
+                        padding: 2px 6px;
+                    }
+                }
+            }
+
+            .ViewAttendance-table-container {
+                margin-top: 8px;
+                width: 100%;
+                overflow-x: auto;
+
+                table {
+                    min-width: 600px;
+                    font-size: 12px;
+
+                    th,
+                    td {
+                        padding: 6px;
+                        font-size: 12px;
+                    }
+                }
             }
         }
     }
+}

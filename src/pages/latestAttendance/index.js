@@ -172,6 +172,44 @@ export default function LatestAttendance() {
   const [punchInImage, setPunchInImage] = useState({});
   const [punchOutImage, setPunchOutImage] = useState({});
   const [loadingImages, setLoadingImages] = useState({});
+  const [selectedMonthYear, setSelectedMonthYear] = useState(() => {
+    const now = new Date();
+    return `${now.getMonth() + 1}-${now.getFullYear()}`;
+  });
+  const alertTimeoutRef = useRef(null);
+  const [AddedAttendance, setAddedAttendance] = useState([]);
+  const [showAddAttendanceTable, setShowAddAttendanceTable] = useState(false);
+  const role = localStorage.getItem("role");
+
+  //get Attendance add by admin
+  const getAddedAttendance = async () => {
+    const [month, year] = selectedMonthYear.split("-");
+
+    try {
+      const res = await axios.get(
+        `${backendUrl}/get-all-attendance-add-by-admin`,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+          params: {
+            search,
+            status,
+            date,
+            month,
+            year,
+          },
+        }
+      );
+      setAddedAttendance(res.data.data);
+    } catch (error) {
+      setAddedAttendance([]); // should be an array, not object
+      setShowAddAttendanceTable(false);
+      console.error("Error fetching attendance:", error);
+    }
+  };
+
+  //get Attendance add by admin
 
   const getAllActorTypes = async () => {
     try {
@@ -214,7 +252,7 @@ export default function LatestAttendance() {
 
   const getAttendance = async () => {
     try {
-      // console.log(date);
+      const [month, year] = selectedMonthYear.split("-");
       const res = await axios.get(
         `${backendUrl}/get-latest-attendance-by-date`,
         {
@@ -225,6 +263,8 @@ export default function LatestAttendance() {
             search,
             status,
             firms,
+            month,
+            year,
           },
           headers: {
             Authorization: localStorage.getItem("authToken"),
@@ -232,7 +272,6 @@ export default function LatestAttendance() {
         }
       );
 
-      // console.log(res);
       setAttendance(res.data.data);
       setTotalpages(res.data.totalPages);
     } catch (error) {
@@ -265,6 +304,7 @@ export default function LatestAttendance() {
 
   //handle download
   const handleDownload = async () => {
+    const [month, year] = selectedMonthYear.split("-");
     try {
       const response = await axios.get(
         `${backendUrl}/download-all-attendance/`,
@@ -274,6 +314,8 @@ export default function LatestAttendance() {
             search,
             status,
             firms,
+            month,
+            year,
           },
           responseType: "blob", // ✅ Important for file downloads
 
@@ -317,6 +359,7 @@ export default function LatestAttendance() {
 
       setDeleteId(null); // Reset deleteId after successful deletion
       getAttendance(); // Refresh data
+      getAddedAttendance()
       showAlert("Attendance deleted successfully!", "success");
     } catch (error) {
       console.error("Error deleting attendance record:", error);
@@ -326,13 +369,18 @@ export default function LatestAttendance() {
 
   //handle save
   const handleSave = async () => {
+    //remove name and position from editData
+    const { name, position, ...data } = editData;
+    console.log(data);
     try {
-      await axios.put(`${backendUrl}/edit-attendance/${editID}`, editData, {
+
+      await axios.put(`${backendUrl}/edit-attendance/${editID}`, data, {
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
       });
       getAttendance();
+      getAddedAttendance()
       showAlert("Attendance updated successfully!", "success");
     } catch (error) {
       console.log(error);
@@ -498,6 +546,7 @@ export default function LatestAttendance() {
               punchOutLongitude: null,
             });
             getAttendance();
+            getAddedAttendance()
             getAttendanceCount();
             showAlert("Attendance added successfully!", "success");
           } catch (error) {
@@ -524,9 +573,10 @@ export default function LatestAttendance() {
 
   useEffect(() => {
     getAllActorTypes();
+    getAddedAttendance();
     getAttendance();
     getAttendanceCount();
-  }, [currentPage, search, date, status]);
+  }, [currentPage, search, date, status, selectedMonthYear]);
 
   useEffect(() => {
     const total = Object.values(count).reduce((sum, value) => sum + value, 0);
@@ -538,11 +588,17 @@ export default function LatestAttendance() {
 
   const showAlert = (message, type = "info") => {
     setAlert({ show: true, message, type });
+    if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+    alertTimeoutRef.current = setTimeout(() => {
+      setAlert({ show: false, message: "", type: "info" });
+    }, 3000); // 3 seconds
   };
 
-  const hideAlert = () => {
-    setAlert({ show: false, message: "", type: "info" });
-  };
+  useEffect(() => {
+    return () => {
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <div className="latestAttendance-page">
@@ -550,12 +606,20 @@ export default function LatestAttendance() {
         <CustomAlert
           message={alert.message}
           type={alert.type}
-          onClose={hideAlert}
+          onClose={() => setAlert({ show: false, message: "", type: "info" })}
         />
       )}
-      <div className="latestAttendance-page-header">
-        <Link to="/attendance">Attendance</Link> &#47;
-        <span>All Attendance</span>
+      <div className="latestAttendance-page-header-line">
+        <div className="latestAttendance-page-header">
+          <Link to="/attendance">Attendance</Link> &#47;
+          <span>All Attendance</span>
+        </div>
+        <button
+          className="add-attendance-button"
+          onClick={() => setShowAddAttendance(true)}
+        >
+          Add Attendance
+        </button>
       </div>
       <div className="latestAttendance-page-counter-container">
         <div className="latestAttendance-page-counter-container-header">
@@ -602,120 +666,164 @@ export default function LatestAttendance() {
       <div className="latestAttendance-page-container">
         <div className="latestAttendance-page-first-line">
           <div className="latestAttendance-page-filters">
-            <input
-              value={search}
-              onChange={(e) => {
-                setCurrentPage(1);
-                setSearch(e.target.value);
-              }}
-              placeholder="Search code"
-            />
+            {!showAddAttendanceTable && (
+              <input
+                value={search}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setSearch(e.target.value);
+                }}
+                placeholder="Search code"
+              />
+            )}
             <input
               type="date"
               onChange={(e) => {
                 setCurrentPage(1);
-
-                const dateValue = e.target.value; // Get the input value
-
+                const dateValue = e.target.value;
                 if (!dateValue) {
-                  setdate(""); // If cleared, set an empty string
+                  setdate("");
                 } else {
-                  setdate(new Date(dateValue).toISOString().split("T")[0]); // Convert to YYYY-MM-DD
+                  setdate(new Date(dateValue).toISOString().split("T")[0]);
                 }
               }}
             />
             <select
-              value={status}
+              value={selectedMonthYear}
               onChange={(e) => {
                 setCurrentPage(1);
-                setStatus(e.target.value);
+                setSelectedMonthYear(e.target.value);
               }}
             >
-              <option value="">Select Status</option>
-              <option value="Present">Present</option>
-              <option value="Pending">Pending</option>
-              <option value="Absent">Absent</option>
-              <option value="Half Day">Half Day</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              {(() => {
+                const options = [];
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+
+                // Generate options for previous year and current year
+                for (let year = currentYear - 1; year <= currentYear; year++) {
+                  for (let month = 0; month < 12; month++) {
+                    const date = new Date(year, month);
+                    const monthName = date.toLocaleString("default", {
+                      month: "long",
+                    });
+                    const value = `${month + 1}-${year}`;
+                    options.push(
+                      <option key={value} value={value}>
+                        {monthName} {year}
+                      </option>
+                    );
+                  }
+                }
+                return options;
+              })()}
             </select>
-
-            <div className="custom-dropdown" ref={dropdownRef}>
-              <div className="dropdown-header" onClick={handleDropdownClick}>
-                {firms.length > 0 ? (
-                  <span>
-                    {firms.length} firm{firms.length > 1 ? "s" : ""} selected
-                  </span>
-                ) : (
-                  <span>Select Firms</span>
-                )}
-                {dropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
-              </div>
-
-              {dropdownOpen && (
-                <div
-                  className="dropdown-content"
-                  style={{
-                    position: "absolute",
+            {!showAddAttendanceTable && (
+              <>
+                <select
+                  value={status}
+                  onChange={(e) => {
+                    setCurrentPage(1);
+                    setStatus(e.target.value);
                   }}
                 >
-                  <div className="dropdown-search">
-                    <input
-                      type="text"
-                      placeholder="Search firms..."
-                      value={dropdownSearch}
-                      onChange={(e) => setDropdownSearch(e.target.value)}
-                    />
+                  <option value="">Select Status</option>
+                  <option value="Present">Present</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Half Day">Half Day</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+
+                <div className="custom-dropdown" ref={dropdownRef}>
+                  <div
+                    className="dropdown-header"
+                    onClick={handleDropdownClick}
+                  >
+                    {firms.length > 0 ? (
+                      <span>
+                        {firms.length} firm{firms.length > 1 ? "s" : ""}{" "}
+                        selected
+                      </span>
+                    ) : (
+                      <span>Select Firms</span>
+                    )}
+                    {dropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
                   </div>
 
-                  {firms.length > 0 && (
-                    <div className="selected-firms">
-                      <div className="selected-firms-header"></div>
-                      {firmList
-                        .filter((firm) => firms.includes(firm._id))
-                        .map((firm) => (
-                          <div
-                            key={firm._id}
-                            className="selected-firm-item"
-                            onClick={() => handleFirmSelect(firm)}
-                          >
-                            {firm.name}
-                          </div>
-                        ))}
+                  {dropdownOpen && (
+                    <div
+                      className="dropdown-content"
+                      style={{
+                        position: "absolute",
+                      }}
+                    >
+                      <div className="dropdown-search">
+                        <input
+                          type="text"
+                          placeholder="Search firms..."
+                          value={dropdownSearch}
+                          onChange={(e) => setDropdownSearch(e.target.value)}
+                        />
+                      </div>
+
+                      {firms.length > 0 && (
+                        <div className="selected-firms">
+                          <div className="selected-firms-header"></div>
+                          {firmList
+                            .filter((firm) => firms.includes(firm._id))
+                            .map((firm) => (
+                              <div
+                                key={firm._id}
+                                className="selected-firm-item"
+                                onClick={() => handleFirmSelect(firm)}
+                              >
+                                {firm.name}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+
+                      <div className="firms-list">
+                        {firmList
+                          .filter(
+                            (firm) =>
+                              !firms.includes(firm._id) &&
+                              firm.name
+                                .toLowerCase()
+                                .includes(dropdownSearch.toLowerCase())
+                          )
+                          .map((firm) => (
+                            <div
+                              key={firm._id}
+                              className="firm-item"
+                              onClick={() => handleFirmSelect(firm)}
+                            >
+                              {firm.name}
+                            </div>
+                          ))}
+                      </div>
+
+                      <div className="dropdown-actions">
+                        <button
+                          className="clear-btn"
+                          onClick={handleClearFirms}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          className="apply-btn"
+                          onClick={handleApplyFirms}
+                        >
+                          Apply
+                        </button>
+                      </div>
                     </div>
                   )}
-
-                  <div className="firms-list">
-                    {firmList
-                      .filter(
-                        (firm) =>
-                          !firms.includes(firm._id) &&
-                          firm.name
-                            .toLowerCase()
-                            .includes(dropdownSearch.toLowerCase())
-                      )
-                      .map((firm) => (
-                        <div
-                          key={firm._id}
-                          className="firm-item"
-                          onClick={() => handleFirmSelect(firm)}
-                        >
-                          {firm.name}
-                        </div>
-                      ))}
-                  </div>
-
-                  <div className="dropdown-actions">
-                    <button className="clear-btn" onClick={handleClearFirms}>
-                      Clear
-                    </button>
-                    <button className="apply-btn" onClick={handleApplyFirms}>
-                      Apply
-                    </button>
-                  </div>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
           <div className="latestAttendance-page-button">
             <button
@@ -725,351 +833,674 @@ export default function LatestAttendance() {
               <FaDownload />
               Download All Attendance
             </button>
-            <button
-              className="add-attendance-button"
-              onClick={() => setShowAddAttendance(true)}
-            >
-              Add Attendance
-            </button>
+            {role === "super_admin" && (
+              <button
+                className="show-add-attendance-button"
+                onClick={() => setShowAddAttendanceTable((pre)=> !pre)}
+              >
+                {showAddAttendanceTable? "Show All Attendance" : "Show Attendance Add by Admin"}
+              </button>
+            )}
           </div>
         </div>
-        <div className="latestAttendance-table-container">
-          <table>
-            <thead>
-              <tr className="main-header">
-                <th rowSpan={2}>SNo.</th>
-                <th rowSpan={2}>code</th>
-                <th rowSpan={2}>Name</th>
-                <th rowSpan={2}>Position</th>
-                <th rowSpan={2}>Date</th>
-                <th colSpan={2}>Punch In</th>
-                <th colSpan={2}>Punch Out</th>
-                <th rowSpan={2}>Status</th>
-                <th rowSpan={2}>Hours Worked</th>
-                <th rowSpan={2}>Expand</th>
-                <th rowSpan={2}>Action</th>
-              </tr>
-              <tr>
-                {/**
-                  <th>Image</th>
-                  */}
-                <th>Time</th>
-                <th>Shop Name</th>
-                {/**
-                  <th>Image</th> 
-                  */}
-                <th>Time</th>
-                <th>Shop Name</th>
-              </tr>
-            </thead>
+        {showAddAttendanceTable ? (
+          <div className="AddedAttendance-table-container">
+            <table>
+              <thead>
+                <tr className="main-header">
+                  <th rowSpan={2}>SNo.</th>
+                  <th rowSpan={2}>code</th>
+                  <th rowSpan={2}>Name</th>
+                  <th rowSpan={2}>Position</th>
+                  <th rowSpan={2}>Date</th>
+                  <th colSpan={2}>Punch In</th>
+                  <th colSpan={2}>Punch Out</th>
+                  <th rowSpan={2}>Status</th>
+                  <th rowSpan={2}>Hours Worked</th>
+                  <th rowSpan={2}>Expand</th>
+                  <th rowSpan={2}>Action</th>
+                </tr>
+                <tr>
+                  <th>Time</th>
+                  <th>Shop Name</th>
+                  <th>Time</th>
+                  <th>Shop Name</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {attendance.length > 0 ? (
-                attendance.map((record, index) => (
-                  <React.Fragment key={record._id || index}>
-                    <tr>
-                      <td>{(currentPage - 1) * limit + index + 1}</td>
-                      <td>{record.code}</td>
-                      <td>{record.name}</td>
-                      <td>{record.position}</td>
-                      <td>
-                        {new Date(record.date).toISOString().split("T")[0]}
-                      </td>
-                      <td>
-                        {editID === record._id ? (
-                          <input
-                            type="time"
-                            value={
-                              editData.punchIn
-                                ? new Date(editData.punchIn).toLocaleTimeString(
-                                    "en-IN",
-                                    {
+              <tbody>
+                {AddedAttendance.length > 0 ? (
+                  AddedAttendance.map((record, index) => (
+                    <React.Fragment key={record._id || index}>
+                      <tr>
+                        <td>{(currentPage - 1) * limit + index + 1}</td>
+                        <td>{record.code}</td>
+                        <td>{record.name}</td>
+                        <td>{record.position}</td>
+                        <td>
+                          {new Date(record.date).toISOString().split("T")[0]}
+                        </td>
+                        <td>
+                          {editID === record._id ? (
+                            <input
+                              type="time"
+                              value={
+                                editData.punchIn
+                                  ? new Date(
+                                      editData.punchIn
+                                    ).toLocaleTimeString("en-IN", {
                                       timeZone: "Asia/Kolkata",
                                       hour12: false,
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                    }
-                                  )
-                                : ""
-                            }
-                            onChange={(e) => {
-                              const [hours, minutes] =
-                                e.target.value.split(":");
-                              const newDate = new Date(
-                                editData.punchIn || new Date()
-                              );
-                              newDate.setHours(hours);
-                              newDate.setMinutes(minutes);
-                              setEditData({
-                                ...editData,
-                                punchIn: newDate.toISOString(),
-                              });
-                            }}
-                          />
-                        ) : record.punchIn ? (
-                          new Date(record.punchIn).toLocaleTimeString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                          })
-                        ) : (
-                          "N/A"
-                        )}
-                      </td>
-                      <td>{record.punchInName || "N/A"}</td>
-                      <td>
-                        {editID === record._id ? (
-                          <input
-                            type="time"
-                            value={
-                              editData.punchOut
-                                ? new Date(
-                                    editData.punchOut
-                                  ).toLocaleTimeString("en-IN", {
-                                    timeZone: "Asia/Kolkata",
-                                    hour12: false,
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : ""
-                            }
-                            onChange={(e) => {
-                              const [hours, minutes] =
-                                e.target.value.split(":");
-                              const newDate = new Date(
-                                editData.punchOut || new Date()
-                              );
-                              newDate.setHours(hours);
-                              newDate.setMinutes(minutes);
-                              setEditData({
-                                ...editData,
-                                punchOut: newDate.toISOString(),
-                              });
-                            }}
-                          />
-                        ) : record.punchOut ? (
-                          new Date(record.punchOut).toLocaleTimeString(
-                            "en-IN",
-                            {
-                              timeZone: "Asia/Kolkata",
-                            }
-                          )
-                        ) : (
-                          "N/A"
-                        )}
-                      </td>
-                      <td>{record.punchOutName || "N/A"}</td>
-
-                      {editID === record._id ? (
-                        <td>
-                          <select
-                            value={editData.status}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                status: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="Present">Present</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Absent">Absent</option>
-                            <option value="Half Day">Half Day</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                          </select>
+                                    })
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const [hours, minutes] =
+                                  e.target.value.split(":");
+                                const newDate = new Date(
+                                  editData.punchIn || new Date()
+                                );
+                                newDate.setHours(hours);
+                                newDate.setMinutes(minutes);
+                                setEditData({
+                                  ...editData,
+                                  punchIn: newDate.toISOString(),
+                                });
+                              }}
+                            />
+                          ) : record.punchIn ? (
+                            new Date(record.punchIn).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          ) : (
+                            "N/A"
+                          )}
                         </td>
-                      ) : (
-                        <td>{record.status}</td>
-                      )}
+                        <td>{record.punchInName || "N/A"}</td>
+                        <td>
+                          {editID === record._id ? (
+                            <input
+                              type="time"
+                              value={
+                                editData.punchOut
+                                  ? new Date(
+                                      editData.punchOut
+                                    ).toLocaleTimeString("en-IN", {
+                                      timeZone: "Asia/Kolkata",
+                                      hour12: false,
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const [hours, minutes] =
+                                  e.target.value.split(":");
+                                const newDate = new Date(
+                                  editData.punchOut || new Date()
+                                );
+                                newDate.setHours(hours);
+                                newDate.setMinutes(minutes);
+                                setEditData({
+                                  ...editData,
+                                  punchOut: newDate.toISOString(),
+                                });
+                              }}
+                            />
+                          ) : record.punchOut ? (
+                            new Date(record.punchOut).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>{record.punchOutName || "N/A"}</td>
 
-                      <td>{record.hoursWorked || "N/A"}</td>
+                        {editID === record._id ? (
+                          <td>
+                            <select
+                              value={editData.status}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  status: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="Present">Present</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Absent">Absent</option>
+                              <option value="Half Day">Half Day</option>
+                            </select>
+                          </td>
+                        ) : (
+                          <td>{record.status}</td>
+                        )}
 
-                      <td className="expand-btn">
-                        <button onClick={() => handleExpand(record)}>
-                          {expand === record._id ? (
+                        <td>{record.hoursWorked || "N/A"}</td>
+
+                        <td className="expand-btn">
+                          <button onClick={() => handleExpand(record)}>
+                            {expand === record._id ? (
+                              <>
+                                Collapse <FaChevronUp />
+                              </>
+                            ) : (
+                              <>
+                                Expand <FaChevronDown />
+                              </>
+                            )}
+                          </button>
+                        </td>
+
+                        <td>
+                          {editID === record._id ? (
                             <>
-                              Collapse <FaChevronUp />
+                              <FaSave
+                                color="green"
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                                onClick={() => {
+                                  handleSave();
+                                  setEditId(null);
+                                }}
+                              />
+                              <FaTimes
+                                color="red"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => setEditId(null)}
+                              />
                             </>
                           ) : (
                             <>
-                              Expand <FaChevronDown />
+                              <FaEdit
+                                color="#005bfe"
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                                onClick={() => handleEdit(record)}
+                              />
+                              <RiDeleteBin6Line
+                                color="#F21E1E"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => setDeleteId(record._id)}
+                              />
                             </>
                           )}
-                        </button>
-                      </td>
-
-                      <td>
-                        {editID === record._id ? (
-                          <>
-                            <FaSave
-                              color="green"
-                              style={{ cursor: "pointer", marginRight: "10px" }}
-                              onClick={() => {
-                                handleSave();
-                                setEditId(null);
-                              }}
-                            />
-                            <FaTimes
-                              color="red"
-                              style={{ cursor: "pointer" }}
-                              onClick={() => setEditId(null)}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <FaEdit
-                              color="#005bfe"
-                              style={{ cursor: "pointer", marginRight: "10px" }}
-                              onClick={() => handleEdit(record)}
-                            />
-                            <RiDeleteBin6Line
-                              color="#F21E1E"
-                              style={{ cursor: "pointer" }}
-                              onClick={() => setDeleteId(record._id)}
-                            />
-                          </>
-                        )}
-                      </td>
-                    </tr>
-
-                    {expand === record._id && (
-                      <tr>
-                        <td colSpan="13" className="inner-code">
-                          <table className="expanded-table">
-                            <thead>
-                              <tr>
-                                <th>Punch In Address</th>
-                                <th>Map</th>
-                                <th>Punch In Image</th>
-                                <th>Punch Out Address</th>
-                                <th>Map</th>
-                                <th>Punch Out Image</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="inner-table-address">
-                                  {loadingAddresses[record._id]
-                                    ? "Loading..."
-                                    : punchInAddress[record._id] || "N/A"}
-                                </td>
-                                <td className="inner-table-map">
-                                  {record.punchInLatitude &&
-                                  record.punchInLongitude ? (
-                                    <iframe
-                                      loading="lazy"
-                                      referrerPolicy="no-referrer-when-downgrade"
-                                      src={`https://maps.google.com/maps?q=${
-                                        typeof record.punchInLatitude ===
-                                        "object"
-                                          ? record.punchInLatitude
-                                              .$numberDecimal
-                                          : record.punchInLatitude
-                                      },${
-                                        typeof record.punchInLongitude ===
-                                        "object"
-                                          ? record.punchInLongitude
-                                              .$numberDecimal
-                                          : record.punchInLongitude
-                                      }&z=16&output=embed`}
-                                      title="Google Map"
-                                    ></iframe>
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
-                                <td>
-                                  {loadingImages[record._id] ? (
-                                    "Loading..."
-                                  ) : punchInImage[record._id] ? (
-                                    <img
-                                      src={punchInImage[record._id]}
-                                      alt="Punch In"
-                                    />
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
-                                <td className="inner-table-address">
-                                  {loadingAddresses[record._id]
-                                    ? "Loading..."
-                                    : punchOutAddress[record._id] || "N/A"}
-                                </td>
-                                <td className="inner-table-map">
-                                  {record.punchOutLatitude &&
-                                  record.punchOutLongitude ? (
-                                    <iframe
-                                      loading="lazy"
-                                      referrerPolicy="no-referrer-when-downgrade"
-                                      src={`https://maps.google.com/maps?q=${
-                                        typeof record.punchOutLatitude ===
-                                        "object"
-                                          ? record.punchOutLatitude
-                                              .$numberDecimal
-                                          : record.punchOutLatitude
-                                      },${
-                                        typeof record.punchOutLongitude ===
-                                        "object"
-                                          ? record.punchOutLongitude
-                                              .$numberDecimal
-                                          : record.punchOutLongitude
-                                      }&z=16&output=embed`}
-                                      title="Google Map"
-                                    ></iframe>
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
-                                <td>
-                                  {loadingImages[record._id] ? (
-                                    "Loading..."
-                                  ) : punchOutImage[record._id] ? (
-                                    <img
-                                      src={punchOutImage[record._id]}
-                                      alt="Punch Out"
-                                    />
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="13" style={{ textAlign: "center" }}>
-                    No recent activities
-                  </td>
+
+                      {expand === record._id && (
+                        <tr>
+                          <td colSpan="13" className="inner-code">
+                            <table className="expanded-table">
+                              <thead>
+                                <tr>
+                                  <th>Punch In Address</th>
+                                  <th>Map</th>
+                                  <th>Punch In Image</th>
+                                  <th>Punch Out Address</th>
+                                  <th>Map</th>
+                                  <th>Punch Out Image</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="inner-table-address">
+                                    {loadingAddresses[record._id]
+                                      ? "Loading..."
+                                      : punchInAddress[record._id] || "N/A"}
+                                  </td>
+                                  <td className="inner-table-map">
+                                    {record.punchInLatitude &&
+                                    record.punchInLongitude ? (
+                                      <iframe
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://maps.google.com/maps?q=${
+                                          typeof record.punchInLatitude ===
+                                          "object"
+                                            ? record.punchInLatitude
+                                                .$numberDecimal
+                                            : record.punchInLatitude
+                                        },${
+                                          typeof record.punchInLongitude ===
+                                          "object"
+                                            ? record.punchInLongitude
+                                                .$numberDecimal
+                                            : record.punchInLongitude
+                                        }&z=16&output=embed`}
+                                        title="Google Map"
+                                      ></iframe>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td>
+                                    {loadingImages[record._id] ? (
+                                      "Loading..."
+                                    ) : punchInImage[record._id] ? (
+                                      <img
+                                        src={punchInImage[record._id]}
+                                        alt="Punch In"
+                                      />
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td className="inner-table-address">
+                                    {loadingAddresses[record._id]
+                                      ? "Loading..."
+                                      : punchOutAddress[record._id] || "N/A"}
+                                  </td>
+                                  <td className="inner-table-map">
+                                    {record.punchOutLatitude &&
+                                    record.punchOutLongitude ? (
+                                      <iframe
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://maps.google.com/maps?q=${
+                                          typeof record.punchOutLatitude ===
+                                          "object"
+                                            ? record.punchOutLatitude
+                                                .$numberDecimal
+                                            : record.punchOutLatitude
+                                        },${
+                                          typeof record.punchOutLongitude ===
+                                          "object"
+                                            ? record.punchOutLongitude
+                                                .$numberDecimal
+                                            : record.punchOutLongitude
+                                        }&z=16&output=embed`}
+                                        title="Google Map"
+                                      ></iframe>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td>
+                                    {loadingImages[record._id] ? (
+                                      "Loading..."
+                                    ) : punchOutImage[record._id] ? (
+                                      <img
+                                        src={punchOutImage[record._id]}
+                                        alt="Punch Out"
+                                      />
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="13" style={{ textAlign: "center" }}>
+                      No recent activities
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="latestAttendance-table-container">
+            <table>
+              <thead>
+                <tr className="main-header">
+                  <th rowSpan={2}>SNo.</th>
+                  <th rowSpan={2}>code</th>
+                  <th rowSpan={2}>Name</th>
+                  <th rowSpan={2}>Position</th>
+                  <th rowSpan={2}>Date</th>
+                  <th colSpan={2}>Punch In</th>
+                  <th colSpan={2}>Punch Out</th>
+                  <th rowSpan={2}>Status</th>
+                  <th rowSpan={2}>Hours Worked</th>
+                  <th rowSpan={2}>Expand</th>
+                  <th rowSpan={2}>Action</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                <tr>
+                  <th>Time</th>
+                  <th>Shop Name</th>
+                  <th>Time</th>
+                  <th>Shop Name</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {attendance.length > 0 ? (
+                  attendance.map((record, index) => (
+                    <React.Fragment key={record._id || index}>
+                      <tr>
+                        <td>{(currentPage - 1) * limit + index + 1}</td>
+                        <td>{record.code}</td>
+                        <td>{record.name}</td>
+                        <td>{record.position}</td>
+                        <td>
+                          {new Date(record.date).toISOString().split("T")[0]}
+                        </td>
+                        <td>
+                          {editID === record._id ? (
+                            <input
+                              type="time"
+                              value={
+                                editData.punchIn
+                                  ? new Date(
+                                      editData.punchIn
+                                    ).toLocaleTimeString("en-IN", {
+                                      timeZone: "Asia/Kolkata",
+                                      hour12: false,
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const [hours, minutes] =
+                                  e.target.value.split(":");
+                                const newDate = new Date(
+                                  editData.punchIn || new Date()
+                                );
+                                newDate.setHours(hours);
+                                newDate.setMinutes(minutes);
+                                setEditData({
+                                  ...editData,
+                                  punchIn: newDate.toISOString(),
+                                });
+                              }}
+                            />
+                          ) : record.punchIn ? (
+                            new Date(record.punchIn).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>{record.punchInName || "N/A"}</td>
+                        <td>
+                          {editID === record._id ? (
+                            <input
+                              type="time"
+                              value={
+                                editData.punchOut
+                                  ? new Date(
+                                      editData.punchOut
+                                    ).toLocaleTimeString("en-IN", {
+                                      timeZone: "Asia/Kolkata",
+                                      hour12: false,
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const [hours, minutes] =
+                                  e.target.value.split(":");
+                                const newDate = new Date(
+                                  editData.punchOut || new Date()
+                                );
+                                newDate.setHours(hours);
+                                newDate.setMinutes(minutes);
+                                setEditData({
+                                  ...editData,
+                                  punchOut: newDate.toISOString(),
+                                });
+                              }}
+                            />
+                          ) : record.punchOut ? (
+                            new Date(record.punchOut).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                              }
+                            )
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>{record.punchOutName || "N/A"}</td>
+
+                        {editID === record._id ? (
+                          <td>
+                            <select
+                              value={editData.status}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  status: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="Present">Present</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Absent">Absent</option>
+                              <option value="Half Day">Half Day</option>
+                            </select>
+                          </td>
+                        ) : (
+                          <td>{record.status}</td>
+                        )}
+
+                        <td>{record.hoursWorked || "N/A"}</td>
+
+                        <td className="expand-btn">
+                          <button onClick={() => handleExpand(record)}>
+                            {expand === record._id ? (
+                              <>
+                                Collapse <FaChevronUp />
+                              </>
+                            ) : (
+                              <>
+                                Expand <FaChevronDown />
+                              </>
+                            )}
+                          </button>
+                        </td>
+
+                        <td>
+                          {editID === record._id ? (
+                            <>
+                              <FaSave
+                                color="green"
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                                onClick={() => {
+                                  handleSave();
+                                  setEditId(null);
+                                }}
+                              />
+                              <FaTimes
+                                color="red"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => setEditId(null)}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <FaEdit
+                                color="#005bfe"
+                                style={{
+                                  cursor: "pointer",
+                                  marginRight: "10px",
+                                }}
+                                onClick={() => handleEdit(record)}
+                              />
+                              <RiDeleteBin6Line
+                                color="#F21E1E"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => setDeleteId(record._id)}
+                              />
+                            </>
+                          )}
+                        </td>
+                      </tr>
+
+                      {expand === record._id && (
+                        <tr>
+                          <td colSpan="13" className="inner-code">
+                            <table className="expanded-table">
+                              <thead>
+                                <tr>
+                                  <th>Punch In Address</th>
+                                  <th>Map</th>
+                                  <th>Punch In Image</th>
+                                  <th>Punch Out Address</th>
+                                  <th>Map</th>
+                                  <th>Punch Out Image</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="inner-table-address">
+                                    {loadingAddresses[record._id]
+                                      ? "Loading..."
+                                      : punchInAddress[record._id] || "N/A"}
+                                  </td>
+                                  <td className="inner-table-map">
+                                    {record.punchInLatitude &&
+                                    record.punchInLongitude ? (
+                                      <iframe
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://maps.google.com/maps?q=${
+                                          typeof record.punchInLatitude ===
+                                          "object"
+                                            ? record.punchInLatitude
+                                                .$numberDecimal
+                                            : record.punchInLatitude
+                                        },${
+                                          typeof record.punchInLongitude ===
+                                          "object"
+                                            ? record.punchInLongitude
+                                                .$numberDecimal
+                                            : record.punchInLongitude
+                                        }&z=16&output=embed`}
+                                        title="Google Map"
+                                      ></iframe>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td>
+                                    {loadingImages[record._id] ? (
+                                      "Loading..."
+                                    ) : punchInImage[record._id] ? (
+                                      <img
+                                        src={punchInImage[record._id]}
+                                        alt="Punch In"
+                                      />
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td className="inner-table-address">
+                                    {loadingAddresses[record._id]
+                                      ? "Loading..."
+                                      : punchOutAddress[record._id] || "N/A"}
+                                  </td>
+                                  <td className="inner-table-map">
+                                    {record.punchOutLatitude &&
+                                    record.punchOutLongitude ? (
+                                      <iframe
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://maps.google.com/maps?q=${
+                                          typeof record.punchOutLatitude ===
+                                          "object"
+                                            ? record.punchOutLatitude
+                                                .$numberDecimal
+                                            : record.punchOutLatitude
+                                        },${
+                                          typeof record.punchOutLongitude ===
+                                          "object"
+                                            ? record.punchOutLongitude
+                                                .$numberDecimal
+                                            : record.punchOutLongitude
+                                        }&z=16&output=embed`}
+                                        title="Google Map"
+                                      ></iframe>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                  <td>
+                                    {loadingImages[record._id] ? (
+                                      "Loading..."
+                                    ) : punchOutImage[record._id] ? (
+                                      <img
+                                        src={punchOutImage[record._id]}
+                                        alt="Punch Out"
+                                      />
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="13" style={{ textAlign: "center" }}>
+                      No recent activities
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       {/* Pagination */}
-      <div className="pagination">
-        <button
-          onClick={prevPage}
-          className="page-btn"
-          disabled={currentPage === 1}
-        >
-          &lt;
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={nextPage}
-          className="page-btn"
-          disabled={currentPage === totalPages}
-        >
-          &gt;
-        </button>
-      </div>
+      {!showAddAttendanceTable && (
+        <div className="pagination">
+          <button
+            onClick={prevPage}
+            className="page-btn"
+            disabled={currentPage === 1}
+          >
+            &lt;
+          </button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={nextPage}
+            className="page-btn"
+            disabled={currentPage === totalPages}
+          >
+            &gt;
+          </button>
+        </div>
+      )}
       {deleteId !== null && (
         <div className="delete-modal" onClick={() => setDeleteId(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>

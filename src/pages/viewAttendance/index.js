@@ -1,9 +1,8 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import config from "../../config.js";
 import axios from "axios";
 import "./style.scss";
-import { FaEdit } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -13,16 +12,21 @@ export default function ViewAttendance() {
   const [attendance, setAttendance] = useState([]);
   const [name, setName] = useState("");
   const [attendanceCount, setAttendanceCount] = useState({});
+  const [selectedMonthYear, setSelectedMonthYear] = useState(() => {
+    const now = new Date();
+    return `${now.getMonth() + 1}-${now.getFullYear()}`;
+  });
+  
 
   const getAttendance = async () => {
-    console.log(date);
+    const [month, year] = selectedMonthYear.split("-");
     try {
       const res = await axios.get(`${backendUrl}/get-attendance/${code}`, {
-        params: { date }, // ✅ Ensure params is an object
+        params: { date, month, year },
       });
       setAttendance(res.data.attendance || []);
       setName(res.data.employeeName);
-      setAttendanceCount(res.data.attendanceCount);
+      setAttendanceCount(res.data.employeeStats);
     } catch (error) {
       setAttendance({});
       console.error("Error fetching attendance:", error);
@@ -32,7 +36,7 @@ export default function ViewAttendance() {
   // Fetch attendance when `code` or `date` changes
   useEffect(() => {
     if (code) getAttendance();
-  }, [code, date]);
+  }, [code, date, selectedMonthYear]);
 
   return (
     <div className="ViewAttendance-page">
@@ -54,7 +58,7 @@ export default function ViewAttendance() {
             </div>
             <div className="attendance-item orange">
               <span className="label">Half Day:</span>
-              <span className="value">{attendanceCount.halfday}</span>
+              <span className="value">{attendanceCount.halfdays}</span>
             </div>
           </div>
           <div className="ViewAttendance-filter">
@@ -63,6 +67,31 @@ export default function ViewAttendance() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
+            <select
+              value={selectedMonthYear}
+              onChange={(e) => setSelectedMonthYear(e.target.value)}
+            >
+              {(() => {
+                const options = [];
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                for (let year = currentYear - 1; year <= currentYear; year++) {
+                  for (let month = 0; month < 12; month++) {
+                    const date = new Date(year, month);
+                    const monthName = date.toLocaleString("default", {
+                      month: "long",
+                    });
+                    const value = `${month + 1}-${year}`;
+                    options.push(
+                      <option key={value} value={value}>
+                        {monthName} {year}
+                      </option>
+                    );
+                  }
+                }
+                return options;
+              })()}
+            </select>
           </div>
         </div>
         <div className="ViewAttendance-table-container">
@@ -92,9 +121,13 @@ export default function ViewAttendance() {
                     <td>{index + 1}</td>
                     <td>{new Date(record.date).toLocaleDateString()}</td>
                     <td>
-                      {new Date(record.punchIn).toLocaleTimeString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                      })}
+                    {record.punchIn
+                      ? new Date(record.punchIn).toLocaleTimeString(
+                          "en-IN",
+                          { timeZone: "Asia/Kolkata" }
+                        )
+                      : "N/A"}
+
                     </td>
                     <td>{record.punchInName || "N/A "}</td>
                     <td>

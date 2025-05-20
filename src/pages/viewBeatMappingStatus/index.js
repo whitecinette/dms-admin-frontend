@@ -31,6 +31,7 @@ const ViewBeatMappingStatus = () => {
   const [expandedRow, setExpandedRow] = useState(null);
   const [expandedRowData, setExpandedRowData] = useState([]);
   const [expandedSearch, setExpandedSearch] = useState("");
+  const [selectedRoute, setSelectedRoute] = useState([]);
 
   const [startDay, setStartDay] = useState(() => {
     const date = new Date();
@@ -123,18 +124,54 @@ const ViewBeatMappingStatus = () => {
   };
 
   const getFilteredSchedule = (schedule) => {
-    if (!expandedSearch) return schedule;
-    const searchTerm = expandedSearch.toLowerCase();
-    return schedule.filter(
-      (item) =>
-        item.code.toLowerCase().includes(searchTerm) ||
-        item.name.toLowerCase().includes(searchTerm) ||
-        item.district.toLowerCase().includes(searchTerm) ||
-        item.taluka.toLowerCase().includes(searchTerm) ||
-        item.zone.toLowerCase().includes(searchTerm) ||
-        item.position.toLowerCase().includes(searchTerm)
-    );
+    if (!expandedSearch && !selectedRoute[expandedRow]) return schedule;
+
+    let filteredSchedule = schedule;
+
+    // Filter by search term
+    if (expandedSearch) {
+      const searchTerm = expandedSearch.toLowerCase();
+      filteredSchedule = filteredSchedule.filter(
+        (item) =>
+          item.code.toLowerCase().includes(searchTerm) ||
+          item.name.toLowerCase().includes(searchTerm) ||
+          item.district.toLowerCase().includes(searchTerm) ||
+          item.taluka.toLowerCase().includes(searchTerm) ||
+          item.zone.toLowerCase().includes(searchTerm) ||
+          item.position.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filter by selected route
+    if (selectedRoute[expandedRow]) {
+      const route = data[expandedRow]?.routes.find(
+        (r) => r.id === selectedRoute[expandedRow]
+      );
+      if (route) {
+        filteredSchedule = filteredSchedule.filter((item) => {
+          const { zones, districts, talukas } = route.itinerary;
+          return (
+            (zones.length === 0 || zones.includes(item.zone)) &&
+            (districts.length === 0 || districts.includes(item.district)) &&
+            (talukas.length === 0 || talukas.includes(item.taluka))
+          );
+        });
+      }
+    }
+
+    return filteredSchedule;
   };
+
+  const handleRouteChange = (routeId, index) => {
+    setSelectedRoute((prev) => ({
+      ...prev,
+      [index]: routeId,
+    }));
+  };
+
+  useEffect(() => {
+    console.log(selectedRoute);
+  }, [selectedRoute]);
 
   return (
     <div className="viewBeatMappingStatus-page">
@@ -163,9 +200,9 @@ const ViewBeatMappingStatus = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="done" fill="#4CAF50" name="Done" />
-              <Bar dataKey="pending" fill="#FFC107" name="Pending" />
-              <Bar dataKey="total" fill="#2196F3" name="Total" />
+              <Bar dataKey="done" fill="#2E7D32" name="Done" />
+              <Bar dataKey="pending" fill="#F57C00" name="Pending" />
+              <Bar dataKey="total" fill="#1E88E5" name="Total" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -209,8 +246,9 @@ const ViewBeatMappingStatus = () => {
                 <label>Status</label>
                 <select
                   name="status"
-                  onChange={(e) => {setStatus(e.target.value)
-                    setExpandedRow(null)
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setExpandedRow(null);
                   }}
                 >
                   <option value="">All</option>
@@ -287,19 +325,127 @@ const ViewBeatMappingStatus = () => {
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
-                      <td>{item.routeName || "N/A"}</td>
-                      <td style={{ color: "#6666f2" }}>{item.total}</td>
-                      <td style={{ color: "#f0b862" }}>{item.pending}</td>
-                      <td style={{ color: "#00c853" }}>{item.done}</td>
+                      <td>
+                        {item.routes && item.routes.length > 1 ? (
+                          <div className="route-select-container">
+                            <select
+                              value={selectedRoute[index] || ""}
+                              onChange={(e) =>
+                                handleRouteChange(e.target.value, index)
+                              }
+                            >
+                              <option value="">All Routes</option>
+                              {item.routes.map((route) => (
+                                <option key={route.id} value={route.id}>
+                                  {route.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          item.routes[0]?.name || "N/A"
+                        )}
+                      </td>
+                      <td
+                        style={{
+                          color: "#1E88E5",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {selectedRoute[index]
+                          ? item.schedule.filter((s) => {
+                              const route = item.routes.find(
+                                (r) => r.id === selectedRoute[index]
+                              );
+                              if (!route) return false;
+                              const { zones, districts, talukas } =
+                                route.itinerary;
+                              return (
+                                (zones.length === 0 ||
+                                  zones.includes(s.zone)) &&
+                                (districts.length === 0 ||
+                                  districts.includes(s.district)) &&
+                                (talukas.length === 0 ||
+                                  talukas.includes(s.taluka))
+                              );
+                            }).length
+                          : item.total}
+                      </td>
+                      <td
+                        style={{
+                          color: "#F57C00",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {selectedRoute[index]
+                          ? item.schedule.filter((s) => {
+                              const route = item.routes.find(
+                                (r) => r.id === selectedRoute[index]
+                              );
+                              if (!route) return false;
+                              const { zones, districts, talukas } =
+                                route.itinerary;
+                              return (
+                                (zones.length === 0 ||
+                                  zones.includes(s.zone)) &&
+                                (districts.length === 0 ||
+                                  districts.includes(s.district)) &&
+                                (talukas.length === 0 ||
+                                  talukas.includes(s.taluka)) &&
+                                s.status === "pending"
+                              );
+                            }).length
+                          : item.pending}
+                      </td>
+                      <td
+                        style={{
+                          color: "#2E7D32",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {selectedRoute[index]
+                          ? item.schedule.filter((s) => {
+                              const route = item.routes.find(
+                                (r) => r.id === selectedRoute[index]
+                              );
+                              if (!route) return false;
+                              const { zones, districts, talukas } =
+                                route.itinerary;
+                              return (
+                                (zones.length === 0 ||
+                                  zones.includes(s.zone)) &&
+                                (districts.length === 0 ||
+                                  districts.includes(s.district)) &&
+                                (talukas.length === 0 ||
+                                  talukas.includes(s.taluka)) &&
+                                s.status === "done"
+                              );
+                            }).length
+                          : item.done}
+                      </td>
                       <td>{item.startDate.split("T")[0]}</td>
                       <td>{item.endDate.split("T")[0]}</td>
                       <td
                         style={{
-                          color:
-                            item.routeStatus === "active" ? "green" : "red",
+                          color: selectedRoute[index]
+                            ? item.routes.find(
+                                (r) => r.id === selectedRoute[index]
+                              )?.status === "active"
+                              ? "green"
+                              : "red"
+                            : item.routes[0]?.status === "active"
+                            ? "green"
+                            : "red",
                         }}
                       >
-                        {item.routeStatus || "N/A"}
+                        {selectedRoute[index]
+                          ? item.routes.find(
+                              (r) => r.id === selectedRoute[index]
+                            )?.status || "N/A"
+                          : item.routes[0]?.status || "N/A"}
                       </td>
                       <td>
                         <div
