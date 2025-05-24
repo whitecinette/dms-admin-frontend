@@ -401,41 +401,45 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                   {headers.map((header, idx) =>
                     header !== "expand" ? (
                       <td key={idx}>
-                        {editId === row._id ? (
-                          header === "status" ||
-                          header === "Status" ||
-                          header === "STATUS" ? (
-                            <select
-                              value={getNestedValue(editData, header)}
-                              onChange={(e) => {
-                                const updatedData = { ...editData };
-                                setNestedValue(
-                                  updatedData,
-                                  header,
-                                  e.target.value
-                                );
-                                setEditData(updatedData);
-                              }}
-                            >
-                              <option value="active">active</option>
-                              <option value="inactive">inactive</option>
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              value={getNestedValue(editData, header)}
-                              onChange={(e) => {
-                                const updatedData = { ...editData };
-                                setNestedValue(
-                                  updatedData,
-                                  header,
-                                  e.target.value
-                                );
-                                setEditData(updatedData);
-                              }}
-                            />
-                          )
-                        ) : (
+                   {editId === row._id ? (
+  header.toLowerCase() === "status" ? (
+    <select
+      value={getNestedValue(editData, header)}
+      onChange={(e) => {
+        const updatedData = { ...editData };
+        setNestedValue(updatedData, header, e.target.value);
+        setEditData(updatedData);
+      }}
+    >
+      <option value="active">active</option>
+      <option value="inactive">inactive</option>
+    </select>
+  ) : header.toLowerCase() === "isavailable" ? (
+    <select
+      value={String(getNestedValue(editData, header))}
+      onChange={(e) => {
+        const updatedData = { ...editData };
+        // Convert string back to boolean before setting
+        const newValue = e.target.value === "true";
+        setNestedValue(updatedData, header, newValue);
+        setEditData(updatedData);
+      }}
+    >
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+  ) : (
+    <input
+      type="text"
+      value={getNestedValue(editData, header)}
+      onChange={(e) => {
+        const updatedData = { ...editData };
+        setNestedValue(updatedData, header, e.target.value);
+        setEditData(updatedData);
+      }}
+    />
+  )
+) : (
                           <span
                             style={{
                               color:
@@ -455,7 +459,11 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                                   : "inherit",
                             }}
                           >
-                            {getNestedValue(row, header)}
+                            {typeof getNestedValue(row, header) === "boolean"
+                              ? getNestedValue(row, header)
+                                ? "Yes"
+                                : "No"
+                              : getNestedValue(row, header)}
                           </span>
                         )}
                       </td>
@@ -554,7 +562,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                                     "createdAt",
                                     "updatedAt",
                                     "__v",
-                                    "securityKey"
+                                    "securityKey",
                                   ].includes(key)
                               ) // Exclude already visible columns
                               .map(([key, value]) =>

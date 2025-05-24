@@ -19,6 +19,7 @@ function Products() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [success, setSuccess] = useState("");
   const [addBox, setAddBox] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(""); // or true/false
 
   const product_categoryList = ["smart_phone", "tab", "wearable"];
   const segmentList = [
@@ -39,6 +40,7 @@ function Products() {
     product_category:
       product_categoryList.length > 0 ? product_categoryList[0] : "",
     status: "active",
+    isAvailable: "true",
   });
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -183,6 +185,7 @@ function Products() {
             order: order,
             search: search,
             product_category: product_category,
+            isAvailable: isAvailable,
           },
         }
       );
@@ -264,6 +267,19 @@ function Products() {
                 </option>
               ))}
             </select>
+
+            {/* is available status dropdown */}
+            <select
+              value={isAvailable}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setIsAvailable(e.target.value);
+              }}
+            >
+              <option value="">All</option>
+              <option value="true">Available</option>
+              <option value="false">Unavailable</option>
+            </select>
           </div>
           <div className="product-page-buttons">
             <div
@@ -291,12 +307,7 @@ function Products() {
                 downloadCSVTemplate(
                   product.headers.filter(
                     (key) =>
-                      ![
-                        "_id",
-                        "createdAt",
-                        "updatedAt",
-                        "__v",
-                      ].includes(key)
+                      !["_id", "createdAt", "updatedAt", "__v"].includes(key)
                   )
                 )
               }
@@ -392,6 +403,14 @@ function Products() {
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
+                </select>
+                <select
+                  name="isAvailable"
+                  value={productData.isAvailable}
+                  onChange={handleChange}
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Unavailable</option>
                 </select>
               </div>
               <div className="product-add-button">
