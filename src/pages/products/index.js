@@ -222,7 +222,7 @@ function Products() {
   //call get function
   useEffect(() => {
     fetchProduct();
-  }, [currentPage, search, product_category]);
+  }, [currentPage, search, product_category, isAvailable]);
 
   const totalPages = Math.ceil(totalRecords / 50);
   // Handle Previous Page
