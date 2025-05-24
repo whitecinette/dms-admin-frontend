@@ -25,6 +25,8 @@ import AdminPage from "./pages/admin";
 import GeoTagging  from "./pages/GeoTagging";
 import FinanceDataUpload from "./pages/finance/dataUpload";
 import FinanceData from "./pages/finance/financeData";
+import FinanceVoucherUpload from "./pages/finance/voucherUpload";
+import FinanceVouchers from "./pages/finance/financeVouchers";
 function App() {
   const token = localStorage.getItem("authToken");
 
@@ -89,6 +91,8 @@ function App() {
             <Route path="/geoTagging" element={<GeoTagging/>} />
             <Route path="/finance/upload-data" element={<FinanceDataUpload /> } />
             <Route path="/finance/data" element={<FinanceData /> } />
+            <Route path="/finance/upload-vouchers" element={<FinanceVoucherUpload /> } />
+            <Route path="/finance/vouchers" element={<FinanceVouchers />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

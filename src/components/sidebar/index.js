@@ -150,6 +150,9 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       children: [
         { name: "Upload Data", to: "/finance/upload-data" },
         { name: "View Data", to: "/finance/data" },
+        { name : "Upload Vouchers", to: "/finance/upload-vouchers" },
+        {name: "View Vouchers", to: "/finance/vouchers"}
+
       ],
     },
     // { name: "Beat Mapping", to: "/segment", icon: <LuMapPinHouse size={20} /> },
