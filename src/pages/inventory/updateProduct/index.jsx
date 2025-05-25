@@ -62,37 +62,41 @@ const UpdateProducts = () => {
   const handleFileSelect = (e) => {
     handleFiles(e.target.files);
   };
-
   const handleSubmit = async () => {
-    if (!file) {
-      setError('No file selected for upload');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await axios.put(`${backendUrl}/product/update-products`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setMessage(res.data.message);
-      setCsvData(null);
-      setFile(null);
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Upload failed';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+   if (!file) {
+     setError('No file selected for upload');
+     return;
+   }
+ 
+   setLoading(true);
+   setError('');
+   setMessage('');
+ 
+   try {
+     const formData = new FormData();
+     formData.append('file', file);
+ 
+     const res = await axios.put(`${backendUrl}/product/update-products`, formData, {
+       headers: {
+         'Content-Type': 'multipart/form-data',
+       },
+     });
+ 
+     setMessage(res.data.message);
+ 
+     // Optional: Short delay to show success message before reload
+     setTimeout(() => {
+       window.location.reload();
+     }, 1000); // 1 second delay
+ 
+   } catch (err) {
+     const msg = err.response?.data?.message || 'Upload failed';
+     setError(msg);
+   } finally {
+     setLoading(false);
+   }
+ };
+ 
 
   const displayedColumns = csvData ? Object.keys(csvData[0]).slice(0, 6) : [];
 
