@@ -27,6 +27,7 @@ import FinanceDataUpload from "./pages/finance/dataUpload";
 import FinanceData from "./pages/finance/financeData";
 import FinanceVoucherUpload from "./pages/finance/voucherUpload";
 import FinanceVouchers from "./pages/finance/financeVouchers";
+import UpdateProducts from "./pages/inventory/updateProduct";
 function App() {
   const token = localStorage.getItem("authToken");
 
@@ -78,6 +79,7 @@ function App() {
             <Route path="/employee" element={<Employees />} />
             <Route path="/mdd" element={<Mdd />} />
             <Route path="/product" element={<Products />} />
+            <Route path="/update/products" element={<UpdateProducts />} />
             <Route path="/viewBeatMappingStatus" element={<ViewBeatMappingStatus/>} />
             <Route path="/actorTypeHierarchy" element={<ActorTypeHierarchy/>} />
             <Route path="/addUser" element={<AddUser/>} />

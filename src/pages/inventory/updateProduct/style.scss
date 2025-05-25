@@ -1,0 +1,107 @@
+.update-products-container {
+  max-width: 80%;
+  margin: 30px auto;
+  font-family: Arial, sans-serif;
+
+  .drop-zone {
+    border: 2px dashed rgba(249, 64, 8, 0.62);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    color: #444;
+    background-color: #fafafa;
+
+    p {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    small {
+      color: #999;
+    }
+  }
+
+  .error-message {
+    color: red;
+    margin-top: 15px;
+  }
+
+  .success-message {
+    color: green;
+    margin-top: 15px;
+  }
+
+  .csv-preview {
+    width: 100%;
+    margin-top: 30px;
+    overflow-x: auto;
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+      th,
+      td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+
+      thead {
+        background-color: rgba(249, 64, 8, 0.62);
+      }
+
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+    }
+
+    .preview-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+  }
+  .file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f0f0f0;
+    padding: 10px 15px;
+    margin-top: 15px;
+    border-radius: 5px;
+    font-size: 14px;
+
+    .remove-file-icon {
+      cursor: pointer;
+      font-weight: bold;
+      color: red;
+      margin-left: 10px;
+      transition: transform 0.2s;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+    }
+  }
+
+  .submit-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #1976d2;
+    color: white;
+    float: right;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+
+    &:disabled {
+      background-color: #888;
+      cursor: not-allowed;
+    }
+  }
+}

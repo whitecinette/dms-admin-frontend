@@ -138,6 +138,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       onClick: () => open(),
       children: [
         { name: "Products", to: "/product" },
+        { name: "Update Products", to: "/update/products" },
         { name: "Orders", to: "/orders" },
         { name: "Stock", to: "/" },
       ],
