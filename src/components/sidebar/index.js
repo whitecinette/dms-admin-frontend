@@ -149,8 +149,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       icon: <BsCashCoin  size={20} />,
       onClick: () => open(),
       children: [
-        { name: "Upload Data", to: "/finance/upload-data" },
-        { name: "View Data", to: "/finance/data" },
+        { name: "Upload Schemes", to: "/finance/upload-data" },
+        { name: "View Schemes", to: "/finance/data" },
         { name : "Upload Vouchers", to: "/finance/upload-vouchers" },
         {name: "View Vouchers", to: "/finance/vouchers"}
 

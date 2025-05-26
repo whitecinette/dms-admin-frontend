@@ -72,55 +72,70 @@ function FinanceDataUpload() {
   };
 
   const handleUploadAll = async () => {
-    for (let sheet of sheetsData) {
-      const rows = sheet.data;
-      const headers = rows[0];
-      const rowData = rows.slice(1);
+    if (!selectedFile) return alert("No file selected");
 
-      const structuredRows = rowData.map((row) => {
-        const obj = {};
-        headers.forEach((key, index) => {
-          obj[key] = row[index] ?? "";
-        });
-        return obj;
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const res = await fetch(`${backendUrl}/finance/upload-data`, {
+        method: "POST",
+        body: formData,
       });
 
-      const payload = {
-        label: sheet.label,
-        type: sheet.type,
-        startDate: sheet.startDate,
-        endDate: sheet.endDate,
-        rows: structuredRows,
-      };
+      const result = await res.json();
 
-      try {
-        const res = await fetch(`${backendUrl}/finance/upload-data`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const result = await res.json();
-        console.log(`Uploaded ${sheet.name}:`, result);
-      } catch (err) {
-        console.error(`Error uploading ${sheet.name}:`, err);
+      if (!res.ok) {
+        console.error("Upload failed:", result.message || result.error);
+        alert("Upload failed: " + (result.message || "Unknown error"));
+      } else {
+        console.log("✅ Upload successful:", result);
+        alert(`Upload successful. Sheets inserted: ${result.inserted}`);
+        resetUpload();
       }
+    } catch (err) {
+      console.error("Error uploading file:", err);
+      alert("Upload failed due to network or server error.");
     }
-
-    alert("All sheets uploaded!");
-    resetUpload();
   };
+
 
   return (
     <div className="finance-upload-container">
       <div className="upload-header">
-        <h2>Finance Data Upload</h2>
+        <h2>Scheme & Working Upload</h2>
         {sheetsData.length > 0 && (
           <button className="reset-btn" onClick={resetUpload}>
             ❌ Clear All
           </button>
         )}
       </div>
+
+      <div className="upload-instructions">
+        <h3>💡 How to Name the Finance File</h3>
+        <ul>
+          <li><strong>File name format:</strong> <code>[SchemeName]_[StartDate]_to_[EndDate].xlsx</code></li>
+          <li>Use <strong>DD-MM-YYYY</strong> date format</li>
+          <li>Replace spaces with <code>_</code></li>
+          <li>Use <code>_and_</code> instead of <code>&</code>, avoid special characters</li>
+          <li><strong>✅ Example:</strong><br />
+            <code>Scheme_5.2_and_5.3_RCM_Additional_SDP_Payout_01-04-2025_to_30-04-2025.xlsx</code>
+          </li>
+        </ul>
+        <h3>Allowed Sheet Names (case-insensitive):</h3>
+        <ul>
+          <li><code>Credit Note Voucher</code> → <strong>credit / main</strong></li>
+          <li><code>Debit Note Voucher</code> → <strong>debit / main</strong></li>
+          <li><code>Credit Note Working</code> → <strong>credit / sub</strong></li>
+          <li><code>Debit Note Working</code> → <strong>debit / sub</strong></li>
+        </ul>
+        <p>
+          ✔ You can include both main and working sheets.<br />
+          ❌ Don’t add any unrelated sheets.<br />
+          📅 Make sure the date range in the file name reflects the actual data period.
+        </p>
+      </div>
+
 
       <div className="upload-box">
         <label htmlFor="file-upload">
@@ -151,54 +166,6 @@ function FinanceDataUpload() {
                   Total Rows: {sheet.data.length - 1}
                 </p>
 
-                <div className="sheet-meta">
-                  <input
-                    type="text"
-                    placeholder="Enter label / name"
-                    className="sheet-input"
-                    value={sheet.label}
-                    onChange={(e) => {
-                      const updated = [...sheetsData];
-                      updated[idx].label = e.target.value;
-                      setSheetsData(updated);
-                    }}
-                  />
-                  <select
-                    className="sheet-dropdown"
-                    value={sheet.type}
-                    onChange={(e) => {
-                      const updated = [...sheetsData];
-                      updated[idx].type = e.target.value;
-                      setSheetsData(updated);
-                    }}
-                  >
-                    <option>Credit Note Voucher</option>
-                    <option>Credit Note Working</option>
-                    <option>Debit Note Voucher</option>
-                    <option>Debit Note Working</option>
-                  </select>
-                  <div className="sheet-date-range">
-                    <input
-                      type="date"
-                      value={sheet.startDate}
-                      onChange={(e) => {
-                        const updated = [...sheetsData];
-                        updated[idx].startDate = e.target.value;
-                        setSheetsData(updated);
-                      }}
-                    />
-                    <span>to</span>
-                    <input
-                      type="date"
-                      value={sheet.endDate}
-                      onChange={(e) => {
-                        const updated = [...sheetsData];
-                        updated[idx].endDate = e.target.value;
-                        setSheetsData(updated);
-                      }}
-                    />
-                  </div>
-                </div>
               </div>
               <button onClick={() => removeSheet(sheet.name)}>❌</button>
             </div>
