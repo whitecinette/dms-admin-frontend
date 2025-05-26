@@ -3,9 +3,6 @@ import Papa from 'papaparse';
 import config from "../../../config";
 import axios from 'axios';
 import './style.scss';
-// Optional: Uncomment if using react-icons
-// import { FaTimesCircle } from 'react-icons/fa';
-
 const backendUrl = config.backend_url;
 
 const UpdateProducts = () => {
@@ -96,12 +93,41 @@ const UpdateProducts = () => {
      setLoading(false);
    }
  };
- 
+ const handleDownloadTemplate = () => {
+  const headers = [
+    'brand',
+    'product_name',
+    'product_category',
+    'price',
+    'segment',
+    'product_code',
+    'model_code',
+    'status',
+  ];
+
+  const csvContent = [headers].map(e => e.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'update_products_template.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 
   const displayedColumns = csvData ? Object.keys(csvData[0]).slice(0, 6) : [];
 
   return (
     <div className="update-products-container">
+     <div className="download-template-btn-wrapper">
+  <button className="download-template-btn" onClick={handleDownloadTemplate}>
+    📥 Download CSV Format
+  </button>
+</div>
+
       <div
         className="drop-zone"
         onDrop={handleDrop}
