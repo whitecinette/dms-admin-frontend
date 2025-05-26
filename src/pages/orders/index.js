@@ -8,29 +8,29 @@ const backendUrl = config.backend_url;
 
 function Orders() {
   const [orderData, setOrderData] = useState([]);
-  const [dealer, setDealer] = useState("");
-  const [dealerList, setDealerList] = useState([]);
+  const [mdd, setMdd] = useState("");
+  const [mddList, setMddList] = useState([]);
   const [searchOrderId, setSearchOrderId] = useState("");
   const [status, setStatus] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, seterror] = useState("");
-  const [dealerSearch, setDealerSearch] = useState("");
+  const [mddSearch, setMddSearch] = useState("");
   const [productList, setProductList] = useState([]);
   const [editingOrder, setEditingOrder] = useState(null);
   const [deleteId, setDeleteId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isDealersLoading, setIsDealersLoading] = useState(false);
-  const [filteredDealers, setFilteredDealers] = useState([]);
+  const [isMddLoading, setIsMddLoading] = useState(false);
+  const [filteredMdd, setFilteredMdd] = useState([]);
   const [totalPendingCount, setTotalPendingCount] = useState(0);
 
   const fetchOrderData = async () => {
-    if (!dealer) return; // Prevent API call if dealer is not set
+    if (!mdd) return; // Prevent API call if dealer is not set
     setIsLoading(true);
     try {
       const response = await axios.get(`${backendUrl}/order/get-order`, {
         params: {
-          UserID: dealer,
+          UserID: mdd,
           status,
           startDate,
           endDate,
@@ -57,7 +57,7 @@ function Orders() {
     }
   };
 
-  const fetchAllDealers = async () => {
+  const fetchAllMdd = async () => {
     try {
       const authToken = localStorage.getItem("authToken");
       if (!authToken) {
@@ -66,25 +66,25 @@ function Orders() {
       }
 
       const response = await axios.get(
-        `${backendUrl}/order/get-order-by-dealer`,
+        `${backendUrl}/order/get-order-by-mdd`,
         {
           headers: { Authorization: authToken },
         }
       );
 
-      const dealers = response.data.data; // Store the fetched dealers
-      setDealerList(dealers);
-      setTotalPendingCount(response.data.totalDealersWithPendingOrders);
+      const mdd = response.data.data; // Store the fetched mdd
+      setMddList(mdd);
+      setTotalPendingCount(response.data.totalMddsWithPendingOrders);
 
-      if (dealers.length > 0) {
-        setDealer(dealers[0]._id);
+      if (mdd.length > 0) {
+        setMdd(mdd[0]._id);
       } else {
-        console.warn("No dealers found!");
+        console.warn("No mdd found!");
       }
     } catch (err) {
-      console.error("Error fetching dealers:", err);
+      console.error("Error fetching mdd:", err);
     } finally {
-      setIsDealersLoading(false);
+      setIsMddLoading(false);
     }
   };
   const handleModelChange = (index, productId) => {
@@ -188,9 +188,9 @@ function Orders() {
   };
 
   useEffect(() => {
-    fetchAllDealers();
+    fetchAllMdd();
     const interval = setInterval(() => {
-      fetchAllDealers();
+      fetchAllMdd();
     }, 60000); // fetch every 60 seconds
   
     return () => clearInterval(interval); // cleanup on unmount
@@ -200,7 +200,7 @@ function Orders() {
   useEffect(() => {
     fetchProducts();
     fetchOrderData();
-  }, [dealer, searchOrderId, status]);
+  }, [mdd, searchOrderId, status]);
 
   useEffect(() => {
     if (startDate === "" && endDate === "") {
@@ -209,11 +209,11 @@ function Orders() {
   }, [startDate, endDate]); // Runs when startDate or endDate changes
 
   useEffect(() => {
-    const filtered = dealerList.filter((dealer) =>
-      dealer.name.toLowerCase().includes(dealerSearch.toLowerCase())
+    const filtered = mddList.filter((mdd) =>
+     mdd.name.toLowerCase().includes(mddSearch.toLowerCase())
     );
-    setFilteredDealers(filtered);
-  }, [dealerSearch, dealerList]);
+    setFilteredMdd(filtered);
+  }, [mddSearch, mddList]);
 
   // ✅ Apply Filter Handler
   const handleApplyFilter = () => {
@@ -326,7 +326,7 @@ function Orders() {
 
                     <div className="order-page-details">
                       <span>
-                        <b>Dealer Name:</b> {order?.UserId?.name || "N/A"}
+                        <b>Mdd Name:</b> {order?.UserId?.name || "N/A"}
                       </span>
                       <span>
                         <b>Order Id: </b>
@@ -516,44 +516,44 @@ function Orders() {
 
         <div className="order-page-dealer-card">
           <div className="order-page-dealer-card-header-line">
-            <div className="order-page-dealer-card-header">Dealer</div>
+            <div className="order-page-dealer-card-header">Mdd</div>
             <div className="order-page-dealer-card-pendings">Pending Orders: <span>{totalPendingCount}</span></div>
           </div>
           <div className="order-page-dealer-filter">
             <input
               type="text"
-              value={dealerSearch}
+              value={mddSearch}
               placeholder="Search Dealer"
-              onChange={(e) => setDealerSearch(e.target.value)}
+              onChange={(e) => setMddSearch(e.target.value)}
             />
           </div>
           <div className="order-page-dealer-list">
-            {isDealersLoading ? (
-              <div className="loading-spinner">Loading dealers...</div>
-            ) : filteredDealers.length > 0 ? (
-              filteredDealers.map((dealers) => (
+            {isMddLoading? (
+              <div className="loading-spinner">Loading Mdd's...</div>
+            ) : filteredMdd.length > 0 ? (
+             filteredMdd.map((mdd) => (
                 <div
-                  key={dealers._id}
+                  key={mdd._id}
                   className={`order-page-dealer ${
-                    dealer === dealers._id ? "active" : ""
+                   mdd === mdd._id ? "active" : ""
                   }`}
-                  onClick={() => setDealer(dealers._id)}
+                  onClick={() => setMdd(mdd._id)}
                 >
                   <span>
-                    <b>Dealer Code:</b> {dealers?.code || "N/A"}
+                    <b>Mdd Code:</b> {mdd?.code || "N/A"}
                   </span>
                   <span>
-                    <b>Dealer Name:</b> {dealers?.name || "N/A"}
+                    <b>Mdd Name:</b> {mdd?.name || "N/A"}
                   </span>
-                  {dealers?.pendingOrdersCount > 0 && (
+                  {mdd?.pendingOrdersCount > 0 && (
                     <span className="pending-orders-count">
-                      {dealers?.pendingOrdersCount || 0}
+                      {mdd?.pendingOrdersCount || 0}
                     </span>
                   )}
                 </div>
               ))
             ) : (
-              <div>No Dealers Found</div>
+              <div>No Mdd Found</div>
             )}
           </div>
         </div>
