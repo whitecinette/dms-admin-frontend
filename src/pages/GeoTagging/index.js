@@ -3,7 +3,6 @@ import axios from "axios";
 import config from "../../config.js";
 import "./style.scss";
 import { FaDownload } from "react-icons/fa";
-import { FaClockRotateLeft } from "react-icons/fa6";
 import CustomAlert from "../../components/CustomAlert";
 
 const backendUrl = config.backend_url;
@@ -96,6 +95,8 @@ function Geotagging() {
           },
         }
       );
+      getUpdateCount();
+      setShowUpdates(false);
     } catch (error) {
       console.error("Error marking seen:", error);
     }
@@ -447,7 +448,6 @@ function Geotagging() {
               <button
                 className="close-button"
                 onClick={() => {
-                  setShowUpdates(false);
                   markSeen();
                 }}
               >

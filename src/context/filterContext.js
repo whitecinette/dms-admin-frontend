@@ -20,8 +20,7 @@ export const FiltersProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    getLastMonthStartAndEndDates()
-    console.log("✅ FiltersProvider Mounted!");
+    getLastMonthStartAndEndDates();
   }, []);
 
   const value = useMemo(() => ({

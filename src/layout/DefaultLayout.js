@@ -3,6 +3,7 @@ import Sidebar from "../components/sidebar";
 import Header from "../components/header";
 import { Outlet } from "react-router-dom";
 import "./style.scss";
+import NotificationAlert from "../components/NotificationAlert";
 
 function DefaultLayout() {
     const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 1024);
@@ -27,6 +28,7 @@ function DefaultLayout() {
     return (
         <div className={`default-layout ${isCollapsed ? "collapsed" : isMobile ? "sidebar-open" : ""}`}>
             <Sidebar isCollapsed={isCollapsed} open={()=>setIsCollapsed(false)} toggleSidebar={toggleSidebar} />
+            <NotificationAlert />
 
             {/* Show overlay & blur ONLY on small screens */}
             {isMobile && !isCollapsed && <div className="overlay" onClick={() => setIsCollapsed(true)}></div>}

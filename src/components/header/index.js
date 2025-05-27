@@ -1,27 +1,58 @@
 import { FaUserAlt } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import ProfilePopup from "../profilePopup";
+import { IoIosNotifications } from "react-icons/io";
 import "./style.scss";
+import axios from "axios";
+import config from "../../config";
+import Notification from "../Notifications";
+
+const backendUrl = config.backend_url;
 
 function Header({ isCollapsed }) {
   const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsCounts, setNotificationsCounts] = useState(0);
 
-  useEffect(() => {
-    if (showProfile) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
+  const getNotificationsCounts = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/get/notification/count`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+      setNotificationsCounts(res.data.count);
+    } catch (err) {
+      console.log(err);
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [showProfile]);
+  };
+  useEffect(() => {
+    getNotificationsCounts();
+  },[showNotifications]);
+
 
   return (
     <>
       <header className={`header ${isCollapsed ? "collapsed" : ""}`}>
-        <div className="profile" onClick={() => setShowProfile(true)}>
-          <FaUserAlt />
+        <div className="icons">
+          <div className="notifications" onClick={()=> setShowNotifications(true)
+          }>
+            <IoIosNotifications size={30} />
+            {notificationsCounts > 0 && (
+              <span className="count">{notificationsCounts}</span>
+            )}
+            </div>
+            {showNotifications && (
+              <div className="notification-content">
+                <Notification onClose={() => setShowNotifications(false)} count={notificationsCounts} />
+              </div>
+            )}
+          <div className="profile" onClick={() => setShowProfile(true)} >
+            <FaUserAlt />
+          </div>
         </div>
       </header>
       {showProfile && (
@@ -30,6 +61,7 @@ function Header({ isCollapsed }) {
           <ProfilePopup onClose={() => setShowProfile(false)} />
         </>
       )}
+      
     </>
   );
 }
