@@ -151,14 +151,14 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       children: [
         { name: "Upload Schemes", to: "/finance/upload-data" },
         { name: "View Schemes", to: "/finance/data" },
-        { name : "Upload Vouchers", to: "/finance/upload-vouchers" },
-        {name: "View Vouchers", to: "/finance/vouchers"}
+        { name : "Upload Outstanding Data", to: "/finance/upload-vouchers" },
+        {name: "View Outstanding Data", to: "/finance/vouchers"}
 
       ],
     },
     // { name: "Beat Mapping", to: "/segment", icon: <LuMapPinHouse size={20} /> },
-    { name: "Format", to: "/segment", icon: <FaFileAlt size={20} /> },
-    { name: "Upload", to: "/segment", icon: <BsCloudUpload size={20} /> },
+    // { name: "Format", to: "/segment", icon: <FaFileAlt size={20} /> },
+    // { name: "Upload", to: "/segment", icon: <BsCloudUpload size={20} /> },
     { name: "Target", to: "/segment", icon: <TbTargetArrow size={20} /> },
     // { name: "Hierarchy", to: "/segment", icon: <TbHierarchy3 size={20} /> },
     {

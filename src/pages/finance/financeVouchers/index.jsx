@@ -1,4 +1,4 @@
-// 📁 components/admin/FinanceVoucherList.jsx
+// Outstanding data
 import React, { useEffect, useState } from "react";
 import config from "../../../config.js";
 import "./style.scss";

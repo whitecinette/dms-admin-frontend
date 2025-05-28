@@ -1,3 +1,4 @@
+// Upload Schemes 
 import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import config from "../../../config.js";
@@ -9,6 +10,8 @@ function FinanceDataUpload() {
   const [sheetsData, setSheetsData] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -77,6 +80,8 @@ function FinanceDataUpload() {
     const formData = new FormData();
     formData.append("file", selectedFile);
 
+    setIsUploading(true); // Start loader
+
     try {
       const res = await fetch(`${backendUrl}/finance/upload-data`, {
         method: "POST",
@@ -96,7 +101,9 @@ function FinanceDataUpload() {
     } catch (err) {
       console.error("Error uploading file:", err);
       alert("Upload failed due to network or server error.");
-    }
+    } finally {
+    setIsUploading(false); // Stop loader
+  }
   };
 
 
@@ -195,10 +202,17 @@ function FinanceDataUpload() {
       </div>
 
       {sheetsData.length > 0 && (
-        <button className="upload-all-btn" onClick={handleUploadAll}>
-          📤 Upload All Sheets
+        <button
+          className="upload-all-btn"
+          onClick={handleUploadAll}
+          disabled={isUploading}
+        >
+          {isUploading ? "⏳ Uploading..." : "📤 Upload All Sheets"}
         </button>
       )}
+
+      {isUploading && <div className="loader">Uploading... Please wait</div>}
+
     </div>
   );
 }
