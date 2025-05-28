@@ -83,7 +83,10 @@ const UpdateProducts = () => {
         }
       );
 
-      setMessage(res.data.message);
+      const added = res.data.added || 0;
+      setMessage(
+        `✅ ${res.data.message} — Newly added products: ${added}`
+      );
 
       // Optional: Short delay to show success message before reload
       setTimeout(() => {
