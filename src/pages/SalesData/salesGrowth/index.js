@@ -141,7 +141,7 @@ const SalesGrowth = ({ moreFilter }) => {
     setSelectedValue(e.target.value);
   };
   
-  const NAVBAR_WIDTH = 350;
+  const NAVBAR_WIDTH = document.querySelector('.sidebar')?.offsetWidth || 0;
 
   const handleDropdownClick = (item) => {
     const element = dropdownRefs.current[item];

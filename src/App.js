@@ -28,6 +28,7 @@ import FinanceData from "./pages/finance/financeData";
 import FinanceVoucherUpload from "./pages/finance/voucherUpload";
 import FinanceVouchers from "./pages/finance/financeVouchers";
 import UpdateProducts from "./pages/inventory/updateProduct";
+import RoutesPlan from "./pages/RoutesPlan";
 function App() {
   const token = localStorage.getItem("authToken");
 
@@ -95,6 +96,7 @@ function App() {
             <Route path="/finance/data" element={<FinanceData /> } />
             <Route path="/finance/upload-vouchers" element={<FinanceVoucherUpload /> } />
             <Route path="/finance/vouchers" element={<FinanceVouchers />} />
+            <Route path="/routePlan" element={<RoutesPlan />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
