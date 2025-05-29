@@ -266,7 +266,7 @@ function RoutesPlan() {
                 >
                   <option value="">All</option>
                   <option value="true">True</option>
-                  <option value="false">Fasle</option>
+                  <option value="false">False</option>
                 </select>
               </div>
             </div>
