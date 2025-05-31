@@ -46,8 +46,13 @@ const NotificationAlert = () => {
   }, []);
 
   const handleNotificationClick = (notification) => {
-    if (notification.type === "routePlan") {
-      navigate("/viewBeatMappingStatus");
+    if (notification.title === "Route Plan") {
+      // Extract name, startDate, and endDate from notification.filters
+      const [name, startDate, endDate] = notification.filters;
+
+      // Navigate to /routePlan with query parameters
+      navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+      handleClose(null, notification._id);
     }
   };
 
@@ -76,6 +81,8 @@ const NotificationAlert = () => {
       month: "short",
       year: "numeric",
     });
+
+    
 
   return (
     <div className="notification-container">

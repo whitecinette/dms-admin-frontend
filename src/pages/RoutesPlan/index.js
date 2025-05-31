@@ -1,27 +1,51 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import config from "../../config";
 import axios from "axios";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import "./style.scss";
+import { AiOutlineLoading } from "react-icons/ai";
+import { FiMap } from "react-icons/fi";
 
 const backend_url = config.backend_url;
 
+function LoadingCards() {
+  return (
+    <div className="loading-cards-container">
+      <div className="loading-card"></div>
+      <div className="loading-card"></div>
+      <div className="loading-card"></div>
+    </div>
+  );
+}
+
 function RoutesPlan() {
-  const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState(() => {
-    const date = new Date();
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    const monday = new Date(date.setDate(diff));
-    return monday;
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const date = new Date();
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? 0 : 7); // adjust when day is sunday
-    const sunday = new Date(date.setDate(diff));
-    return sunday;
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Parse query parameters from the URL
+  const queryParams = new URLSearchParams(location.search);
+  const initialSearch = queryParams.get("search") || "";
+  const initialStartDate = queryParams.get("startDate")
+    ? new Date(queryParams.get("startDate"))
+    : (() => {
+        const date = new Date();
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(date.setDate(diff));
+      })();
+  const initialEndDate = queryParams.get("endDate")
+    ? new Date(queryParams.get("endDate"))
+    : (() => {
+        const date = new Date();
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? 0 : 7);
+        return new Date(date.setDate(diff));
+      })();
+
+  const [search, setSearch] = useState(initialSearch);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [status, setStatus] = useState("");
   const [approved, setApproved] = useState("");
   const [routePlan, setRoutePlan] = useState([]);
@@ -29,8 +53,12 @@ function RoutesPlan() {
   const [dropdown, setDropdown] = useState("");
   const [dropdownSearch, setDropdownSearch] = useState("");
   const [dropdownValue, setDropdownValue] = useState([]);
+  const [prevDropdownValue, setPrevDropdownValue] = useState([]);
   const dropdownRefs = useRef({});
+  const dropdownContainerRef = useRef(null);
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRouteLoading, setIsRouteLoading] = useState(true);
 
   const NAVBAR_WIDTH = document.querySelector(".sidebar")?.offsetWidth || 0;
 
@@ -46,10 +74,47 @@ function RoutesPlan() {
       setDropdown(item);
       setDropdownStyles({
         top: rect.bottom + window.scrollY,
-        left: Math.max(calculatedLeft, 0), // 👈 clamp to minimum 0
+        left: Math.max(calculatedLeft, 0),
       });
     }
   };
+
+  // Update prevDropdownValue when dropdown is opened
+  useEffect(() => {
+    if (dropdown) {
+      setPrevDropdownValue(dropdownValue);
+    }
+  }, [dropdown]);
+
+  // Handle click outside to close dropdown and manage dropdownValue
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdownContainer = dropdownContainerRef.current;
+      const isClickInsideDropdown =
+        dropdownContainer && dropdownContainer.contains(event.target);
+      const isClickInsideTrigger = Object.values(dropdownRefs.current).some(
+        (ref) => ref && ref.contains(event.target)
+      );
+
+      if (!isClickInsideDropdown && !isClickInsideTrigger) {
+        setDropdown("");
+        setDropdownSearch("");
+        // Reset to empty or restore previous state based on prevDropdownValue
+        setDropdownValue((prev) => {
+          if (prevDropdownValue[dropdown]?.length > 0) {
+            return { ...prev, [dropdown]: prevDropdownValue[dropdown] };
+          }
+          return { ...prev, [dropdown]: [] };
+        });
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdown, prevDropdownValue]);
+
   const formatDate = (date) =>
     new Date(date).toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -58,9 +123,10 @@ function RoutesPlan() {
     });
 
   const getRoutePlan = async () => {
-    if ((startDate && endDate) === "") {
+    if (!startDate || !endDate) {
       return;
     }
+    setIsRouteLoading(true);
     try {
       const res = await axios.get(`${backend_url}/admin/route-plan/get`, {
         headers: {
@@ -79,6 +145,8 @@ function RoutesPlan() {
     } catch (err) {
       console.log(err);
       setRoutePlan([]);
+    } finally {
+      setIsRouteLoading(false);
     }
   };
 
@@ -96,6 +164,8 @@ function RoutesPlan() {
     } catch (err) {
       console.log(err);
       setItinerary([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -107,97 +177,176 @@ function RoutesPlan() {
     getItinerary();
   }, []);
 
+  // Reset all filters and URL
+  const handleReset = () => {
+    setSearch("");
+    const defaultStartDate = (() => {
+      const date = new Date();
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(date.setDate(diff));
+    })();
+    const defaultEndDate = (() => {
+      const date = new Date();
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? 0 : 7);
+      return new Date(date.setDate(diff));
+    })();
+    setStartDate(defaultStartDate);
+    setEndDate(defaultEndDate);
+    setStatus("");
+    setApproved("");
+    setDropdownValue({});
+    setPrevDropdownValue({});
+    setDropdown("");
+    setDropdownSearch("");
+    navigate("/routePlan", { replace: true });
+    getRoutePlan();
+  };
+
   const handleApproval = async (routeId, isApproved, status = "active") => {
     try {
       await axios.put(
         `${backend_url}/admin/route-plan/update/${routeId}`,
         { approved: isApproved, status },
-        
         {
           headers: {
             Authorization: localStorage.getItem("authToken"),
           },
         }
       );
-      getRoutePlan(); // Refresh the list after approval/rejection
+      getRoutePlan();
     } catch (err) {
       console.log(err);
     }
   };
 
-  const renderRouteCard = (route) => (
-    <div key={route._id} className="route-card">
-      <div className="route-card-header">
-      <h3>{route.EmpName} ({route.position})</h3>
-        <span className={`status ${route.status}`}>{route.status}</span>
-      </div>
-      <div className="route-card-content">
-        <div className="route-info">
-          <p>
-            <strong>Code:</strong> {route.code}
-          </p>
-          <p>
-            <strong>Route Name:</strong> {route.name} 
-          </p>
-          <p>
-            <strong>Date:</strong> {formatDate(route.startDate)} -{" "}
-            {formatDate(route.endDate)}
-          </p>
+  if (isLoading) {
+    return (
+      <div className="RoutePlan-page">
+        <div className="routePlan-header">Route Plans</div>
+        <div className="routePlan-container">
+          <div className="spinner-container">
+            <AiOutlineLoading className="spinner" size={40} />
+          </div>
         </div>
-        <div className="route-itinerary">
-          <h4>Itinerary</h4>
-          {route.itinerary.district.length > 0 && (
+      </div>
+    );
+  }
+
+  const NoNotification = () => {
+    return (
+      <div className="No-Notifications">
+        <div className="no-notification-content">
+          <FiMap size={60} />
+          <div>No Routes Found</div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleRouteClick = (route) => {
+    navigate(
+      `/viewBeatMappingStatus?search=${encodeURIComponent(
+        route.EmpName
+      )}&startDate=${route.startDate}&endDate=${route.endDate}&route=${
+        route.id
+      }`
+    );
+  };
+
+  const renderRouteCard = (route) => (
+    <div key={route.id} className="route-card">
+      <div
+        className="route-card-clickable"
+        onClick={() => handleRouteClick(route)}
+      >
+        <div className="route-card-header">
+          <div className="header-left">
+            <h3>
+              {route.EmpName} ({route.position})
+            </h3>
+            <div className="header-code-status">
+              <span className="route-code">{route.code}</span>
+              {route.approved && (
+                <span className="approved-header">Approved</span>
+              )}
+            </div>
+          </div>
+          <span className={`status ${route.status}`}>{route.status}</span>
+        </div>
+        <div className="route-card-content">
+          <div className="route-info">
             <p>
-              <strong>District:</strong> {route.itinerary.district.join(", ")}
+              <strong>Route Name:</strong> {route.name}
             </p>
-          )}
-          {route.itinerary.zone.length > 0 && (
             <p>
-              <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
+              <strong>Date:</strong> {formatDate(route.startDate)} -{" "}
+              {formatDate(route.endDate)}
             </p>
-          )}
-          {route.itinerary.taluka.length > 0 && (
-            <p>
-              <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
-            </p>
-          )}
+          </div>
+          <div className="route-itinerary">
+            <h4 className="route-itinerary-header">Itinerary</h4>
+            {route.itinerary.district.length > 0 && (
+              <div className="route-itinerary-content">
+                <strong>District:</strong> {route.itinerary.district.join(", ")}
+              </div>
+            )}
+            {route.itinerary.zone.length > 0 && (
+              <div className="route-itinerary-content">
+                <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
+              </div>
+            )}
+            {route.itinerary.taluka.length > 0 && (
+              <div className="route-itinerary-content">
+                <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
+              </div>
+            )}
+          </div>
+          <div className="status-count">
+            <div className="status-item">
+              <strong>Total:</strong>
+              <span className="badge total">{route.total}</span>
+            </div>
+            <div className="status-item">
+              <strong>Done:</strong>
+              <span className="badge done">{route.done}</span>
+            </div>
+            <div className="status-item">
+              <strong>Pending:</strong>
+              <span className="badge pending">{route.pending}</span>
+            </div>
+          </div>
         </div>
       </div>
       <div className="route-card-actions">
         {route.approved ? (
-          <>
-            <span className="status-badge approved">Approved</span>
-            {route.status === "active"? 
-                (
-
-                    <button
-                      className="action-btn reject"
-                      onClick={() => handleApproval(route._id, true, "inactive")}
-                    >
-                      Change to Inactive
-                    </button>
-                ):(
-                    <button
-                      className="action-btn approve"
-                      onClick={() => handleApproval(route._id, true)}
-                    >
-                      Change to Active
-                    </button>
-                )
-            }
-          </>
-        ) : (
-          <>
-            <span className="status-badge rejected">Rejected</span>
+          route.status === "active" ? (
+            <button
+              className="action-btn reject"
+              onClick={() => handleApproval(route.id, true, "inactive")}
+            >
+              Change to Inactive
+            </button>
+          ) : (
             <button
               className="action-btn approve"
-              onClick={() => handleApproval(route._id, true )}
+              onClick={() => handleApproval(route.id, true)}
+            >
+              Change to Active
+            </button>
+          )
+        ) : (
+          <>
+            <button
+              className="action-btn approve"
+              onClick={() => handleApproval(route.id, true)}
             >
               Approve
             </button>
             <button
-              className="action-btn approve"
-              onClick={() => handleApproval(route._id, false, "inactive")}
+              className="action-btn reject"
+              onClick={() => handleApproval(route.id, false, "inactive")}
             >
               Reject
             </button>
@@ -222,7 +371,6 @@ function RoutesPlan() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-
               <div className="routePlan-date-filter">
                 <label htmlFor="startDate">From</label>
                 <input
@@ -246,7 +394,7 @@ function RoutesPlan() {
                 />
               </div>
               <div className="routePlan-status-filter">
-                <label htmlFor="status">Status{" "}</label>
+                <label htmlFor="status">Status </label>
                 <select
                   id="status"
                   value={status}
@@ -258,7 +406,7 @@ function RoutesPlan() {
                 </select>
               </div>
               <div className="routePlan-status-filter">
-              <label htmlFor="approved">Approved{" "}</label>
+                <label htmlFor="approved">Approved </label>
                 <select
                   id="approved"
                   value={approved}
@@ -269,10 +417,14 @@ function RoutesPlan() {
                   <option value="false">False</option>
                 </select>
               </div>
+              <div className="routePlan-reset-filter">
+                <button className="reset-btn" onClick={handleReset}>
+                  Reset Filters
+                </button>
+              </div>
             </div>
           </div>
           <div className="routePlan-filter-dropdown">
-            {/* Dynamic Dropdown from itinerary object keys */}
             {Object.keys(itinerary || {}).map((type) => {
               const filteredCount = dropdownValue?.[type]?.length || 0;
 
@@ -288,7 +440,7 @@ function RoutesPlan() {
                       if (dropdown === type) {
                         setDropdown("");
                       } else {
-                        handleDropdownClick(type); // ✅ Update position + open dropdown
+                        handleDropdownClick(type);
                       }
                     }}
                   >
@@ -299,11 +451,10 @@ function RoutesPlan() {
                 </div>
               );
             })}
-
-            {/* Dropdown container */}
             {dropdown && (
               <div
                 className="dropdown-container"
+                ref={dropdownContainerRef}
                 style={{
                   position: "absolute",
                   top: `${dropdownStyles.top}px`,
@@ -318,8 +469,6 @@ function RoutesPlan() {
                     onChange={(e) => setDropdownSearch(e.target.value)}
                   />
                 </div>
-
-                {/* Selected Items List */}
                 {dropdownValue?.[dropdown]?.length > 0 && (
                   <div className="dropdown-selected-list">
                     {dropdownValue[dropdown].map((item, index) => (
@@ -333,7 +482,6 @@ function RoutesPlan() {
                               (i) => i !== item
                             ),
                           }));
-                          handleDropdownClick(item);
                         }}
                       >
                         {item}
@@ -341,8 +489,6 @@ function RoutesPlan() {
                     ))}
                   </div>
                 )}
-
-                {/* List of items based on selected dropdown type */}
                 <div className="dropdown-list">
                   {(itinerary?.[dropdown] || [])
                     .filter(
@@ -383,7 +529,7 @@ function RoutesPlan() {
                       onClick={() => {
                         setDropdown("");
                         setDropdownSearch("");
-                        getRoutePlan(); // Optional callback for fetch/update
+                        getRoutePlan();
                       }}
                     >
                       Apply
@@ -394,9 +540,15 @@ function RoutesPlan() {
             )}
           </div>
         </div>
-        <div className="route-cards-container">
-          {routePlan.map((route) => renderRouteCard(route))}
-        </div>
+        {isRouteLoading ? (
+          <LoadingCards />
+        ) : routePlan.length > 0 ? (
+          <div className="route-cards-container">
+            {routePlan.map((route) => renderRouteCard(route))}
+          </div>
+        ) : (
+          <NoNotification />
+        )}
       </div>
     </div>
   );

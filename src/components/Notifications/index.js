@@ -4,10 +4,12 @@ import config from "../../config";
 import "./style.scss";
 import { IoMdClose } from "react-icons/io";
 import { MdNotificationsOff } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 const backendUrl = config.backend_url;
 
 function Notification({ onClose, count }) {
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState([]);
 
   const getNotifications = async () => {
@@ -49,6 +51,16 @@ function Notification({ onClose, count }) {
       console.log("Error marking notifications as read:", err);
     }
   };
+  const handleNotificationClick = (notification) => {
+    if (notification.title === "Route Plan") {
+      // Extract name, startDate, and endDate from notification.filters
+      const [name, startDate, endDate] = notification.filters;
+
+      // Navigate to /routePlan with query parameters
+      navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+      handleClose();
+    }
+  };
 
   const handleClose = async () => {
     await markNotificationsAsRead();
@@ -79,6 +91,7 @@ function Notification({ onClose, count }) {
                 borderLeft:
                   index < count ? "4px solid #007bff" : ""
               }}
+              onClick={() => handleNotificationClick(notification)}
             >
               <div className="notifications-header">
                 <div>{notification.title}</div>

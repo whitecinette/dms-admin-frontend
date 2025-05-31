@@ -20,7 +20,7 @@ import ViewAttendance from "./pages/viewAttendance";
 import LatestAttendance from "./pages/latestAttendance";
 import Hierarchy from "./pages/hierarchy";
 import AlphaMessages from "./pages/alphaMessages";
-import EmployeesSchedules from "./pages/employeeSchedule";
+import EmployeesSchedules from "./pages/viewBeatMappingStatus/employeeSchedule";
 import AdminPage from "./pages/admin";  
 import GeoTagging  from "./pages/GeoTagging";
 import FinanceDataUpload from "./pages/finance/dataUpload";
@@ -89,7 +89,6 @@ function App() {
             <Route path="/attendance/allAttendance" element={<LatestAttendance/>} />
             <Route path="/hierarchy" element={<Hierarchy/>} />
             <Route path="/alphaMessages" element={<AlphaMessages/>} />
-            <Route path="/viewBeatMappingStatus/schedules/:code" element={<EmployeesSchedules/>} />
             <Route path="/admin" element={<AdminPage/>} />
             <Route path="/geoTagging" element={<GeoTagging/>} />
             <Route path="/finance/upload-data" element={<FinanceDataUpload /> } />

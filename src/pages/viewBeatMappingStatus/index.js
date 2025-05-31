@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaDownload, FaFileUpload } from "react-icons/fa";
 import config from "../../config.js";
 import axios from "axios";
-import "./style.scss"; // Import SCSS file for styling
+import "./style.scss";
 import {
   BarChart,
   Bar,
@@ -11,47 +11,68 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
+  Pie,
+  PieChart,
+  Cell,
 } from "recharts";
 import { GiPathDistance } from "react-icons/gi";
 import CustomAlert from "../../components/CustomAlert/index.js";
 import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
+import { useLocation, useNavigate } from "react-router-dom";
+import EmployeeSchedule from "./employeeSchedule";
 
 const backendUrl = config.backend_url;
 
 const ViewBeatMappingStatus = () => {
-  const [errorMessage, setErrorMessage] = useState("");
-  const [success, setSuccess] = useState("");
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = new URLSearchParams(location.search);
+
+  // Initialize state from query parameters
+  const initialSearch = queryParams.get("search") || "";
+  const initialStartDate = queryParams.get("startDate")
+    ? new Date(queryParams.get("startDate"))
+    : (() => {
+        const date = new Date();
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(date.setDate(diff));
+      })();
+  const initialEndDate = queryParams.get("endDate")
+    ? new Date(queryParams.get("endDate"))
+    : (() => {
+        const date = new Date();
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? 0 : 7);
+        return new Date(date.setDate(diff));
+      })();
+  const initialSelectedRoute = queryParams.get("route")
+    ? [queryParams.get("route")]
+    : [];
+
+  // State declarations
   const [data, setData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState(initialSearch);
+  const [startDay, setStartDay] = useState(initialStartDate);
+  const [endDay, setEndDay] = useState(initialEndDate);
+  const [selectedRoute, setSelectedRoute] = useState(initialSelectedRoute);
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [showSecurityKeyPopup, setShowSecurityKeyPopup] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
   const [expandedRowData, setExpandedRowData] = useState([]);
-  const [expandedSearch, setExpandedSearch] = useState("");
-  const [selectedRoute, setSelectedRoute] = useState([]);
 
-  const [startDay, setStartDay] = useState(() => {
-    const date = new Date();
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    const monday = new Date(date.setDate(diff));
-    return monday;
-  });
-
-  const [endDay, setEndDay] = useState(() => {
-    const date = new Date();
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? 0 : 7); // adjust when day is sunday
-    const sunday = new Date(date.setDate(diff));
-    return sunday;
-  });
 
   const getbeatmapping = async () => {
     if (!startDay || !endDay) {
-      console.warn("Start and End dates are required.");
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Start and end dates are required.",
+      });
       return;
     }
 
@@ -63,21 +84,44 @@ const ViewBeatMappingStatus = () => {
             startDate: startDay.toISOString().split("T")[0],
             endDate: endDay.toISOString().split("T")[0],
             search,
-            status,
             page: currentPage,
             limit: 15,
           },
         }
       );
-      setData(res.data.data);
-      setTotalRecords(res.data.total);
+
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setData(res.data.data); // Set the data array from response
+        setTotalRecords(res.data.total || 0);
+      } else {
+        throw new Error("Invalid response format");
+      }
     } catch (err) {
       setData([]);
-      console.log(err);
+      setTotalRecords(0);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          err.response?.data?.message || "Failed to fetch beat mapping data",
+      });
+      console.error("Error fetching beat mapping:", err);
     }
   };
 
-  //add daily beat mapping
+  useEffect(() => {
+    if (startDay && endDay) {
+      getbeatmapping();
+    }
+  }, [currentPage, search, startDay, endDay]);
+
+  useEffect(() => {
+    if (expandedRow !== null) {
+      setExpandedRow(null);
+      setExpandedRowData([]);
+    }
+  }, [currentPage, search, startDay, endDay]);
+
   const addDailyBeatMapping = async () => {
     try {
       const res = await axios.put(`${backendUrl}/add-daily-beat-mapping`);
@@ -86,27 +130,18 @@ const ViewBeatMappingStatus = () => {
         type: "success",
         message: res.data.message || "Daily Beat Mapping Added Successfully",
       });
-      setSuccess(res.data.message || "Daily Beat Mapping Added Successfully");
     } catch (err) {
-      setErrorMessage(
-        err.response.data.message || "Failed to Add Daily Beat Mapping"
-      );
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          err.response?.data?.message || "Failed to add daily beat mapping",
+      });
     }
   };
 
-  useEffect(() => {
-    if (expandedRow) {
-      setExpandedRow(null);
-    }
-    const shouldFetch = startDay && endDay;
-    if (shouldFetch) {
-      getbeatmapping();
-    }
-  }, [currentPage, search, status, startDay, endDay]);
+  const totalPages = Math.ceil(totalRecords / 15);
 
-  const totalPages = Math.ceil(totalRecords / 50);
-
-  // ✅ Handle Pagination
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -119,47 +154,42 @@ const ViewBeatMappingStatus = () => {
     }
   };
 
-  const handleExpandedSearch = (e) => {
-    setExpandedSearch(e.target.value);
-  };
 
-  const getFilteredSchedule = (schedule) => {
-    if (!expandedSearch && !selectedRoute[expandedRow]) return schedule;
 
-    let filteredSchedule = schedule;
 
-    // Filter by search term
-    if (expandedSearch) {
-      const searchTerm = expandedSearch.toLowerCase();
-      filteredSchedule = filteredSchedule.filter(
-        (item) =>
-          item.code.toLowerCase().includes(searchTerm) ||
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.district.toLowerCase().includes(searchTerm) ||
-          item.taluka.toLowerCase().includes(searchTerm) ||
-          item.zone.toLowerCase().includes(searchTerm) ||
-          item.position.toLowerCase().includes(searchTerm)
-      );
+
+  const getRouteFilteredCounts = (schedule = [], routeId, routes = []) => {
+    if (!routeId) {
+      return {
+        total: schedule.length,
+        done: schedule.filter((s) => s.status === "done").length,
+        pending: schedule.filter((s) => s.status === "pending").length,
+      };
     }
 
-    // Filter by selected route
-    if (selectedRoute[expandedRow]) {
-      const route = data[expandedRow]?.routes.find(
-        (r) => r.id === selectedRoute[expandedRow]
-      );
-      if (route) {
-        filteredSchedule = filteredSchedule.filter((item) => {
-          const { zones, districts, talukas } = route.itinerary;
-          return (
-            (zones.length === 0 || zones.includes(item.zone)) &&
-            (districts.length === 0 || districts.includes(item.district)) &&
-            (talukas.length === 0 || talukas.includes(item.taluka))
-          );
-        });
-      }
+    const route = routes.find((r) => r.id === routeId);
+    if (!route) {
+      return {
+        total: schedule.length,
+        done: schedule.filter((s) => s.status === "done").length,
+        pending: schedule.filter((s) => s.status === "pending").length,
+      };
     }
 
-    return filteredSchedule;
+    const { zones, districts, talukas } = route.itinerary || {};
+    const filteredSchedule = schedule.filter((item) => {
+      return (
+        (zones?.length === 0 || zones?.includes(item.zone)) &&
+        (districts?.length === 0 || districts?.includes(item.district)) &&
+        (talukas?.length === 0 || talukas?.includes(item.taluka))
+      );
+    });
+
+    return {
+      total: filteredSchedule.length,
+      done: filteredSchedule.filter((s) => s.status === "done").length,
+      pending: filteredSchedule.filter((s) => s.status === "pending").length,
+    };
   };
 
   const handleRouteChange = (routeId, index) => {
@@ -169,9 +199,35 @@ const ViewBeatMappingStatus = () => {
     }));
   };
 
-  useEffect(() => {
-    console.log(selectedRoute);
-  }, [selectedRoute]);
+  // Reset all filters and URL
+  const handleReset = () => {
+    setSearch("");
+    const defaultStartDate = (() => {
+      const date = new Date();
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(date.setDate(diff));
+    })();
+    const defaultEndDate = (() => {
+      const date = new Date();
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? 0 : 7);
+      return new Date(date.setDate(diff));
+    })();
+    setStartDay(defaultStartDate);
+    setEndDay(defaultEndDate);
+    navigate("/viewBeatMappingStatus", { replace: true });
+    getbeatmapping();
+  };
+
+  const stackedData = data.map((emp) => {
+    const total = emp.done + emp.pending;
+    return {
+      ...emp,
+      done: ((emp.done / total) * 100).toFixed(1),
+      pending: ((emp.pending / total) * 100).toFixed(1),
+    };
+  });
 
   return (
     <div className="viewBeatMappingStatus-page">
@@ -193,30 +249,33 @@ const ViewBeatMappingStatus = () => {
               {startDay.toDateString()} - {endDay.toDateString()}
             </h2>
           </div>
-          {/* Graph */}
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} barCategoryGap="20%">
-              <XAxis dataKey="code" fontSize={13} />
-              <YAxis />
+            <BarChart width={600} height={300} data={stackedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey={(entry) => entry.name.split(" ")[0]}
+                textAnchor="end"
+                height={60}
+                fontSize={13}
+                angle={-45}
+              />
+              <YAxis domain={[0, 100]}  tickFormatter={(tick) => `${tick}%`} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="done" fill="#2E7D32" name="Done" />
-              <Bar dataKey="pending" fill="#F57C00" name="Pending" />
-              <Bar dataKey="total" fill="#1E88E5" name="Total" />
+              <Bar dataKey="done" name={"Done"} stackId="a" fill="#2E7D32" />
+              <Bar dataKey="pending" stackId="a" fill="#FFB300" name={"Pending"}/>
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
       <div className="viewBeatMappingStatus-page-container">
-        {/* Filter Section */}
         <div className="viewBeatMapping-first-line">
           <div className="filters-container">
             <div className="viewBeatMappingStatus-filter">
               <input
                 type="text"
                 placeholder="Search Employee Code"
-                name="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -225,7 +284,6 @@ const ViewBeatMappingStatus = () => {
                   <label>From:</label>
                   <input
                     type="date"
-                    name="startDay"
                     value={startDay ? startDay.toISOString().split("T")[0] : ""}
                     onChange={(e) => setStartDay(new Date(e.target.value))}
                   />
@@ -234,50 +292,34 @@ const ViewBeatMappingStatus = () => {
                   <label>To:</label>
                   <input
                     type="date"
-                    name="endDay"
                     value={endDay ? endDay.toISOString().split("T")[0] : ""}
                     onChange={(e) => setEndDay(new Date(e.target.value))}
                   />
                 </div>
               </div>
             </div>
-            <div className="viewBeatMapping-status-filter">
-              <div className="viewBeatMapping-status-filter-item">
-                <label>Status</label>
-                <select
-                  name="status"
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    setExpandedRow(null);
-                  }}
-                >
-                  <option value="">All</option>
-                  <option value="done">Done</option>
-                  <option value="pending">Pending</option>
-                </select>
-              </div>
-            </div>
           </div>
 
-          {/* Buttons Section */}
           <div className="buttons-container">
             <div
               className="viewBeatMappingStatus-upload-btn"
               onClick={addDailyBeatMapping}
             >
-              <label htmlFor="file-upload" className="browse-btn">
+              <label className="browse-btn">
                 <FaFileUpload />
                 Add Daily Beat Mapping
               </label>
             </div>
             <div className="viewBeatMappingStatus-download-btn">
-              <div
-                className="browse-btn"
-                // onClick={downloadCSV}
-              >
+              <div className="browse-btn">
                 <FaDownload />
                 Download CSV
               </div>
+            </div>
+            <div className="viewBeatMappingStatus-reset-filter">
+              <button className="reset-btn" onClick={handleReset}>
+                Reset Filters
+              </button>
             </div>
             {localStorage.getItem("role") === "super_admin" && (
               <div className="edit-security-key">
@@ -292,7 +334,6 @@ const ViewBeatMappingStatus = () => {
           </div>
         </div>
 
-        {/* Table Section */}
         <div className="viewBeatMapping-table-container">
           <table>
             <thead>
@@ -300,14 +341,14 @@ const ViewBeatMappingStatus = () => {
                 <th>S.NO</th>
                 <th>Employee Code</th>
                 <th>Employee Name</th>
-                <th>Route</th>
                 <th>Total</th>
                 <th>Pending</th>
                 <th>Done</th>
                 <th>Start Date</th>
                 <th>End Date</th>
-                <th>Status</th>
                 <th>View</th>
+                <th>Route</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -320,14 +361,60 @@ const ViewBeatMappingStatus = () => {
               ) : (
                 data.map((item, index) => {
                   const isExpanded = expandedRow === index;
+
+                  const counts = getRouteFilteredCounts(
+                    item.schedule || [],
+                    selectedRoute[index],
+                    item.routes || []
+                  );
                   return [
-                    <tr key={item._id || `row-${index}`}>
+                    <tr key={item._id || `row-${index}`} onClick={() => {
+                      setExpandedRow(isExpanded ? null : index);
+                      setExpandedRowData(item.schedule || []);
+                    }}>
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
+
+                      <td
+                        style={{
+                          color: "#1E88E5",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {counts.total}
+                      </td>
+                      <td
+                        style={{
+                          color: "#F57C00",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {counts.pending}
+                      </td>
+                      <td
+                        style={{
+                          color: "#2E7D32",
+                          fontWeight: "600",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {counts.done}
+                      </td>
+                      <td>{item.startDate?.split("T")[0] || "N/A"}</td>
+                      <td>{item.endDate?.split("T")[0] || "N/A"}</td>
+                      <td>
+                        <div
+                          className="expand-btn"
+                        >
+                          {isExpanded ? "Collapse" : "Expand"}
+                        </div>
+                      </td>
                       <td>
                         {item.routes && item.routes.length > 1 ? (
-                          <div className="route-select-container">
+                          <div className="route-select-container" onClick={(e) => e.stopPropagation()}>
                             <select
                               value={selectedRoute[index] || ""}
                               onChange={(e) =>
@@ -343,228 +430,31 @@ const ViewBeatMappingStatus = () => {
                             </select>
                           </div>
                         ) : (
-                          item.routes[0]?.name || "N/A"
+                          item.routes?.[0]?.name || "N/A"
                         )}
                       </td>
                       <td
                         style={{
-                          color: "#1E88E5",
-                          fontWeight: "600",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {selectedRoute[index]
-                          ? item.schedule.filter((s) => {
-                              const route = item.routes.find(
-                                (r) => r.id === selectedRoute[index]
-                              );
-                              if (!route) return false;
-                              const { zones, districts, talukas } =
-                                route.itinerary;
-                              return (
-                                (zones.length === 0 ||
-                                  zones.includes(s.zone)) &&
-                                (districts.length === 0 ||
-                                  districts.includes(s.district)) &&
-                                (talukas.length === 0 ||
-                                  talukas.includes(s.taluka))
-                              );
-                            }).length
-                          : item.total}
-                      </td>
-                      <td
-                        style={{
-                          color: "#F57C00",
-                          fontWeight: "600",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {selectedRoute[index]
-                          ? item.schedule.filter((s) => {
-                              const route = item.routes.find(
-                                (r) => r.id === selectedRoute[index]
-                              );
-                              if (!route) return false;
-                              const { zones, districts, talukas } =
-                                route.itinerary;
-                              return (
-                                (zones.length === 0 ||
-                                  zones.includes(s.zone)) &&
-                                (districts.length === 0 ||
-                                  districts.includes(s.district)) &&
-                                (talukas.length === 0 ||
-                                  talukas.includes(s.taluka)) &&
-                                s.status === "pending"
-                              );
-                            }).length
-                          : item.pending}
-                      </td>
-                      <td
-                        style={{
-                          color: "#2E7D32",
-                          fontWeight: "600",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {selectedRoute[index]
-                          ? item.schedule.filter((s) => {
-                              const route = item.routes.find(
-                                (r) => r.id === selectedRoute[index]
-                              );
-                              if (!route) return false;
-                              const { zones, districts, talukas } =
-                                route.itinerary;
-                              return (
-                                (zones.length === 0 ||
-                                  zones.includes(s.zone)) &&
-                                (districts.length === 0 ||
-                                  districts.includes(s.district)) &&
-                                (talukas.length === 0 ||
-                                  talukas.includes(s.taluka)) &&
-                                s.status === "done"
-                              );
-                            }).length
-                          : item.done}
-                      </td>
-                      <td>{item.startDate.split("T")[0]}</td>
-                      <td>{item.endDate.split("T")[0]}</td>
-                      <td
-                        style={{
                           color: selectedRoute[index]
-                            ? item.routes.find(
+                            ? item.routes?.find(
                                 (r) => r.id === selectedRoute[index]
                               )?.status === "active"
                               ? "green"
                               : "red"
-                            : item.routes[0]?.status === "active"
+                            : item.routes?.[0]?.status === "active"
                             ? "green"
                             : "red",
                         }}
                       >
                         {selectedRoute[index]
-                          ? item.routes.find(
+                          ? item.routes?.find(
                               (r) => r.id === selectedRoute[index]
                             )?.status || "N/A"
-                          : item.routes[0]?.status || "N/A"}
-                      </td>
-                      <td>
-                        <div
-                          className="expand-btn"
-                          onClick={() => {
-                            setExpandedRow(isExpanded ? null : index);
-                            setExpandedRowData(item.schedule || []);
-                            setExpandedSearch("");
-                          }}
-                        >
-                          Expand
-                        </div>
+                          : item.routes?.[0]?.status || "N/A"}
                       </td>
                     </tr>,
-                    isExpanded && (
-                      <tr
-                        key={`expanded-${index}`}
-                        className="expand-container-row"
-                      >
-                        <td colSpan="11" className="expand-container">
-                          <div className="expand-container-filter">
-                            <input
-                              type="text"
-                              placeholder="Search by code, name, district, taluka, zone or position"
-                              value={expandedSearch}
-                              onChange={handleExpandedSearch}
-                            />
-                          </div>
-                          <div className="expand-container-body">
-                            <div className="schedule-cards">
-                              {getFilteredSchedule(expandedRowData).map(
-                                (scheduleItem, sIndex) => {
-                                  const isDone = scheduleItem.status === "done";
-                                  const isPending =
-                                    scheduleItem.status === "pending";
-                                  return (
-                                    <div
-                                      key={
-                                        scheduleItem._id || `schedule-${sIndex}`
-                                      }
-                                      className={`schedule-card ${
-                                        isDone ? "done" : "pending"
-                                      }`}
-                                    >
-                                      <div className="card-top-row">
-                                        <span className="card-code">
-                                          {scheduleItem.code}
-                                        </span>
-                                        {scheduleItem.visitCount > 0 && (
-                                          <span className="visit-badge">
-                                            {scheduleItem.visitCount}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="card-name">
-                                        {scheduleItem.name}
-                                      </div>
-                                      <div className="card-tags">
-                                        {scheduleItem.zone && (
-                                          <span className="tag">
-                                            {scheduleItem.zone}
-                                          </span>
-                                        )}
-                                        {scheduleItem.district && (
-                                          <span className="tag">
-                                            {scheduleItem.district}
-                                          </span>
-                                        )}
-                                        {scheduleItem.taluka && (
-                                          <span className="tag">
-                                            {scheduleItem.taluka}
-                                          </span>
-                                        )}
-                                        {scheduleItem.position && (
-                                          <span className="tag">
-                                            {scheduleItem.position}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="card-bottom-row">
-                                        {scheduleItem.distance ? (
-                                          <span className="distance-icon">
-                                            <GiPathDistance size={24} />
-                                            {scheduleItem.distance.slice(
-                                              0,
-                                              4
-                                            )}{" "}
-                                            Km
-                                          </span>
-                                        ) : (
-                                          <span className="distance-icon">
-                                            <GiPathDistance size={24} />
-                                            N/A
-                                          </span>
-                                        )}
-                                        <div className="card-status-row">
-                                          {isDone ? (
-                                            <span className="status-pill done">
-                                              Done
-                                              <span className="checkmark">
-                                                ✔
-                                              </span>
-                                            </span>
-                                          ) : (
-                                            <span className="status-pill pending">
-                                              Pending
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ),
+
+
                   ];
                 })
               )}
@@ -592,10 +482,6 @@ const ViewBeatMappingStatus = () => {
         </div>
       </div>
 
-      {/* Error and Success Message */}
-      {errorMessage && <div className="error-message">{errorMessage}</div>}
-      {success && <div className="success-message">{success}</div>}
-
       {showSecurityKeyPopup && (
         <SecurityKeyPopup
           onClose={() => setShowSecurityKeyPopup(false)}
@@ -604,6 +490,16 @@ const ViewBeatMappingStatus = () => {
             setShowSecurityKeyPopup(false);
           }}
         />
+      )}
+          {expandedRow !== null && (
+              <EmployeeSchedule
+                  schedule={expandedRowData}
+                  isClose={() => setExpandedRow(null)}
+                  selectedRoute={selectedRoute}
+                  data={data}
+                  expandedRow={expandedRow}
+              />
+
       )}
     </div>
   );

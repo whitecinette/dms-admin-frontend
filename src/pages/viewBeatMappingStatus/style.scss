@@ -137,6 +137,25 @@
                 flex-wrap: wrap;
                 align-items: center;
 
+                .viewBeatMappingStatus-reset-filter {
+                    margin-left: 10px;
+                }
+
+                .reset-btn {
+                    padding: 12px 18px;
+                    background-color: #f44336;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: background-color 0.3s;
+
+                    &:hover {
+                        background-color: #d32f2f;
+                    }
+                }
+
                 .viewBeatMappingStatus-upload-btn,
                 .viewBeatMappingStatus-download-btn {
                     display: flex;
@@ -208,7 +227,8 @@
                     color: white;
 
                     th {
-                        padding: 0 5px;
+                        
+                        padding: 10px 5px;
                         white-space: nowrap;
                         text-align: center;
                     }
@@ -229,6 +249,9 @@
                         &:nth-child(even) {
                             background-color: white;
                         }
+                        &:hover{
+                            background-color: #e6e4e4;
+                        }
 
                         .expand-btn {
                             padding: 2px;
@@ -238,6 +261,7 @@
                         }
 
                         td {
+                            padding: 10px 5px;
                             font-size: 12px;
                             text-align: center;
                             white-space: nowrap;
@@ -248,6 +272,21 @@
 
                             &:last-child {
                                 border-radius: 0 5px 5px 0;
+                            }
+                            
+                        }
+
+                        // Custom Select Styles
+                        .route-select-container {
+                            position: relative;
+                            width: 100%;
+
+                            select {
+                                width: 80%;
+                                max-width: 100px;
+                                border: none;
+                                background-color: transparent;
+                                cursor: pointer;
                             }
                         }
 
@@ -348,8 +387,15 @@
                                                 font-weight: 500;
                                             }
 
-                                            .visit-badge {
+                                            .done {
                                                 background: #357a38;
+                                            }
+
+                                            .pending {
+                                                background: #F57C00;
+                                            }
+
+                                            .visit-badge {
                                                 color: #fff;
                                                 border-radius: 50%;
                                                 width: 28px;
@@ -575,26 +621,4 @@
             }
         }
     }
-}
-
-// Custom Select Styles
-.route-select-container {
-    position: relative;
-    width: 100%;
-
-    select {
-        // appearance: none;
-        width: 80%;
-        // padding: 8px 12px;
-        // font-size: 12px;
-        // border: 1px solid #e0e0e0;
-        // border-radius: 6px;
-        border: none;
-        background-color: transparent;
-        // color: #333;
-        cursor: pointer;
-        // transition: all 0.3s ease;
-        // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
 }

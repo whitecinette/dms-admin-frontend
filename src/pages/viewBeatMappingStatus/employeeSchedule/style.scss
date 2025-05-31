@@ -1,185 +1,327 @@
-.employee-schedule {
-    .employee-schedule-header {
-        font-size: 20px;
-        font-weight: bold;
-        color: #333;
+$primary-dark: #2E7D32;
+$warning: #FFB300;
+$neutral-gray: #ddd;
+$light-gray: #e0e0e0;
+$dark-gray: #666;
+$border-gray: #ccc;
+$white: #fff;
+$black: #000;
+$modal-bg: rgba(0, 0, 0, 0.5);
+$spacing-sm: 5px;
+$spacing-md: 10px;
+$spacing-lg: 20px;
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$font-size-sm: 12px;
+$font-size-md: 14px;
+$font-size-lg: 18px;
 
-        .header-link {
-            display: flex;
-            align-items: center;
+// Breakpoints for responsive design
+$breakpoint-mobile: 576px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+
+.employeeSchedule {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: $modal-bg;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+
+    .employeeSchedule-container {
+        background: $white;
+        border-radius: $border-radius-md;
+        width: 90%; // Slightly wider on smaller screens
+        max-width: 80vw; // Keep max-width for larger screens
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+
+        @media (max-width: $breakpoint-mobile) {
+            width: 95%;
+            max-width: 95vw;
+            max-height: 90vh;
         }
-    }
 
-    .employee-schedule-container {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 10px;
+        @media (min-width: $breakpoint-tablet) and (max-width: $breakpoint-desktop) {
+            width: 85%;
+            max-width: 85vw;
+        }
 
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: #f0f0f0; // Fixed invalid color value
+            z-index: 10;
+            padding: $spacing-lg $spacing-lg 0 $spacing-lg;
 
-
-        .employee-schedule-filter {
-            display: flex;
-            gap: 5px;
-
-            input,
-            select {
-                // width: 100%;
-                margin-top: 2px;
-                max-width: 60rem;
-                border-radius: 10px;
-                border: 2px solid #808080;
-                color: #808080;
-                padding: 5px;
-                font-size: 12px;
+            @media (max-width: $breakpoint-mobile) {
+                padding: $spacing-md $spacing-md 0 $spacing-md;
             }
-        }
 
-        .employee-schedule-date {
-            margin-left: 10px;
-            font-size: 0.9rem;
-            display: flex;
-            gap: 20px;
-
-            .date {
+            .employeeSchedule-header {
                 display: flex;
-                flex-direction: row;
-                justify-content: center;
+                justify-content: space-between;
                 align-items: center;
-                gap: 5px;
+                margin-bottom: $spacing-lg;
 
-                input {
-                    width: 100%;
-                    border-radius: 10px;
-                    border: 2px solid #808080;
-                    color: #808080;
-                    padding: 5px;
-                    font-size: 12px;
+                h3 {
+                    margin: 0;
+                    font-size: $font-size-lg;
 
-                    &::-webkit-calendar-picker-indicator {
-                        filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+                    @media (max-width: $breakpoint-mobile) {
+                        font-size: $font-size-md;
+                    }
+                }
+
+                .close-btn {
+                    background: none;
+                    border: none;
+                    font-size: $font-size-lg;
+                    cursor: pointer;
+                    color: $black;
+
+                    @media (max-width: $breakpoint-mobile) {
+                        font-size: $font-size-md;
+                    }
+                }
+            }
+
+            .expand-container-filter {
+                display: flex;
+                gap: $spacing-md;
+                margin-bottom: $spacing-lg;
+
+                @media (max-width: $breakpoint-mobile) {
+                    flex-direction: column;
+                    gap: $spacing-sm;
+                    margin-bottom: $spacing-md;
+                }
+
+                input,
+                select {
+                    padding: 8px;
+                    border: 1px solid $border-gray;
+                    border-radius: $border-radius-sm;
+                    flex: 1;
+
+                    @media (max-width: $breakpoint-mobile) {
+                        padding: 6px;
+                        font-size: $font-size-sm;
                     }
                 }
             }
         }
 
-        .employee-schedule-table {
-            margin-top: 5px;
-            width: 100%;
-            overflow-x: auto;
-            max-height: 60vh;
-            scrollbar-width: thin;
-
-            /* Enable vertical scrolling */
-            display: block;
-            max-width: 100%;
+        .expand-container-body {
+            padding: 0 $spacing-lg $spacing-lg $spacing-lg;
+            flex: 1;
             overflow-y: auto;
 
-            /* Custom scrollbar for better UX */
-            &::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
+            @media (max-width: $breakpoint-mobile) {
+                padding: 0 $spacing-md $spacing-md $spacing-md;
             }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                min-width: 700px;
+            .schedule-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+                gap: 15px;
 
-                thead {
-                    position: sticky;
-                    top: 0;
-                    background-color: #6399f9;
-                    color: white;
-
-                    th {
-                        padding: 0 5px;
-                        white-space: nowrap;
-                        text-align: center;
-                        // padding: 12px;
-                    }
-
-
-                    /* Rounded corners for first and last th */
-                    th:first-child {
-                        border-radius: 5px 0 0 5px;
-                    }
-
-                    th:last-child {
-                        border-radius: 0 5px 5px 0;
-                    }
+                @media (max-width: $breakpoint-mobile) {
+                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                    gap: 10px;
                 }
 
-                tbody {
-                    tr {
+                @media (min-width: $breakpoint-tablet) and (max-width: $breakpoint-desktop) {
+                    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                    gap: 12px;
+                }
 
-                        background-color: #f8f8f8;
+                .schedule-card {
+                    border: 1px solid $neutral-gray;
+                    padding: $spacing-md;
+                    border-radius: $border-radius-sm;
+                    background: $white;
+                    position: relative;
 
-                        &:nth-child(even) {
-                            background-color: white;
-                        }
+                    @media (max-width: $breakpoint-mobile) {
+                        padding: $spacing-sm;
+                    }
 
-                        .expand-btn {
-                            padding: 2px;
+                    &.done {
+                        border-left: 4px solid $primary-dark;
+                    }
 
-                            button {
-                                padding: 2px;
-                                background-color: #6399f9;
-                                color: white;
-                                border: none;
-                                font-size: 12px;
-                                border-radius: 5px;
-                                cursor: pointer;
+                    &.pending {
+                        border-left: 4px solid $warning;
+                    }
+
+                    .card-top-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+
+                        .card-code {
+                            font-weight: bold;
+                            font-size: $font-size-md;
+
+                            @media (max-width: $breakpoint-mobile) {
+                                font-size: $font-size-sm;
                             }
                         }
 
-                        td {
-                            font-size: 12px;
-                            text-align: center;
-                            white-space: nowrap;
+                        .visit-badge {
+                            background: $neutral-gray;
+                            padding: 2px 6px;
+                            border-radius: $border-radius-lg;
+                            font-size: $font-size-sm;
 
-                            /* Rounded corners */
-                            &:first-child {
-                                border-radius: 5px 0 0 5px;
+                            @media (max-width: $breakpoint-mobile) {
+                                padding: 1px 4px;
+                                font-size: 10px;
                             }
 
-                            &:last-child {
-                                border-radius: 0 5px 5px 0;
+                            &.done {
+                                background: $primary-dark;
+                                color: $white;
+                                backdrop-filter: blur(10px);
+                                -webkit-backdrop-filter: blur(10px);
+                            }
+
+                            &.pending {
+                                background: $warning;
+                                color: $black;
+                            }
+                        }
+                    }
+
+                    .card-name {
+                        margin: $spacing-sm 0;
+                        font-size: $font-size-md;
+
+                        @media (max-width: $breakpoint-mobile) {
+                            font-size: $font-size-sm;
+                            margin: $spacing-sm 0;
+                        }
+                    }
+
+                    .card-tags {
+                        margin: $spacing-sm 0;
+
+                        .tag {
+                            background: $light-gray;
+                            padding: 2px 6px;
+                            border-radius: $border-radius-sm;
+                            margin-right: $spacing-sm;
+                            font-size: $font-size-sm;
+
+                            @media (max-width: $breakpoint-mobile) {
+                                padding: 1px 4px;
+                                margin-right: $spacing-sm;
+                                font-size: 10px;
+                            }
+                        }
+                    }
+
+                    .card-bottom-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: $spacing-md;
+                        min-height: 30px;
+
+                        @media (max-width: $breakpoint-mobile) {
+                            min-height: 24px;
+                            margin-top: $spacing-sm;
+                        }
+
+                        .distance-icon {
+                            display: flex;
+                            align-items: center;
+                            gap: $spacing-sm;
+                            font-size: $font-size-sm;
+                            line-height: 1;
+                            height: 24px;
+
+                            svg {
+                                flex-shrink: 0;
+                                width: 24px;
+                                height: 24px;
+
+                                @media (max-width: $breakpoint-mobile) {
+                                    width: 20px;
+                                    height: 20px;
+                                }
+                            }
+
+                            @media (max-width: $breakpoint-mobile) {
+                                font-size: 10px;
+                                height: 20px;
+                                gap: $spacing-sm;
+                            }
+                        }
+
+                        .card-status-row {
+                            display: flex;
+                            justify-content: flex-end;
+
+                            .status-pill {
+                                padding: 4px 12px;
+                                border-radius: $border-radius-lg;
+                                font-size: $font-size-sm;
+                                line-height: 1;
+                                display: inline-flex;
+                                align-items: center;
+                                gap: $spacing-sm;
+                                height: 24px;
+
+                                @media (max-width: $breakpoint-mobile) {
+                                    padding: 3px 8px;
+                                    font-size: 10px;
+                                    height: 20px;
+                                }
+
+                                &.done {
+                                    background: $primary-dark;
+                                    color: $white;
+                                }
+
+                                &.pending {
+                                    background: $warning;
+                                    color: $black;
+                                }
+
+                                .checkmark {
+                                    margin-left: $spacing-sm;
+                                    line-height: 1;
+
+                                    @media (max-width: $breakpoint-mobile) {
+                                        margin-left: $spacing-sm;
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    }
-    .security-key-popup{
-        .form-group{
-            input{
-                width: 90%;
-                border-radius: 10px;
-                border: 2px solid #808080;
-                color: #808080;
-                padding: 5px;
-            }
-        }
-        .popup-actions{
-            display: flex;
-            gap: 10px;
-            justify-content: end;
-            align-items: center;
-            .cancel-btn{
-                background-color: #6399f9;
-                color: white;
-                border: none;
-                padding: 5px;
-                border-radius: 5px;
-            }
-            .delete-btn{
-                background-color: red;
-                color: white;
-                border: none;
-                padding: 5px;
-                border-radius: 5px;
+
+            .no-data {
+                text-align: center;
+                padding: $spacing-lg;
+                color: $dark-gray;
+
+                @media (max-width: $breakpoint-mobile) {
+                    padding: $spacing-md;
+                    font-size: $font-size-sm;
+                }
             }
         }
     }
