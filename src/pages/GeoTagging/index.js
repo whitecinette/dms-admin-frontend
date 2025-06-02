@@ -217,15 +217,14 @@ function Geotagging() {
   useEffect(() => {
     getAllActorTypes();
     getUpdateCount();
-  
+
     const intervalId = setInterval(() => {
       getUpdateCount();
     }, 60000); // 60 seconds
-  
+
     // Clean up on component unmount
     return () => clearInterval(intervalId);
   }, []);
-  
 
   useEffect(() => {
     fetchGeotagData();
@@ -465,10 +464,10 @@ function Geotagging() {
                   >
                     <div className="update-card-header">
                       <span className="update-name">
-                        Dealer Name: {update.modelId.name}
+                        Dealer Name: {update.modelId?.name || "N/A"}
                       </span>
                       <span className="update-status">
-                        {update.updateReason}
+                        {update.updateReason || "N/A"}
                       </span>
                     </div>
                     <div className="update-card-body">
@@ -476,7 +475,8 @@ function Geotagging() {
                         <div className="update-row">
                           <span className="update-label">Updated By:</span>
                           <span className="update-value">
-                            {update.updatedBy.name} ({update.updatedBy.code})
+                            {update.updatedBy?.name || "N/A"} (
+                            {update.updatedBy?.code || "N/A"})
                           </span>
                         </div>
                         <div className="update-row">
@@ -484,43 +484,51 @@ function Geotagging() {
                             Previous Location:
                           </span>
                           <span className="update-value">
-                            Lat: {update.previousData.latitude}, Long:{" "}
-                            {update.previousData.longitude}
+                            Lat: {update.previousData?.latitude || "N/A"}, Long:{" "}
+                            {update.previousData?.longitude || "N/A"}
                           </span>
                         </div>
                         <div className="update-row">
                           <span className="update-label">New Location:</span>
                           <span className="update-value">
-                            Lat: {update.newData.latitude}, Long:{" "}
-                            {update.newData.longitude}
+                            Lat: {update.newData?.latitude || "N/A"}, Long:{" "}
+                            {update.newData?.longitude || "N/A"}
                           </span>
                         </div>
                         <div className="update-row">
                           <span className="update-label">Updated At:</span>
                           <span className="update-value">
-                            {new Date(update.timestamp).toLocaleString()}
+                            {update.timestamp
+                              ? new Date(update.timestamp).toLocaleString()
+                              : "N/A"}
                           </span>
                         </div>
                       </div>
                       <div className="update-maps">
-                        <div className="map-container">
-                          <h4>Previous Location</h4>
-                          <iframe
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            src={`https://maps.google.com/maps?q=${update.previousData.latitude},${update.previousData.longitude}&z=16&output=embed`}
-                            title="Previous Location"
-                          ></iframe>
-                        </div>
-                        <div className="map-container">
-                          <h4>New Location</h4>
-                          <iframe
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            src={`https://maps.google.com/maps?q=${update.newData.latitude},${update.newData.longitude}&z=16&output=embed`}
-                            title="New Location"
-                          ></iframe>
-                        </div>
+                        {update.previousData?.latitude &&
+                          update.previousData?.longitude && (
+                            <div className="map-container">
+                              <h4>Previous Location</h4>
+                              <iframe
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                src={`https://maps.google.com/maps?q=${update.previousData.latitude},${update.previousData.longitude}&z=16&output=embed`}
+                                title="Previous Location"
+                              ></iframe>
+                            </div>
+                          )}
+                        {update.newData?.latitude &&
+                          update.newData?.longitude && (
+                            <div className="map-container">
+                              <h4>New Location</h4>
+                              <iframe
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                src={`https://maps.google.com/maps?q=${update.newData.latitude},${update.newData.longitude}&z=16&output=embed`}
+                                title="New Location"
+                              ></iframe>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
