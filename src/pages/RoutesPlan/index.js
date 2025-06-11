@@ -6,18 +6,10 @@ import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import "./style.scss";
 import { AiOutlineLoading } from "react-icons/ai";
 import { FiMap } from "react-icons/fi";
+import LoadingCards from "../../components/LoadingCards";
+import NoCardsFound from "../../components/NoCardsFound";
 
 const backend_url = config.backend_url;
-
-function LoadingCards() {
-  return (
-    <div className="loading-cards-container">
-      <div className="loading-card"></div>
-      <div className="loading-card"></div>
-      <div className="loading-card"></div>
-    </div>
-  );
-}
 
 function RoutesPlan() {
   const location = useLocation();
@@ -115,12 +107,22 @@ function RoutesPlan() {
     };
   }, [dropdown, prevDropdownValue]);
 
-  const formatDate = (date) =>
-    new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
+    const formatDate = (dateInput) => {
+    // Get only the date part to avoid time zone shift
+    const datePart = dateInput?.slice(0, 10); // "YYYY-MM-DD"
+    if (!datePart) return "N/A";
+
+    const [year, month, day] = datePart.split("-");
+    const dateObj = new Date(year, month - 1, day); // month is 0-indexed
+
+    const formattedDate = dateObj.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
       year: "numeric",
     });
+
+    return formattedDate || "N/A";
+  };
 
   const getRoutePlan = async () => {
     if (!startDate || !endDate) {
@@ -233,17 +235,6 @@ function RoutesPlan() {
       </div>
     );
   }
-
-  const NoNotification = () => {
-    return (
-      <div className="No-Notifications">
-        <div className="no-notification-content">
-          <FiMap size={60} />
-          <div>No Routes Found</div>
-        </div>
-      </div>
-    );
-  };
 
   const handleRouteClick = (route) => {
     navigate(
@@ -547,7 +538,7 @@ function RoutesPlan() {
             {routePlan.map((route) => renderRouteCard(route))}
           </div>
         ) : (
-          <NoNotification />
+          <NoCardsFound icon={<FiMap size={60}/>} text={"No Routes Found"} />
         )}
       </div>
     </div>

@@ -1,0 +1,29 @@
+.NoCardsFound {
+    background-color: rgba(255, 0, 0, 0.17); // soft blur red
+    backdrop-filter: blur(4px);
+    padding: 40px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    width: 97%; // full width of container
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .NoCardsFound-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #555;
+        font-size: 16px;
+
+        svg {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #cc0000; // strong red for icon
+        }
+    }
+}

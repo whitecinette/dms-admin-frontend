@@ -3,7 +3,7 @@ import "./style.scss";
 import config from "../../config";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import { FaRoute } from "react-icons/fa";
+import { FaRoute, FaWpforms } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 
@@ -45,13 +45,19 @@ const NotificationAlert = () => {
     };
   }, []);
 
-  const handleNotificationClick = (notification) => {
-    if (notification.title === "Route Plan") {
-      // Extract name, startDate, and endDate from notification.filters
-      const [name, startDate, endDate] = notification.filters;
-
-      // Navigate to /routePlan with query parameters
-      navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+ const handleNotificationClick = (notification) => {
+    try {
+      if (notification.title === "Route Plan") {
+        const [name, startDate, endDate] = notification.filters;
+        navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+      } else if (notification.title === "Leave Request") {
+        const [code, startDate, endDate] = notification.filters;
+        navigate(`/leaveApplication?search=${encodeURIComponent(code)}&startDate=${startDate}&endDate=${endDate}`);
+      }
+      
+    } catch (error) {
+      console.error("Error in handleNotificationClick:", error);
+    }finally {
       handleClose(null, notification._id);
     }
   };
@@ -59,12 +65,17 @@ const NotificationAlert = () => {
   const getNotificationIcon = (title) => {
     if (title === "Route Plan") {
       return <FaRoute className="icon" />;
+    }else if (title === "Leave Request") {
+      return <FaWpforms className="icon" />;
     }
     return null;
   };
 
+  // Modify handleClose to make event parameter optional
   const handleClose = async (e, id) => {
-    e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+    }
     try {
       await axios.put(`${backendSocketUrl}/mark/notification`, {
         userId: localStorage.getItem("userId"),
@@ -75,12 +86,22 @@ const NotificationAlert = () => {
       console.error("Error marking notification as read:", err);
     }
   };
-  const formatDate = (date) =>
-    new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
+    const formatDate = (dateInput) => {
+    // Get only the date part to avoid time zone shift
+    const datePart = dateInput?.slice(0, 10); // "YYYY-MM-DD"
+    if (!datePart) return "N/A";
+
+    const [year, month, day] = datePart.split("-");
+    const dateObj = new Date(year, month - 1, day); // month is 0-indexed
+
+    const formattedDate = dateObj.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
       year: "numeric",
     });
+
+    return formattedDate || "N/A";
+  };
 
     
 

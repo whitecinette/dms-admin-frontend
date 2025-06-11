@@ -145,7 +145,7 @@ const LoginAdmin = () => {
               <p className="forgot-password-link">
                 <span onClick={toggleForgotPassword}>Forgot Password?</span>
               </p>
-              {error && <p className="error">{error}</p>}
+              {error && <p className="error-message">{error}</p>}
               <div>
                 <button className="form-login-button" type="submit">
                   Login
@@ -198,7 +198,7 @@ const LoginAdmin = () => {
               <p className="back-to-login-link">
                 <span onClick={toggleForgotPassword}>Back to Login</span>
               </p>
-              {error && <p className="error">{error}</p>}
+              {error && <p className="error-message">{error}</p>}
               {successMsg && <p className="success">{successMsg}</p>}
               <div>
                 <button className="form-login-button" type="submit">

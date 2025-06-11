@@ -732,8 +732,7 @@ export default function LatestAttendance() {
                   <option value="Pending">Pending</option>
                   <option value="Absent">Absent</option>
                   <option value="Half Day">Half Day</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
+                  <option value="Leave">Leave</option>
                 </select>
 
                 <div className="custom-dropdown" ref={dropdownRef}>

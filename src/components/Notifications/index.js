@@ -32,7 +32,7 @@ function Notification({ onClose, count }) {
         .filter((_, index) => index < count)
         .map(notification => notification._id);
 
-        console.log("Unread notifications:", unreadNotifications);
+        // console.log("Unread notifications:", unreadNotifications);
       if (unreadNotifications.length > 0) {
         await axios.put(
           `${backendUrl}/mark/notification`,
@@ -51,20 +51,48 @@ function Notification({ onClose, count }) {
       console.log("Error marking notifications as read:", err);
     }
   };
+  // Update handleNotificationClick to handle the event properly
   const handleNotificationClick = (notification) => {
-    if (notification.title === "Route Plan") {
-      // Extract name, startDate, and endDate from notification.filters
-      const [name, startDate, endDate] = notification.filters;
-
-      // Navigate to /routePlan with query parameters
-      navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+    try {
+      if (notification.title === "Route Plan") {
+        const [name, startDate, endDate] = notification.filters;
+        const queryParams = `?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`;
+        
+        // Check if we're already on the route plan page
+        if (window.location.pathname === '/routePlan') {
+          // Force a reload of the current page with new parameters
+          window.location.href = `/routePlan${queryParams}`;
+        } else {
+          // Use normal navigation for different pages
+          navigate(`/routePlan${queryParams}`);
+        }
+      } else if (notification.title === "Leave Request") {
+        const [code, startDate, endDate] = notification.filters;
+        const queryParams = `?search=${encodeURIComponent(code)}&startDate=${startDate}&endDate=${endDate}`;
+        
+        if (window.location.pathname === '/leaveApplication') {
+          window.location.href = `/leaveApplication${queryParams}`;
+        } else {
+          navigate(`/leaveApplication${queryParams}`);
+        }
+      }
+      handleClose();
+    } catch (error) {
+      console.error("Error in handleNotificationClick:", error);
+    }finally {
       handleClose();
     }
+
   };
 
+  // Update the handleClose function to work without requiring event
   const handleClose = async () => {
-    await markNotificationsAsRead();
-    onClose();
+    try {
+      await markNotificationsAsRead();
+      onClose(); // Call the onClose prop passed from parent
+    } catch (error) {
+      console.error("Error in handleClose:", error);
+    }
   };
 
   useEffect(() => {
@@ -75,7 +103,8 @@ function Notification({ onClose, count }) {
     <div className="Notification">
       <div className="notification-header">
         <div>Notifications</div>
-        <span onClick={handleClose}>
+        {/* Update the JSX where close button is rendered */}
+        <span onClick={(e) => handleClose(e)}>
           <IoMdClose />
         </span>
       </div>

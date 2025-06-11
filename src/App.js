@@ -33,70 +33,12 @@ import FinanceVoucherUpload from "./pages/finance/voucherUpload";
 import FinanceVouchers from "./pages/finance/financeVouchers";
 import UpdateProducts from "./pages/inventory/updateProduct";
 import RoutesPlan from "./pages/RoutesPlan";
-import axios from "axios";
-import config from "./config";
-
-const backend_url = config.backend_url;
-
-function PrivateRoute({ element }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-
-  const isTokenExpired = () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) return true;
-
-    try {
-      const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-      const expiryTime = tokenPayload.exp * 1000;
-      return new Date(expiryTime) < Date.now();
-    } catch (error) {
-      console.error("Invalid token:", error);
-      return true;
-    }
-  };
-
-  const refreshToken = async () => {
-    try {
-      if (!localStorage.getItem("refreshToken")) {
-        setIsAuthenticated(false);
-        return;
-      }
-      const body = {
-        refreshToken: localStorage.getItem("refreshToken"),
-      };
-
-      const res = await axios.post(`${backend_url}/user/Refresh-token`, body);
-      localStorage.setItem("authToken", res.data.token); // Update token
-      localStorage.setItem("refreshToken", res.data.refreshToken); // Update refresh token
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error("Error refreshing token:", error);
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("refreshToken");
-      setIsAuthenticated(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isTokenExpired()) {
-      console.log("Token expired, refreshing...");
-      refreshToken();
-    } else {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  if (isAuthenticated === null) {
-    return <div>Loading...</div>; // Temporary loading state
-  }
-
-  return isAuthenticated ? element : <Navigate to="/login" replace />;
-}
+import PrivateRoute from "./components/PrivateRoute";
+import LeaveApplication from "./pages/LeaveApplication";
 
 function App() {
   return (
     <Router>
-      <Suspense fallback={<div>Loading application...</div>}>
         <Routes>
           {/* Public Route - Login Page */}
           <Route path="/login" element={<LoginSignUpAdmin />} />
@@ -146,12 +88,12 @@ function App() {
             />
             <Route path="/finance/vouchers" element={<FinanceVouchers />} />
             <Route path="/routePlan" element={<RoutesPlan />} />
+            <Route path="/leaveApplication" element={<LeaveApplication />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
           <Route path="*" element={<Page404 />} />
         </Routes>
-      </Suspense>
     </Router>
   );
 }
