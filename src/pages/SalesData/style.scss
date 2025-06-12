@@ -1,9 +1,43 @@
-.sales-page{
-    .sales-page-header{
-        font-size: 1.5rem;
-        font-weight: 900;
+.sales-page {
+    .sales-page-header {
+        .buttons {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+
+            .upload-btn,
+            .download-btn {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                padding: 5px 10px;
+                border-radius: 10px;
+                font-size: 15px;
+                cursor: pointer;
+                border: none;
+
+                &:hover {
+                    opacity: .9;
+                }
+            }
+
+            .upload-btn {
+                background-color: #6666f2;
+
+                .browse-btn {
+                    cursor: pointer;
+                }
+            }
+
+            .download-btn {
+                background-color: #ffcd00;
+                color: black;
+            }
+        }
     }
-    .sales-page-container{
+
+    .sales-page-container {
         background-color: #fff;
         padding: 20px;
         border-radius: 10px;
