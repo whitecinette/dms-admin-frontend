@@ -131,7 +131,7 @@ const AddAttendancePopup = ({
 
 export default function LatestAttendance() {
   const [deleteId, setDeleteId] = useState(null);
-  const [attendance, setAttendance] = useState({});
+  const [attendance, setAttendance] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalpages] = useState(0);
   const [search, setSearch] = useState("");
@@ -181,7 +181,7 @@ export default function LatestAttendance() {
   const [showAddAttendanceTable, setShowAddAttendanceTable] = useState(false);
   const role = localStorage.getItem("role");
 
-  //get Attendance add by admin
+  // Get Attendance added by admin
   const getAddedAttendance = async () => {
     const [month, year] = selectedMonthYear.split("-");
 
@@ -201,16 +201,16 @@ export default function LatestAttendance() {
           },
         }
       );
+      console.log("API Response (getAddedAttendance):", res.data.data); // Debugging
       setAddedAttendance(res.data.data);
     } catch (error) {
-      setAddedAttendance([]); // should be an array, not object
+      setAddedAttendance([]);
       setShowAddAttendanceTable(false);
-      console.error("Error fetching attendance:", error);
+      console.error("Error fetching added attendance:", error);
     }
   };
 
-  //get Attendance add by admin
-
+  // Get all actor types
   const getAllActorTypes = async () => {
     try {
       const res = await axios.get(
@@ -222,7 +222,7 @@ export default function LatestAttendance() {
     }
   };
 
-  //get getAttendanceCount
+  // Get attendance count
   const getAttendanceCount = async () => {
     let newDate = "";
     if (!date) {
@@ -231,7 +231,6 @@ export default function LatestAttendance() {
     } else {
       newDate = new Date(date).toISOString().split("T")[0];
     }
-    console.log(newDate);
     try {
       const response = await axios.get(
         `${backendUrl}/get-attendance-by-date/${newDate}`,
@@ -246,10 +245,11 @@ export default function LatestAttendance() {
       );
       setCount(response.data.attendanceCount);
     } catch (err) {
-      console.error("Error fetching attendance:", err);
+      console.error("Error fetching attendance count:", err);
     }
   };
 
+  // Get attendance
   const getAttendance = async () => {
     try {
       const [month, year] = selectedMonthYear.split("-");
@@ -271,7 +271,7 @@ export default function LatestAttendance() {
           },
         }
       );
-
+      console.log("API Response (getAttendance):", res.data.data); // Debugging
       setAttendance(res.data.data);
       setTotalpages(res.data.totalPages);
     } catch (error) {
@@ -279,10 +279,10 @@ export default function LatestAttendance() {
     }
   };
 
+  // Fetch address from coordinates
   const fetchAddress = async (lat, lon) => {
     if (!lat || !lon) return "N/A";
     try {
-      // Convert MongoDB decimal to string if needed
       const latitude =
         typeof lat === "object" && lat.$numberDecimal
           ? lat.$numberDecimal
@@ -302,7 +302,7 @@ export default function LatestAttendance() {
     }
   };
 
-  //handle download
+  // Handle download
   const handleDownload = async () => {
     const [month, year] = selectedMonthYear.split("-");
     try {
@@ -317,26 +317,20 @@ export default function LatestAttendance() {
             month,
             year,
           },
-          responseType: "blob", // ✅ Important for file downloads
-
+          responseType: "blob",
           headers: {
             Authorization: localStorage.getItem("authToken"),
           },
         }
       );
 
-      // Create a Blob URL
       const url = window.URL.createObjectURL(new Blob([response.data]));
-
-      // Create a download link
       const a = document.createElement("a");
       a.href = url;
       a.download = "all_attendance_data.csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-
-      // Cleanup Blob URL
       window.URL.revokeObjectURL(url);
       showAlert("Attendance data downloaded successfully!", "success");
     } catch (error) {
@@ -345,7 +339,7 @@ export default function LatestAttendance() {
     }
   };
 
-  //delete employee attendance by id
+  // Delete employee attendance by id
   const deleteRow = async () => {
     try {
       await axios.delete(
@@ -357,9 +351,9 @@ export default function LatestAttendance() {
         }
       );
 
-      setDeleteId(null); // Reset deleteId after successful deletion
-      getAttendance(); // Refresh data
-      getAddedAttendance()
+      setDeleteId(null);
+      getAttendance();
+      getAddedAttendance();
       showAlert("Attendance deleted successfully!", "success");
     } catch (error) {
       console.error("Error deleting attendance record:", error);
@@ -367,31 +361,30 @@ export default function LatestAttendance() {
     }
   };
 
-  //handle save
+  // Handle save
   const handleSave = async () => {
-    //remove name and position from editData
     const { name, position, ...data } = editData;
-    console.log(data);
     try {
-
       await axios.put(`${backendUrl}/edit-attendance/${editID}`, data, {
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
       });
       getAttendance();
-      getAddedAttendance()
+      getAddedAttendance();
       showAlert("Attendance updated successfully!", "success");
+      setEditId(null);
     } catch (error) {
       console.log(error);
       showAlert(
         error.response?.data.message ||
-          "Error adding attendance. Please try again.",
+          "Error updating attendance. Please try again.",
         "error"
       );
     }
   };
-  //Handle edit
+
+  // Handle edit
   const handleEdit = (row) => {
     setEditId(row._id);
     setEditData(row);
@@ -411,6 +404,7 @@ export default function LatestAttendance() {
     }
   };
 
+  // Handle dropdown click
   const handleDropdownClick = (event) => {
     if (dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
@@ -422,6 +416,7 @@ export default function LatestAttendance() {
     setDropdownOpen(!dropdownOpen);
   };
 
+  // Handle firm selection
   const handleFirmSelect = (firm) => {
     if (firms.includes(firm._id)) {
       setFirms(firms.filter((id) => id !== firm._id));
@@ -431,11 +426,13 @@ export default function LatestAttendance() {
     setCurrentPage(1);
   };
 
+  // Clear firms
   const handleClearFirms = () => {
     setFirms([]);
     setCurrentPage(1);
   };
 
+  // Apply firms
   const handleApplyFirms = () => {
     setDropdownOpen(false);
     setDropdownSearch("");
@@ -443,6 +440,7 @@ export default function LatestAttendance() {
     getAttendanceCount();
   };
 
+  // Handle expand
   const handleExpand = async (record) => {
     const newExpandState = expand === record._id ? null : record._id;
     setExpand(newExpandState);
@@ -458,7 +456,6 @@ export default function LatestAttendance() {
         setPunchInAddress((prev) => ({ ...prev, [record._id]: inAddress }));
         setPunchOutAddress((prev) => ({ ...prev, [record._id]: outAddress }));
 
-        // Load images only when expanding
         if (record.punchInImage) {
           const inImage = new Image();
           inImage.src = record.punchInImage;
@@ -486,7 +483,6 @@ export default function LatestAttendance() {
         setLoadingImages((prev) => ({ ...prev, [record._id]: false }));
       }
     } else {
-      // Clear images when collapsing
       setPunchInImage((prev) => {
         const newState = { ...prev };
         delete newState[record._id];
@@ -500,6 +496,7 @@ export default function LatestAttendance() {
     }
   };
 
+  // Handle add attendance
   const handleAddAttendance = async () => {
     if (!newAttendance.code || !newAttendance.remark) {
       showAlert("Please fill in Code and Remark fields", "error");
@@ -546,7 +543,7 @@ export default function LatestAttendance() {
               punchOutLongitude: null,
             });
             getAttendance();
-            getAddedAttendance()
+            getAddedAttendance();
             getAttendanceCount();
             showAlert("Attendance added successfully!", "success");
           } catch (error) {
@@ -571,6 +568,17 @@ export default function LatestAttendance() {
     }
   };
 
+  // Check if record is absent
+  const isAbsent = (record) => {
+    if (!record || !record.status) {
+      console.warn("Invalid record or status:", record);
+      return false;
+    }
+    console.log("Record Status:", record.status); // Debugging
+    return record.status.trim().toLowerCase() === "absent";
+  };
+
+  // Effect to fetch data
   useEffect(() => {
     getAllActorTypes();
     getAddedAttendance();
@@ -578,22 +586,24 @@ export default function LatestAttendance() {
     getAttendanceCount();
   }, [currentPage, search, date, status, selectedMonthYear]);
 
+  // Effect to calculate total employees
   useEffect(() => {
     const total = Object.values(count).reduce((sum, value) => sum + value, 0);
     if (!Object.keys(count).includes("totalEmployees")) {
       setCount((prev) => ({ ...prev, totalEmployees: total }));
     }
-    // console.log(count);
   }, [count]);
 
+  // Show alert
   const showAlert = (message, type = "info") => {
     setAlert({ show: true, message, type });
     if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
     alertTimeoutRef.current = setTimeout(() => {
       setAlert({ show: false, message: "", type: "info" });
-    }, 3000); // 3 seconds
+    }, 3000);
   };
 
+  // Cleanup alert timeout
   useEffect(() => {
     return () => {
       if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
@@ -611,7 +621,7 @@ export default function LatestAttendance() {
       )}
       <div className="latestAttendance-page-header-line">
         <div className="latestAttendance-page-header">
-          <Link to="/attendance">Attendance</Link> &#47;
+          <Link to="/attendance">Attendance</Link> /
           <span>All Attendance</span>
         </div>
         <button
@@ -626,7 +636,7 @@ export default function LatestAttendance() {
           {date ? (
             <>{new Date(date).toISOString().split("T")[0]} Attendance</>
           ) : (
-            <>Today&apos;s Attendance</>
+            <>Todays Attendance</>
           )}
         </div>
         <div className="latestAttendance-page-counter">
@@ -634,31 +644,31 @@ export default function LatestAttendance() {
             <span className="latestAttendance-page-counter-header">
               Total Employee:
             </span>
-            <span>{count.totalEmployees}</span>
+            <span>{count.totalEmployees || 0}</span>
           </div>
           <div className="latestAttendance-page-present-count counts">
             <span className="latestAttendance-page-counter-header">
               Total Present:
             </span>
-            <span>{count.present + count.pending}</span>
+            <span>{(count.present || 0) + (count.pending || 0)}</span>
           </div>
           <div className="latestAttendance-page-absent-count counts">
             <span className="latestAttendance-page-counter-header">
               Total Absent:
             </span>
-            <span>{count.absent}</span>
+            <span>{count.absent || 0}</span>
           </div>
           <div className="latestAttendance-page-half-day-count counts">
             <span className="latestAttendance-page-counter-header">
               Total Half-Day:
             </span>
-            <span>{count.halfDay}</span>
+            <span>{count.halfDay || 0}</span>
           </div>
           <div className="latestAttendance-page-leave-count counts">
             <span className="latestAttendance-page-counter-header">
               Total Leave:
             </span>
-            <span>{count.leave}</span>
+            <span>{count.leave || 0}</span>
           </div>
         </div>
       </div>
@@ -700,7 +710,6 @@ export default function LatestAttendance() {
                 const currentDate = new Date();
                 const currentYear = currentDate.getFullYear();
 
-                // Generate options for previous year and current year
                 for (let year = currentYear - 1; year <= currentYear; year++) {
                   for (let month = 0; month < 12; month++) {
                     const date = new Date(year, month);
@@ -756,6 +765,8 @@ export default function LatestAttendance() {
                       className="dropdown-content"
                       style={{
                         position: "absolute",
+                        top: dropdownStyles.top,
+                        left: dropdownStyles.left,
                       }}
                     >
                       <div className="dropdown-search">
@@ -835,9 +846,11 @@ export default function LatestAttendance() {
             {role === "super_admin" && (
               <button
                 className="show-add-attendance-button"
-                onClick={() => setShowAddAttendanceTable((pre)=> !pre)}
+                onClick={() => setShowAddAttendanceTable((pre) => !pre)}
               >
-                {showAddAttendanceTable? "Show All Attendance" : "Show Attendance Add by Admin"}
+                {showAddAttendanceTable
+                  ? "Show All Attendance"
+                  : "Show Attendance Add by Admin"}
               </button>
             )}
           </div>
@@ -848,7 +861,7 @@ export default function LatestAttendance() {
               <thead>
                 <tr className="main-header">
                   <th rowSpan={2}>SNo.</th>
-                  <th rowSpan={2}>code</th>
+                  <th rowSpan={2}>Code</th>
                   <th rowSpan={2}>Name</th>
                   <th rowSpan={2}>Position</th>
                   <th rowSpan={2}>Date</th>
@@ -866,7 +879,6 @@ export default function LatestAttendance() {
                   <th>Shop Name</th>
                 </tr>
               </thead>
-
               <tbody>
                 {AddedAttendance.length > 0 ? (
                   AddedAttendance.map((record, index) => (
@@ -963,7 +975,6 @@ export default function LatestAttendance() {
                           )}
                         </td>
                         <td>{record.punchOutName || "N/A"}</td>
-
                         {editID === record._id ? (
                           <td>
                             <select
@@ -984,63 +995,81 @@ export default function LatestAttendance() {
                         ) : (
                           <td>{record.status}</td>
                         )}
-
                         <td>{record.hoursWorked || "N/A"}</td>
-
                         <td className="expand-btn">
-                          <button onClick={() => handleExpand(record)}>
-                            {expand === record._id ? (
-                              <>
-                                Collapse <FaChevronUp />
-                              </>
-                            ) : (
-                              <>
-                                Expand <FaChevronDown />
-                              </>
-                            )}
-                          </button>
+                          {isAbsent(record) ? (
+                            <button disabled className="disabled-expand">
+                              No Data Available
+                            </button>
+                          ) : (
+                            <button onClick={() => handleExpand(record)}>
+                              {expand === record._id ? (
+                                <>
+                                  Collapse <FaChevronUp />
+                                </>
+                              ) : (
+                                <>
+                                  Expand <FaChevronDown />
+                                </>
+                              )}
+                            </button>
+                          )}
                         </td>
-
-                        <td>
-                          {editID === record._id ? (
-                            <>
-                              <FaSave
-                                color="green"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => {
-                                  handleSave();
-                                  setEditId(null);
-                                }}
-                              />
-                              <FaTimes
-                                color="red"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => setEditId(null)}
-                              />
-                            </>
+                        <td className="action-buttons">
+                          {isAbsent(record) ? (
+                            <div className="absent-notice">
+                              <span title="Cannot edit absent record">
+                                Not Editable
+                              </span>
+                            </div>
                           ) : (
                             <>
-                              <FaEdit
-                                color="#005bfe"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => handleEdit(record)}
-                              />
-                              <RiDeleteBin6Line
-                                color="#F21E1E"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => setDeleteId(record._id)}
-                              />
+                              {editID === record._id ? (
+                                <>
+                                  <button
+                                    className="action-btn save"
+                                    onClick={() => {
+                                      handleSave();
+                                      setEditId(null);
+                                    }}
+                                    title="Save changes"
+                                  >
+                                    <FaSave />
+                                    <span>Save</span>
+                                  </button>
+                                  <button
+                                    className="action-btn cancel"
+                                    onClick={() => setEditId(null)}
+                                    title="Cancel editing"
+                                  >
+                                    <FaTimes />
+                                    <span>Cancel</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    className="action-btn edit"
+                                    onClick={() => handleEdit(record)}
+                                    title="Edit record"
+                                  >
+                                    <FaEdit />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    className="action-btn delete"
+                                    onClick={() => setDeleteId(record._id)}
+                                    title="Delete record"
+                                  >
+                                    <RiDeleteBin6Line />
+                                    <span>Delete</span>
+                                  </button>
+                                </>
+                              )}
                             </>
                           )}
                         </td>
                       </tr>
-
                       {expand === record._id && (
                         <tr>
                           <td colSpan="13" className="inner-code">
@@ -1165,7 +1194,7 @@ export default function LatestAttendance() {
               <thead>
                 <tr className="main-header">
                   <th rowSpan={2}>SNo.</th>
-                  <th rowSpan={2}>code</th>
+                  <th rowSpan={2}>Code</th>
                   <th rowSpan={2}>Name</th>
                   <th rowSpan={2}>Position</th>
                   <th rowSpan={2}>Date</th>
@@ -1183,7 +1212,6 @@ export default function LatestAttendance() {
                   <th>Shop Name</th>
                 </tr>
               </thead>
-
               <tbody>
                 {attendance.length > 0 ? (
                   attendance.map((record, index) => (
@@ -1280,7 +1308,6 @@ export default function LatestAttendance() {
                           )}
                         </td>
                         <td>{record.punchOutName || "N/A"}</td>
-
                         {editID === record._id ? (
                           <td>
                             <select
@@ -1301,63 +1328,81 @@ export default function LatestAttendance() {
                         ) : (
                           <td>{record.status}</td>
                         )}
-
                         <td>{record.hoursWorked || "N/A"}</td>
-
                         <td className="expand-btn">
-                          <button onClick={() => handleExpand(record)}>
-                            {expand === record._id ? (
-                              <>
-                                Collapse <FaChevronUp />
-                              </>
-                            ) : (
-                              <>
-                                Expand <FaChevronDown />
-                              </>
-                            )}
-                          </button>
+                          {isAbsent(record) ? (
+                            <button disabled className="disabled-expand">
+                              No Data Available
+                            </button>
+                          ) : (
+                            <button onClick={() => handleExpand(record)}>
+                              {expand === record._id ? (
+                                <>
+                                  Collapse <FaChevronUp />
+                                </>
+                              ) : (
+                                <>
+                                  Expand <FaChevronDown />
+                                </>
+                              )}
+                            </button>
+                          )}
                         </td>
-
-                        <td>
-                          {editID === record._id ? (
-                            <>
-                              <FaSave
-                                color="green"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => {
-                                  handleSave();
-                                  setEditId(null);
-                                }}
-                              />
-                              <FaTimes
-                                color="red"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => setEditId(null)}
-                              />
-                            </>
+                        <td className="action-buttons">
+                          {isAbsent(record) ? (
+                            <div className="absent-notice">
+                              <span title="Cannot edit absent record">
+                                Not Editable
+                              </span>
+                            </div>
                           ) : (
                             <>
-                              <FaEdit
-                                color="#005bfe"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => handleEdit(record)}
-                              />
-                              <RiDeleteBin6Line
-                                color="#F21E1E"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => setDeleteId(record._id)}
-                              />
+                              {editID === record._id ? (
+                                <>
+                                  <button
+                                    className="action-btn save"
+                                    onClick={() => {
+                                      handleSave();
+                                      setEditId(null);
+                                    }}
+                                    title="Save changes"
+                                  >
+                                    <FaSave />
+                                    <span>Save</span>
+                                  </button>
+                                  <button
+                                    className="action-btn cancel"
+                                    onClick={() => setEditId(null)}
+                                    title="Cancel editing"
+                                  >
+                                    <FaTimes />
+                                    <span>Cancel</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    className="action-btn edit"
+                                    onClick={() => handleEdit(record)}
+                                    title="Edit record"
+                                  >
+                                    <FaEdit />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    className="action-btn delete"
+                                    onClick={() => setDeleteId(record._id)}
+                                    title="Delete record"
+                                  >
+                                    <RiDeleteBin6Line />
+                                    <span>Delete</span>
+                                  </button>
+                                </>
+                              )}
                             </>
                           )}
                         </td>
                       </tr>
-
                       {expand === record._id && (
                         <tr>
                           <td colSpan="13" className="inner-code">
@@ -1478,7 +1523,6 @@ export default function LatestAttendance() {
           </div>
         )}
       </div>
-      {/* Pagination */}
       {!showAddAttendanceTable && (
         <div className="pagination">
           <button
