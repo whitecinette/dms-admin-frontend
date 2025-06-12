@@ -586,13 +586,6 @@ export default function LatestAttendance() {
     getAttendanceCount();
   }, [currentPage, search, date, status, selectedMonthYear]);
 
-  // Effect to calculate total employees
-  useEffect(() => {
-    const total = Object.values(count).reduce((sum, value) => sum + value, 0);
-    if (!Object.keys(count).includes("totalEmployees")) {
-      setCount((prev) => ({ ...prev, totalEmployees: total }));
-    }
-  }, [count]);
 
   // Show alert
   const showAlert = (message, type = "info") => {
@@ -644,7 +637,7 @@ export default function LatestAttendance() {
             <span className="latestAttendance-page-counter-header">
               Total Employee:
             </span>
-            <span>{count.totalEmployees || 0}</span>
+            <span>{count.total || 0}</span>
           </div>
           <div className="latestAttendance-page-present-count counts">
             <span className="latestAttendance-page-counter-header">
