@@ -7,11 +7,13 @@
 
         // padding: 10px;
     }
-    .latestAttendance-page-header-line{
+
+    .latestAttendance-page-header-line {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+
         .add-attendance-button {
             background: #005bfe;
             color: white;
@@ -26,14 +28,15 @@
             gap: 0.5rem;
             transition: background-color 0.2s;
             margin-left: 1rem;
-        
+
             &:hover {
                 background: #0046cc;
             }
         }
     }
+
     &-header {
-        
+
         font-size: 16px;
         color: #666;
 
@@ -121,6 +124,7 @@
                         opacity: .9;
                     }
                 }
+
                 .show-add-attendance-button {
                     background: linear-gradient(135deg, #4CAF50, #45a049);
                     color: white;
@@ -135,8 +139,8 @@
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                  
-                  }
+
+                }
             }
 
 
@@ -352,6 +356,158 @@
                             }
                         }
 
+                        .action-buttons {
+                            display: flex;
+                            gap: 8px;
+                            justify-content: center;
+                            align-items: center;
+
+                            button {
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 6px;
+                                padding: 6px 12px;
+                                border: none;
+                                border-radius: 6px;
+                                font-size: 13px;
+                                font-weight: 500;
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+                                min-width: 85px;
+                                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+                                &:active {
+                                    transform: scale(0.97);
+                                }
+
+                                svg {
+                                    font-size: 15px;
+                                }
+
+                                &.edit {
+                                    background-color: #ebf5ff;
+                                    color: #0066ff;
+
+                                    &:hover {
+                                        background-color: #d1e9ff;
+                                    }
+                                }
+
+                                &.delete {
+                                    background-color: #fff1f1;
+                                    color: #ff4d4d;
+
+                                    &:hover {
+                                        background-color: #ffe0e0;
+                                    }
+                                }
+
+                                &.save {
+                                    background-color: #ecfdf3;
+                                    color: #00ab55;
+
+                                    &:hover {
+                                        background-color: #dcf5e7;
+                                    }
+                                }
+
+                                &.cancel {
+                                    background-color: #f4f6f8;
+                                    color: #637381;
+
+                                    &:hover {
+                                        background-color: #e7eaed;
+                                    }
+                                }
+                            }
+
+                            .absent-notice {
+                                background-color: #f9fafb;
+                                padding: 6px 12px;
+                                border-radius: 6px;
+                                color: #637381;
+                                font-size: 13px;
+                                text-align: center;
+                                min-width: 100px;
+                                border: 1px dashed #dfe3e8;
+
+                                span {
+                                    opacity: 0.8;
+                                }
+                            }
+                        }
+
+                        .expand-btn {
+                            button {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                                padding: 6px 12px;
+                                border: 1px solid #e5e7eb;
+                                border-radius: 6px;
+                                background-color: white;
+                                color: #374151;
+                                font-size: 13px;
+                                font-weight: 500;
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+
+                                &:hover:not(:disabled) {
+                                    background-color: #f9fafb;
+                                    border-color: #dfe3e8;
+                                }
+
+                                &:active:not(:disabled) {
+                                    transform: scale(0.97);
+                                }
+
+                                svg {
+                                    font-size: 12px;
+                                }
+
+                                &.disabled-expand {
+                                    background-color: #f9fafb;
+                                    color: #9ca3af;
+                                    border-color: #e5e7eb;
+                                    cursor: not-allowed;
+                                    opacity: 0.7;
+                                }
+                            }
+                        }
+
+                        // Add responsive styles
+                        @media (max-width: 768px) {
+                            .action-buttons {
+                                button {
+                                    padding: 6px 8px;
+                                    min-width: unset;
+
+                                    span {
+                                        display: none;
+                                    }
+
+                                    svg {
+                                        font-size: 16px;
+                                        margin: 0;
+                                    }
+                                }
+
+                                .absent-notice {
+                                    padding: 6px 8px;
+                                    min-width: unset;
+                                }
+                            }
+
+                            .expand-btn button {
+                                padding: 6px 8px;
+
+                                span {
+                                    display: none;
+                                }
+                            }
+                        }
+
                         .inner-code {
                             margin-top: 5px;
                             width: 100%;
@@ -538,13 +694,14 @@
             }
         }
     }
+
     .AddedAttendance-table-container {
 
         width: 100%;
         overflow-x: auto;
         max-height: 65vh;
         scrollbar-width: thin;
-       margin-top: 5px;
+        margin-top: 5px;
 
         /* Enable vertical scrolling */
         display: block;

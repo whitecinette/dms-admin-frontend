@@ -148,7 +148,7 @@ export default function LatestAttendance() {
   const [firms, setFirms] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState("");
-  const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+  const [dropdownStyles, setDropdownStyles] = useState({ top: 30});
   const [showAddAttendance, setShowAddAttendance] = useState(false);
   const [newAttendance, setNewAttendance] = useState({
     code: "",
@@ -406,13 +406,6 @@ export default function LatestAttendance() {
 
   // Handle dropdown click
   const handleDropdownClick = (event) => {
-    if (dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      setDropdownStyles({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-      });
-    }
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -586,7 +579,6 @@ export default function LatestAttendance() {
     getAttendanceCount();
   }, [currentPage, search, date, status, selectedMonthYear]);
 
-
   // Show alert
   const showAlert = (message, type = "info") => {
     setAlert({ show: true, message, type });
@@ -614,8 +606,7 @@ export default function LatestAttendance() {
       )}
       <div className="latestAttendance-page-header-line">
         <div className="latestAttendance-page-header">
-          <Link to="/attendance">Attendance</Link> /
-          <span>All Attendance</span>
+          <Link to="/attendance">Attendance</Link> /<span>All Attendance</span>
         </div>
         <button
           className="add-attendance-button"
