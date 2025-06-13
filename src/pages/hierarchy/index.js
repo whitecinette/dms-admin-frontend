@@ -7,6 +7,7 @@ import { FaDownload, FaFileUpload } from "react-icons/fa";
 import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import CustomAlert from "../../components/CustomAlert";
+import HierarchyUploadPopup from "./UploadPopup/index.js";
 
 const backendUrl = config.backend_url;
 
@@ -21,58 +22,32 @@ function Hierarchy() {
   const [deleteId, setDeleteId] = useState(null);
   const limit = 50;
   const [alert, setAlert] = useState(null);
+  const [showUploadPopup, setShowUploadPopup] = useState(false);
 
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Check if file is CSV
-    if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-      setAlert({
-        type: "error",
-        message: "Please upload a CSV file",
-      });
-      return;
-    }
-
+  const handleUpload = async (selectedFirm, file) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("hierarchy_name", firm);
+    formData.append("hierarchy_name", selectedFirm);
 
-    try {
-      const response = await axios.post(
-        `${backendUrl}/update-hierarchy-entries`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setAlert({
-          type: "success",
-          message: "File uploaded successfully",
-        });
-        getHierarchy(); // Refresh the hierarchy data
-      } else {
-        setAlert({
-          type: "error",
-          message: response.data.message || "Failed to upload file",
-        });
+    const response = await axios.post(
+      `${backendUrl}/hierarchy-entries/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: localStorage.getItem("authToken"),
+        },
       }
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      setAlert({
-        type: "error",
-        message: error.response?.data?.message || "Failed to upload file",
-      });
-    }
+    );
 
-    // Reset file input
-    event.target.value = "";
+    if (response.data.success) {
+      setAlert({
+        type: "success",
+        message: "File uploaded successfully",
+      });
+      getHierarchy();
+      setShowUploadPopup(false);
+    }
   };
 
   const getAllActorTypes = async () => {
@@ -199,18 +174,13 @@ function Hierarchy() {
             </div>
           </div>
           <div className="hierarchy-page-buttons">
-            <div className="hierarchy-upload-btn">
-              <label htmlFor="file-upload" className="browse-btn">
-                <FaFileUpload />
-                Upload Bulk CSV
-              </label>
-              <input
-                type="file"
-                id="file-upload"
-                hidden
-                onChange={handleFileChange}
-              />
-            </div>
+            <button
+              className="hierarchy-upload-btn"
+              onClick={() => setShowUploadPopup(true)}
+            >
+              <FaFileUpload />
+              Upload Bulk CSV
+            </button>
             <div
               className="hierarchy-download-btn"
               onClick={() => downloadCSVTemplate(["hierarchy_name"])}
@@ -355,6 +325,13 @@ function Hierarchy() {
             </div>
           </div>
         </div>
+      )}
+      {showUploadPopup && (
+        <HierarchyUploadPopup
+          firms={firmList}
+          onClose={() => setShowUploadPopup(false)}
+          onUpload={handleUpload}
+        />
       )}
     </div>
   );
