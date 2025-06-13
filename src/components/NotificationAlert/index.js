@@ -45,19 +45,26 @@ const NotificationAlert = () => {
     };
   }, []);
 
- const handleNotificationClick = (notification) => {
+  const handleNotificationClick = (notification) => {
     try {
       if (notification.title === "Route Plan") {
         const [name, startDate, endDate] = notification.filters;
-        navigate(`/routePlan?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`);
+        navigate(
+          `/routePlan?search=${encodeURIComponent(
+            name
+          )}&startDate=${startDate}&endDate=${endDate}`
+        );
       } else if (notification.title === "Leave Request") {
         const [code, startDate, endDate] = notification.filters;
-        navigate(`/leaveApplication?search=${encodeURIComponent(code)}&startDate=${startDate}&endDate=${endDate}`);
+        navigate(
+          `/leaveApplication?search=${encodeURIComponent(
+            code
+          )}&startDate=${startDate}&endDate=${endDate}`
+        );
       }
-      
     } catch (error) {
       console.error("Error in handleNotificationClick:", error);
-    }finally {
+    } finally {
       handleClose(null, notification._id);
     }
   };
@@ -65,7 +72,7 @@ const NotificationAlert = () => {
   const getNotificationIcon = (title) => {
     if (title === "Route Plan") {
       return <FaRoute className="icon" />;
-    }else if (title === "Leave Request") {
+    } else if (title === "Leave Request") {
       return <FaWpforms className="icon" />;
     }
     return null;
@@ -79,14 +86,16 @@ const NotificationAlert = () => {
     try {
       await axios.put(`${backendSocketUrl}/mark/notification`, {
         userId: localStorage.getItem("userId"),
-        notificationIds: [id]
+        notificationIds: [id],
       });
-      setNotifications((prev) => prev.filter((notification) => notification._id !== id));
+      setNotifications((prev) =>
+        prev.filter((notification) => notification._id !== id)
+      );
     } catch (err) {
       console.error("Error marking notification as read:", err);
     }
   };
-    const formatDate = (dateInput) => {
+  const formatDate = (dateInput) => {
     // Get only the date part to avoid time zone shift
     const datePart = dateInput?.slice(0, 10); // "YYYY-MM-DD"
     if (!datePart) return "N/A";
@@ -102,8 +111,6 @@ const NotificationAlert = () => {
 
     return formattedDate || "N/A";
   };
-
-    
 
   return (
     <div className="notification-container">
@@ -129,7 +136,9 @@ const NotificationAlert = () => {
             </div>
             <p className="message">{notification.message}</p>
             <div className="notification-details">
-              <span className="code">{notification.targetCodes?.join(", ")}</span>
+              <span className="code">
+                {notification.targetCodes?.join(", ")}
+              </span>
               <span className="timestamp">
                 {formatDate(notification.createdAt)}
               </span>

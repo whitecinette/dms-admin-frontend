@@ -1,0 +1,293 @@
+.SalesReport-page{
+    .SalesReport-filter-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 24px;
+
+        .SalesReport-filter {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+
+            .search-filter {
+
+                input {
+                    width: 90%;
+                    max-width: 500px;
+                    padding: 10px 16px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    transition: all 0.2s ease;
+                    outline: none;
+
+                    &::placeholder {
+                        color: #94a3b8;
+                    }
+
+                    &:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                    }
+                }
+            }
+
+            .date-filter {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 200px;
+
+                label {
+                    color: #64748b;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                input {
+                    padding: 10px 16px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    outline: none;
+                    transition: all 0.2s ease;
+
+                    &:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                    }
+
+                    &::-webkit-calendar-picker-indicator {
+                        cursor: pointer;
+                        opacity: 0.6;
+                        transition: opacity 0.2s ease;
+
+                        &:hover {
+                            opacity: 1;
+                        }
+                    }
+                }
+            }
+
+            .status-filter,
+            .bill-filter {
+                min-width: 180px;
+
+                select {
+                    width: 100%;
+                    padding: 10px 16px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    background-color: white;
+                    cursor: pointer;
+                    outline: none;
+                    transition: all 0.2s ease;
+                    appearance: none;
+                    // background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 12px center;
+                    background-size: 16px;
+                    padding-right: 40px;
+
+                    &:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                    }
+
+                    option {
+                        padding: 8px;
+
+                        &:hover {
+                            background-color: #f1f5f9;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .SalesReport-table-container {
+        width: 100%;
+        overflow-x: auto;
+        max-height: 60vh;
+        scrollbar-width: thin;
+
+        /* Enable vertical scrolling */
+        display: block;
+        max-width: 100%;
+        overflow-y: auto;
+
+        /* Custom scrollbar for better UX */
+        &::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+
+            thead {
+                position: sticky;
+                top: 0;
+                background-color: #6399f9;
+                color: white;
+
+                th {
+                    padding: 0 5px;
+                    white-space: nowrap;
+                    text-align: center;
+                    // padding: 12px;
+                }
+
+
+                /* Rounded corners for first and last th */
+                th:first-child {
+                    border-radius: 5px 0 0 5px;
+                }
+
+                th:last-child {
+                    border-radius: 0 5px 5px 0;
+                }
+            }
+
+            tbody {
+                tr {
+
+                    background-color: #f8f8f8;
+
+                    &:nth-child(even) {
+                        background-color: white;
+                    }
+
+                    .expand-btn {
+                        padding: 2px;
+
+                        button {
+                            padding: 2px;
+                            background-color: #6399f9;
+                            color: white;
+                            border: none;
+                            font-size: 12px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                        }
+                    }
+
+                    td {
+                        font-size: 12px;
+                        text-align: center;
+                        white-space: nowrap;
+
+
+
+                        /* Rounded corners */
+                        &:first-child {
+                            border-radius: 5px 0 0 5px;
+                        }
+
+                        &:last-child {
+                            border-radius: 0 5px 5px 0;
+                        }
+                    }
+                }
+
+            }
+
+            .products-table-container {
+                width: 100%;
+                overflow-x: auto;
+                max-height: 60vh;
+                scrollbar-width: thin;
+
+                /* Enable vertical scrolling */
+                display: block;
+                max-width: 100%;
+                overflow-y: auto;
+
+                /* Custom scrollbar for better UX */
+                &::-webkit-scrollbar {
+                    width: 8px;
+                    height: 8px;
+                }
+
+                .products-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    min-width: 700px;
+
+                    thead {
+                        position: sticky;
+                        top: 0;
+
+                        color: white;
+
+                        th {
+                            padding: 0 5px;
+                            white-space: nowrap;
+                            text-align: center;
+                            background-color: #6399f9 !important;
+                            // padding: 12px;
+                        }
+
+                        /* Rounded corners for first and last th */
+                        th:first-child {
+                            border-radius: 5px 0 0 5px;
+                        }
+
+                        th:last-child {
+                            border-radius: 0 5px 5px 0;
+                        }
+                    }
+
+                    tbody {
+                        tr {
+
+                            background-color: #f8f8f8;
+
+                            &:nth-child(even) {
+                                background-color: white;
+                            }
+
+                            .expand-btn {
+                                padding: 2px;
+
+                                button {
+                                    padding: 2px;
+                                    background-color: #6399f9;
+                                    color: white;
+                                    border: none;
+                                    font-size: 12px;
+                                    border-radius: 5px;
+                                    cursor: pointer;
+                                }
+                            }
+
+                            td {
+                                font-size: 12px;
+                                text-align: center;
+                                white-space: nowrap;
+
+
+
+                                /* Rounded corners */
+                                &:first-child {
+                                    border-radius: 5px 0 0 5px;
+                                }
+
+                                &:last-child {
+                                    border-radius: 0 5px 5px 0;
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+}

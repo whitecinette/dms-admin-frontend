@@ -5,9 +5,11 @@ import SalesDataTable from "./salesDataTable";
 import { FaDownload, FaFileUpload, FaUserCog } from "react-icons/fa";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import UploadPopup from "./uploadPopup";
+import { SalesReport } from "./SalesReport";
 
 function SalesData() {
   const [isUpload, setIsUpload] = useState(false);
+  const [view, setView] = useState("SalesReport")
   return (
     <div className="sales-page">
       <div className="sales-page-header">
@@ -44,11 +46,32 @@ function SalesData() {
             Download CSV Format
           </button>
         </div>
+        <div className="Slider">
+            <button
+            className={view === "SalesReport" ? "SalesReport active" : "SalesReport"}
+            onClick={() => setView("SalesReport")}
+          >
+            Sales Report
+          </button>
+          <button
+            className={view === "SalesData" ? "SalesData active" : "SalesData"}
+            onClick={() => setView("SalesData")}
+          >
+            Sales Data
+          </button>
+        </div>
       </div>
-      <div className="sales-page-container">
-        <SalesGrowth moreFilter />
-        <SalesDataTable />
-      </div>
+      {view === "SalesReport" ? (
+        <>
+        <div className="sales-page-container">
+          <SalesGrowth moreFilter />
+          <SalesDataTable />
+        </div>
+        </>
+      ):(
+        <SalesReport/>
+      )
+      }
       {isUpload && <UploadPopup close={() => setIsUpload(false)} />}
     </div>
   );
