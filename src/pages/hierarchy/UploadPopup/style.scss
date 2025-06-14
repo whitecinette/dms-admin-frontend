@@ -284,3 +284,24 @@
         overflow-y: auto;
     }
 }
+.download-section {
+  margin: 15px 0;
+  text-align: center;
+  
+  p {
+    margin-bottom: 10px;
+  }
+}
+
+.download-csv-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  
+  &:hover {
+    background-color: #45a049;
+  }
+}
