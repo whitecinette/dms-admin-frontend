@@ -96,6 +96,7 @@ function Extraction() {
     show: false,
     dealer: [],
   });
+  const [isDownloading, setIsDownloading] = useState(false)
   // const [uploadedBy, setUpLoadedBy] = useState("");
 
   const [startDate, setStartDate] = useState(() => {
@@ -162,60 +163,72 @@ function Extraction() {
     }
   };
 
-  const handleDownload = async () => {
-    const grouped = {
-      smd: dropdownValue
-        .filter((item) => item.position === "SMD")
-        .map((item) => item.code),
-      mdd: dropdownValue
-        .filter((item) => item.position === "MDD")
-        .map((item) => item.code),
-      asm: dropdownValue
-        .filter((item) => item.position === "ASM")
-        .map((item) => item.code),
-    };
+ const handleDownload = async () => {
 
-    try {
-      const response = await axios.get(
-        `${backendUrl}/admin/get-extraction-records/download`,
-        {
-          params: {
-            startDate,
-            endDate,
-            ...grouped,
-          },
-          responseType: "blob",
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
+  setIsDownloading(true)
 
-      const contentType = response.headers["content-type"];
+  const grouped = {
+    smd: dropdownValue
+      .filter((item) => item.position === "SMD")
+      .map((item) => item.code),
+    mdd: dropdownValue
+      .filter((item) => item.position === "MDD")
+      .map((item) => item.code),
+    asm: dropdownValue
+      .filter((item) => item.position === "ASM")
+      .map((item) => item.code),
+  };
 
-      // If it's JSON, handle as error or warning
-      if (contentType.includes("application/json")) {
-        const text = await response.data.text(); // Read blob as text
-        const json = JSON.parse(text);
-        alert(json.message || "No data found for the selected filters.");
-        return;
+  try {
+    const response = await axios.get(
+      `${backendUrl}/admin/get-extraction-records/download`,
+      {
+        params: {
+          startDate,
+          endDate,
+          ...grouped,
+        },
+        responseType: "blob",
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
       }
+    );
 
-      // Otherwise, proceed with CSV download
-      const blob = new Blob([response.data], { type: "text/csv" });
+    const contentType = response.headers["content-type"];
+
+    // Handle JSON response (e.g., error or no data)
+    if (contentType.includes("application/json")) {
+      const text = await response.data.text();
+      const json = JSON.parse(text);
+      alert(json.message || "No data found for the selected filters.");
+      return;
+    }
+
+    // Handle XLSX download
+    if (contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "extraction_data.csv";
+      link.download = "extraction_records.xlsx"; // Match backend filename
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download failed:", error);
-      alert("Failed to download data. Please check your network or filters.");
+    } else {
+      console.error("Unexpected content type:", contentType);
+      alert("Unexpected file format received. Please try again.");
     }
-  };
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Failed to download data. Please check your network or filters.");
+  }finally{
+    setIsDownloading(false)
+  }
+};
 
   //get done data
   // const getExtractionDoneRecodes = async () => {
@@ -612,7 +625,8 @@ function Extraction() {
                   onClick={handleDownload}
                 >
                   <FaDownload />
-                  Download Extraction
+                  {isDownloading ? "Downloading..." : "Download Extraction" }
+                  
                 </button>
               </div>
             </div>

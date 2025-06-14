@@ -302,6 +302,11 @@
                 tbody {
                     tr {
                         background-color: #f8f8f8;
+                        cursor: pointer;
+
+                        &:hover {
+                            background-color: #e8e8e8 !important;
+                        }
 
                         &:nth-child(even) {
                             background-color: white;
@@ -391,6 +396,7 @@
                             text-align: center;
                             white-space: nowrap;
                             padding: 10px;
+
 
                             /* Rounded corners */
                             &:first-child {
