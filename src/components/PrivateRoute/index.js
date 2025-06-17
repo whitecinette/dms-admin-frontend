@@ -30,6 +30,7 @@ function PrivateRoute({ element }) {
       }
       const body = {
         refreshToken: localStorage.getItem("refreshToken"),
+        oldToken: localStorage.getItem("authToken")
       };
 
       const res = await axios.post(`${backend_url}/user/Refresh-token`, body);

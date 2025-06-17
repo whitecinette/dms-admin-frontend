@@ -47,17 +47,16 @@ const LoginAdmin = () => {
     try {
       const response = await axios.post(
         `${backend_url}/app/user/login`,
-        loginData
+        loginData,
+        { headers: { "X-Client-Type": "admin" } }
       );
 
       if (response.status === 200) {
-        console.log("Login successful:", response.data);
-
         // Store token and authentication state in localStorage
         localStorage.setItem("authToken", response.data.token);
-        localStorage.setItem('role', response.data.user.role);
-        localStorage.setItem('userId',response.data.user.id);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
+        localStorage.setItem("role", response.data.user.role);
+        localStorage.setItem("userId", response.data.user.id);
+        localStorage.setItem("refreshToken", response.data.refreshToken);
         // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
 
         // Redirect to the dashboard
@@ -151,7 +150,6 @@ const LoginAdmin = () => {
                   Login
                 </button>
               </div>
-              
             </form>
           ) : (
             <form
@@ -205,7 +203,6 @@ const LoginAdmin = () => {
                   Reset Password
                 </button>
               </div>
-              
             </form>
           )}
         </div>

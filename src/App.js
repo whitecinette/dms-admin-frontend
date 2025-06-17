@@ -8,7 +8,6 @@ import DefaultLayout from "./layout/DefaultLayout";
 import Dashboard from "./pages/dashboard";
 import LoginSignUpAdmin from "./pages/loginAdmin/loginSignUpAdmin";
 import Page404 from "./pages/ErrorPage";
-import { Suspense, useEffect, useState } from "react";
 import Orders from "./pages/orders";
 import SalesData from "./pages/SalesData";
 import Extraction from "./pages/Extraction";
@@ -35,6 +34,7 @@ import UpdateProducts from "./pages/inventory/updateProduct";
 import RoutesPlan from "./pages/RoutesPlan";
 import PrivateRoute from "./components/PrivateRoute";
 import LeaveApplication from "./pages/LeaveApplication";
+import TravelExpenses from "./pages/TravelExpenses";
 
 function App() {
   return (
@@ -89,6 +89,7 @@ function App() {
             <Route path="/finance/vouchers" element={<FinanceVouchers />} />
             <Route path="/routePlan" element={<RoutesPlan />} />
             <Route path="/leaveApplication" element={<LeaveApplication />} />
+            <Route path="/travelExpenses" element={<TravelExpenses />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
