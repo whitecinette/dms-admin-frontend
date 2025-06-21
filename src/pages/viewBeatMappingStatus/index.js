@@ -12,16 +12,12 @@ import {
   Legend,
   ResponsiveContainer,
   CartesianGrid,
-  ReferenceLine,
-  Pie,
-  PieChart,
-  Cell,
 } from "recharts";
-import { GiPathDistance } from "react-icons/gi";
 import CustomAlert from "../../components/CustomAlert/index.js";
 import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import EmployeeSchedule from "./employeeSchedule";
+import * as XLSX from "xlsx";
 
 const backendUrl = config.backend_url;
 
@@ -64,7 +60,6 @@ const ViewBeatMappingStatus = () => {
   const [showSecurityKeyPopup, setShowSecurityKeyPopup] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
   const [expandedRowData, setExpandedRowData] = useState([]);
-
 
   const getbeatmapping = async () => {
     if (!startDay || !endDay) {
@@ -154,10 +149,6 @@ const ViewBeatMappingStatus = () => {
     }
   };
 
-
-
-
-
   const getRouteFilteredCounts = (schedule = [], routeId, routes = []) => {
     if (!routeId) {
       return {
@@ -220,6 +211,59 @@ const ViewBeatMappingStatus = () => {
     getbeatmapping();
   };
 
+  const handleDownloadExcel = () => {
+    if (!data || data.length === 0) {
+      setAlert({
+        show: true,
+        type: "error",
+        message: "No data to download.",
+      });
+      return;
+    }
+
+    // Flatten data: one row per dealer per employee
+    let excelData = [];
+    data.forEach((item, idx) => {
+      // If item.dealers is an array, otherwise adjust as per your data structure
+      const dealers = Array.isArray(item.schedule) ? item.schedule : [];
+      if (dealers.length === 0) {
+        // No dealers, still add the row
+        excelData.push({
+          "Employee Code": item.code,
+          "Employee Name": item.name,
+          Dealer: "N/A",
+          Total: (item.done || 0) + (item.pending || 0),
+          Done: item.done || 0,
+          Pending: item.pending || 0,
+          "Start Date": item.startDate?.split("T")[0] || "N/A",
+          "End Date": item.endDate?.split("T")[0] || "N/A",
+          Route: item.routes?.map((r) => r.name).join(", ") || "N/A",
+          Status: item.routes?.map((r) => r.status).join(", ") || "N/A",
+        });
+      } else {
+        dealers.forEach((dealerObj, dealerIdx) => {
+          excelData.push({
+            "Employee Code": item.code,
+            "Employee Name": item.name,
+            Total: (item.done || 0) + (item.pending || 0),
+            Done: item.done || 0,
+            Pending: item.pending || 0,
+            "Start Date": item.startDate?.split("T")[0] || "N/A",
+            "End Date": item.endDate?.split("T")[0] || "N/A",
+             Dealer: dealerObj.name || dealerObj,
+             Status: dealerObj.status
+          });
+        });
+      }
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "BeatMappingStatus");
+
+    XLSX.writeFile(workbook, "BeatMappingStatus.xlsx");
+  };
+
   const stackedData = data.map((emp) => {
     const total = emp.done + emp.pending;
     return {
@@ -259,11 +303,16 @@ const ViewBeatMappingStatus = () => {
                 fontSize={13}
                 angle={-45}
               />
-              <YAxis domain={[0, 100]}  tickFormatter={(tick) => `${tick}%`} />
+              <YAxis domain={[0, 100]} tickFormatter={(tick) => `${tick}%`} />
               <Tooltip />
               <Legend />
               <Bar dataKey="done" name={"Done"} stackId="a" fill="#2E7D32" />
-              <Bar dataKey="pending" stackId="a" fill="#FFB300" name={"Pending"}/>
+              <Bar
+                dataKey="pending"
+                stackId="a"
+                fill="#FFB300"
+                name={"Pending"}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -311,7 +360,7 @@ const ViewBeatMappingStatus = () => {
               </label>
             </div>
             <div className="viewBeatMappingStatus-download-btn">
-              <div className="browse-btn">
+              <div className="browse-btn" onClick={handleDownloadExcel}>
                 <FaDownload />
                 Download CSV
               </div>
@@ -368,10 +417,13 @@ const ViewBeatMappingStatus = () => {
                     item.routes || []
                   );
                   return [
-                    <tr key={item._id || `row-${index}`} onClick={() => {
-                      setExpandedRow(isExpanded ? null : index);
-                      setExpandedRowData(item.schedule || []);
-                    }}>
+                    <tr
+                      key={item._id || `row-${index}`}
+                      onClick={() => {
+                        setExpandedRow(isExpanded ? null : index);
+                        setExpandedRowData(item.schedule || []);
+                      }}
+                    >
                       <td>{(currentPage - 1) * 15 + index + 1}</td>
                       <td>{item.code}</td>
                       <td>{item.name}</td>
@@ -406,15 +458,16 @@ const ViewBeatMappingStatus = () => {
                       <td>{item.startDate?.split("T")[0] || "N/A"}</td>
                       <td>{item.endDate?.split("T")[0] || "N/A"}</td>
                       <td>
-                        <div
-                          className="expand-btn"
-                        >
+                        <div className="expand-btn">
                           {isExpanded ? "Collapse" : "Expand"}
                         </div>
                       </td>
                       <td>
                         {item.routes && item.routes.length > 1 ? (
-                          <div className="route-select-container" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="route-select-container"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <select
                               value={selectedRoute[index] || ""}
                               onChange={(e) =>
@@ -453,8 +506,6 @@ const ViewBeatMappingStatus = () => {
                           : item.routes?.[0]?.status || "N/A"}
                       </td>
                     </tr>,
-
-
                   ];
                 })
               )}
@@ -491,15 +542,14 @@ const ViewBeatMappingStatus = () => {
           }}
         />
       )}
-          {expandedRow !== null && (
-              <EmployeeSchedule
-                  schedule={expandedRowData}
-                  isClose={() => setExpandedRow(null)}
-                  selectedRoute={selectedRoute}
-                  data={data}
-                  expandedRow={expandedRow}
-              />
-
+      {expandedRow !== null && (
+        <EmployeeSchedule
+          schedule={expandedRowData}
+          isClose={() => setExpandedRow(null)}
+          selectedRoute={selectedRoute}
+          data={data}
+          expandedRow={expandedRow}
+        />
       )}
     </div>
   );

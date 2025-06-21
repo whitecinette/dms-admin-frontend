@@ -1,5 +1,5 @@
 import { cloneElement, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaChartPie,
   FaFileAlt,
@@ -21,8 +21,13 @@ import { TbTargetArrow, TbHierarchy3 } from "react-icons/tb";
 import { RiTimeLine, RiPinDistanceFill } from "react-icons/ri";
 import logo from "../../assets/images/company-logo.png";
 import "./style.scss";
+// import axios from "axios";
+// import config from "../../config";
+
+// const backend_url = config.backend_url;
 
 function Sidebar({ isCollapsed, open, toggleSidebar }) {
+  const navigate = useNavigate();
   const [openDropdowns, setOpenDropdowns] = useState({});
   const role = localStorage.getItem("role");
 
@@ -33,6 +38,25 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     }));
   };
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Track screen size
+
+  // // handle logout
+  // const handleLogout = async () => {
+  //   try {
+  //     await axios.post(
+  //       `${backend_url}/user/logout`,
+  //       {}, // empty body
+  //       {
+  //         headers: {
+  //           Authorization: localStorage.getItem("authToken"),
+  //         },
+  //       }
+  //     );
+  //     localStorage.clear();
+  //     navigate("/login");
+  //   } catch (error) {
+  //     console.error("Error during logout:", error);
+  //   }
+  // };
 
   const navItems = [
     {
@@ -97,7 +121,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       onClick: () => open(),
       children: [
         { name: "Attendance", to: "/attendance" },
-        { name: "Approval", to: "/salesDate" },
+        { name: "Leave Application", to: "/leaveApplication" },
+        { name: "Travel Expenses", to: "/travelExpenses" },
         { name: "Payroll", to: "/salesDate" },
         { name: "Route Plans", to: "/routePlan" },
         { name: "View Beat Mapping Status", to: "/viewBeatMappingStatus" },
@@ -147,14 +172,13 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     {
       name: "Finance",
       to: "#",
-      icon: <BsCashCoin  size={20} />,
+      icon: <BsCashCoin size={20} />,
       onClick: () => open(),
       children: [
         { name: "Upload Schemes", to: "/finance/upload-data" },
         { name: "View Schemes", to: "/finance/data" },
-        { name : "Upload Outstanding Data", to: "/finance/upload-vouchers" },
-        {name: "View Outstanding Data", to: "/finance/vouchers"}
-
+        { name: "Upload Outstanding Data", to: "/finance/upload-vouchers" },
+        { name: "View Outstanding Data", to: "/finance/vouchers" },
       ],
     },
     // { name: "Beat Mapping", to: "/segment", icon: <LuMapPinHouse size={20} /> },

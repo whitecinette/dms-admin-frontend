@@ -189,13 +189,9 @@ function AdminPage() {
               placeholder="Search Admin"
             />
           </div>
-          <div
-            className="Admin-page-add-button"
-            onClick={() => setShowAddAdminModal(true)}
-          >
-            <FaPlus />
-            Add Admin
-          </div>
+          {/**
+             
+             */}
         </div>
 
         {/* ✅ Pass Data Correctly to Table */}

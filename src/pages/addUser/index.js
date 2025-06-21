@@ -21,6 +21,7 @@ export default function AddUser() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [addBox, setAddBox] = useState(false);
   const [addData, setAddData] = useState({});
+  const role = localStorage.getItem("role");
 
   const getActorCodes = async (sort = "createdAt", order) => {
     try {
@@ -351,8 +352,8 @@ export default function AddUser() {
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
       {addBox && (
-        <div className="addUser-add-box">
-          <div className="addUser-add-container">
+        <div className="addUser-add-box"  onClick={() => setAddBox(false)}>
+          <div className="addUser-add-container" onClick={(e)=> e.stopPropagation()}>
             <div className="addUser-add-content">
               <div className="addUser-add-header">Add addUser</div>
               <div className="addUser-add-form">
@@ -377,10 +378,22 @@ export default function AddUser() {
                   value={addData.role}
                   onChange={handleChange}
                 >
-                  <option value="">Select Role</option>
-                  <option value="employee">Employee</option>
-                  <option value="dealer">Dealer</option>
-                  <option value="mdd">MDD</option>
+                  {role === "super_admin" ? (
+                    <>
+                      <option value="">Select Role</option>
+                      <option value="admin">Admin</option>                      
+                      <option value="employee">Employee</option>
+                      <option value="dealer">Dealer</option>
+                      <option value="mdd">MDD</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="">Select Role</option>
+                      <option value="employee">Employee</option>
+                      <option value="dealer">Dealer</option>
+                      <option value="mdd">MDD</option>
+                    </>
+                  )}
                 </select>
                 <input
                   type="text"
