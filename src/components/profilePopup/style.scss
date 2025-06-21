@@ -1,14 +1,3 @@
-.profile-overlay {
-    position: fixed;
-    width: 100vw;
-    height: 100vh;
-    top: 0;
-    left: -1;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-}
-
 .profile-popup {
     position: fixed;
     top: 50%;
@@ -20,7 +9,7 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     width: 450px;
     max-width: 90%;
-    z-index: 10000;
+    z-index: 10000000;
     animation: popIn 0.3s ease;
 
     @keyframes popIn {

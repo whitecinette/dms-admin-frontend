@@ -33,7 +33,7 @@ function ProfilePopup({ onClose }) {
   const [originalEmail, setOriginalEmail] = useState("");
   const [verificationPolling, setVerificationPolling] = useState(null);
   const POLLING_INTERVAL = 30000;
-  const [isVerifying, setIsVerifying] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Fetch profile on mount
   // Update the fetchProfile function
@@ -86,7 +86,7 @@ function ProfilePopup({ onClose }) {
   // Update handleSendVerificationEmail function
   const handleSendVerificationEmail = async (email) => {
     try {
-      setIsVerifying(true)
+      setIsVerifying(true);
       await axios.post(
         `${backendUrl}/user/verifyMail`,
         { email },
@@ -109,8 +109,8 @@ function ProfilePopup({ onClose }) {
     } catch (err) {
       setError("Error sending verification email");
       console.error("Error sending email:", err);
-    }finally{
-      setIsVerifying(false)
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -298,7 +298,7 @@ function ProfilePopup({ onClose }) {
                           handleSendVerificationEmail(editedProfile.email)
                         }
                       >
-                      {isVerifying? ("Verify.."):("Verify")}
+                        {isVerifying ? "Verify.." : "Verify"}
                       </button>
                     )}
                   </div>
@@ -362,7 +362,11 @@ function ProfilePopup({ onClose }) {
                 </div>
                 <div className="info-item">
                   <div className="status-badge">
-                    <span className={`status ${profile.status}`}>
+                    <span
+                      className={`status ${
+                        profile?.status ? profile.status : ""
+                      }`}
+                    >
                       {profile?.status || "Status"}
                     </span>
                   </div>

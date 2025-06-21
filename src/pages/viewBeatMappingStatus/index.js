@@ -31,19 +31,11 @@ const ViewBeatMappingStatus = () => {
   const initialStartDate = queryParams.get("startDate")
     ? new Date(queryParams.get("startDate"))
     : (() => {
-        const date = new Date();
-        const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(date.setDate(diff));
+        return new Date();
       })();
   const initialEndDate = queryParams.get("endDate")
     ? new Date(queryParams.get("endDate"))
-    : (() => {
-        const date = new Date();
-        const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? 0 : 7);
-        return new Date(date.setDate(diff));
-      })();
+    : null;
   const initialSelectedRoute = queryParams.get("route")
     ? [queryParams.get("route")]
     : [];
@@ -60,13 +52,14 @@ const ViewBeatMappingStatus = () => {
   const [showSecurityKeyPopup, setShowSecurityKeyPopup] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
   const [expandedRowData, setExpandedRowData] = useState([]);
+  const [isDownload, setIsDownload] = useState(false);
 
   const getbeatmapping = async () => {
-    if (!startDay || !endDay) {
+    if (!startDay) {
       setAlert({
         show: true,
         type: "error",
-        message: "Start and end dates are required.",
+        message: "Start date is required.",
       });
       return;
     }
@@ -77,7 +70,7 @@ const ViewBeatMappingStatus = () => {
         {
           params: {
             startDate: startDay.toISOString().split("T")[0],
-            endDate: endDay.toISOString().split("T")[0],
+            endDate: endDay ? endDay.toISOString().split("T")[0] : "",
             search,
             page: currentPage,
             limit: 15,
@@ -105,7 +98,7 @@ const ViewBeatMappingStatus = () => {
   };
 
   useEffect(() => {
-    if (startDay && endDay) {
+    if (startDay) {
       getbeatmapping();
     }
   }, [currentPage, search, startDay, endDay]);
@@ -193,18 +186,8 @@ const ViewBeatMappingStatus = () => {
   // Reset all filters and URL
   const handleReset = () => {
     setSearch("");
-    const defaultStartDate = (() => {
-      const date = new Date();
-      const day = date.getDay();
-      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-      return new Date(date.setDate(diff));
-    })();
-    const defaultEndDate = (() => {
-      const date = new Date();
-      const day = date.getDay();
-      const diff = date.getDate() - day + (day === 0 ? 0 : 7);
-      return new Date(date.setDate(diff));
-    })();
+    const defaultStartDate = new Date();
+    const defaultEndDate = "";
     setStartDay(defaultStartDate);
     setEndDay(defaultEndDate);
     navigate("/viewBeatMappingStatus", { replace: true });
@@ -212,6 +195,7 @@ const ViewBeatMappingStatus = () => {
   };
 
   const handleDownloadExcel = () => {
+    setIsDownload(true);
     if (!data || data.length === 0) {
       setAlert({
         show: true,
@@ -235,8 +219,7 @@ const ViewBeatMappingStatus = () => {
           Total: (item.done || 0) + (item.pending || 0),
           Done: item.done || 0,
           Pending: item.pending || 0,
-          "Start Date": item.startDate?.split("T")[0] || "N/A",
-          "End Date": item.endDate?.split("T")[0] || "N/A",
+          Date: startDay?.toDateString().split("T")[0] || "N/A",
           Route: item.routes?.map((r) => r.name).join(", ") || "N/A",
           Status: item.routes?.map((r) => r.status).join(", ") || "N/A",
         });
@@ -248,10 +231,10 @@ const ViewBeatMappingStatus = () => {
             Total: (item.done || 0) + (item.pending || 0),
             Done: item.done || 0,
             Pending: item.pending || 0,
-            "Start Date": item.startDate?.split("T")[0] || "N/A",
-            "End Date": item.endDate?.split("T")[0] || "N/A",
-             Dealer: dealerObj.name || dealerObj,
-             Status: dealerObj.status
+            Date: startDay?.toDateString().split("T")[0] || "N/A",
+            Dealer: dealerObj.name || dealerObj,
+            Status: dealerObj.status,
+            "Visited Count": dealerObj?.visited ? dealerObj?.visited : 0,
           });
         });
       }
@@ -262,6 +245,7 @@ const ViewBeatMappingStatus = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "BeatMappingStatus");
 
     XLSX.writeFile(workbook, "BeatMappingStatus.xlsx");
+    setIsDownload(false)
   };
 
   const stackedData = data.map((emp) => {
@@ -290,7 +274,9 @@ const ViewBeatMappingStatus = () => {
         <div className="viewBeatMapping-page-graph">
           <div className="viewBeatMappingStatus-calendar-header">
             <h2>
-              {startDay.toDateString()} - {endDay.toDateString()}
+              {startDay && endDay
+                ? `${startDay.toDateString()} - ${endDay.toDateString()}`
+                : "Select date range"}
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -334,7 +320,13 @@ const ViewBeatMappingStatus = () => {
                   <input
                     type="date"
                     value={startDay ? startDay.toISOString().split("T")[0] : ""}
-                    onChange={(e) => setStartDay(new Date(e.target.value))}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setStartDay(null);
+                      } else {
+                        setStartDay(new Date(e.target.value));
+                      }
+                    }}
                   />
                 </div>
                 <div className="date">
@@ -342,7 +334,13 @@ const ViewBeatMappingStatus = () => {
                   <input
                     type="date"
                     value={endDay ? endDay.toISOString().split("T")[0] : ""}
-                    onChange={(e) => setEndDay(new Date(e.target.value))}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setEndDay(null);
+                      } else {
+                        setEndDay(new Date(e.target.value));
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -362,7 +360,8 @@ const ViewBeatMappingStatus = () => {
             <div className="viewBeatMappingStatus-download-btn">
               <div className="browse-btn" onClick={handleDownloadExcel}>
                 <FaDownload />
-                Download CSV
+                {isDownload ? "Download..." : "Download"  }
+               
               </div>
             </div>
             <div className="viewBeatMappingStatus-reset-filter">
@@ -393,8 +392,6 @@ const ViewBeatMappingStatus = () => {
                 <th>Total</th>
                 <th>Pending</th>
                 <th>Done</th>
-                <th>Start Date</th>
-                <th>End Date</th>
                 <th>View</th>
                 <th>Route</th>
                 <th>Status</th>
@@ -455,8 +452,6 @@ const ViewBeatMappingStatus = () => {
                       >
                         {counts.done}
                       </td>
-                      <td>{item.startDate?.split("T")[0] || "N/A"}</td>
-                      <td>{item.endDate?.split("T")[0] || "N/A"}</td>
                       <td>
                         <div className="expand-btn">
                           {isExpanded ? "Collapse" : "Expand"}
