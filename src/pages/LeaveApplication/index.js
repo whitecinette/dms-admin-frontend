@@ -307,7 +307,9 @@ function LeaveApplication() {
                       <td>{formatDate(application.toDate)}</td>
                       <td>{application.totalDays}</td>
                       <td>
-                        {application.halfDaySession.toUpperCase() || "N/A"}
+                        {application.halfDaySession
+                          ? application.halfDaySession.toUpperCase()
+                          : "N/A"}
                       </td>
                       <td>
                         {canChangeStatus(application) ? (
