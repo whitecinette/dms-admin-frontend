@@ -280,7 +280,7 @@ function LeaveApplication() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center" }}>
+                  <td colSpan="10" style={{ textAlign: "center" }}>
                     loading...
                   </td>
                 </tr>
@@ -339,7 +339,7 @@ function LeaveApplication() {
                     </tr>
                     {expandedRows[application._id] && (
                       <tr className="expanded-row">
-                        <td colSpan="9">
+                        <td colSpan="10">
                           <div className="leave-expanded-content">
                             <div className="reason-section">
                               <strong>Reason:</strong> {application.reason}
@@ -396,7 +396,7 @@ function LeaveApplication() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center" }}>
+                  <td colSpan="10" style={{ textAlign: "center" }}>
                     No data found
                   </td>
                 </tr>
