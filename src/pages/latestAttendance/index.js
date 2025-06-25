@@ -179,7 +179,8 @@ export default function LatestAttendance() {
   const alertTimeoutRef = useRef(null);
   const [AddedAttendance, setAddedAttendance] = useState([]);
   const [showAddAttendanceTable, setShowAddAttendanceTable] = useState(false);
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("role");  
+  const [tag, setTag] = useState("")
 
   // Get Attendance added by admin
   const getAddedAttendance = async () => {
@@ -198,6 +199,7 @@ export default function LatestAttendance() {
             date,
             month,
             year,
+            tag
           },
         }
       );
@@ -237,6 +239,7 @@ export default function LatestAttendance() {
         {
           params: {
             firms,
+            tag
           },
           headers: {
             Authorization: localStorage.getItem("authToken"),
@@ -265,6 +268,7 @@ export default function LatestAttendance() {
             firms,
             month,
             year,
+            tag
           },
           headers: {
             Authorization: localStorage.getItem("authToken"),
@@ -316,6 +320,7 @@ export default function LatestAttendance() {
             firms,
             month,
             year,
+            tag
           },
           responseType: "blob",
           headers: {
@@ -726,6 +731,11 @@ export default function LatestAttendance() {
                   <option value="Absent">Absent</option>
                   <option value="Half Day">Half Day</option>
                   <option value="Leave">Leave</option>
+                </select>
+                
+                <select value={tag} onChange={(e)=>{setCurrentPage(1); setTag(e.target.value)}}>
+                  <option value={""}>Select Tag</option>
+                  <option value={"office"}>Office</option>
                 </select>
 
                 <div className="custom-dropdown" ref={dropdownRef}>
