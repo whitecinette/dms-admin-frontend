@@ -54,7 +54,7 @@ const ViewBeatMappingStatus = () => {
   const [expandedRowData, setExpandedRowData] = useState([]);
   const [isDownload, setIsDownload] = useState(false);
 
-  const getbeatmapping = async () => {
+  const getBeatMapping = async () => {
     if (!startDay) {
       setAlert({
         show: true,
@@ -99,7 +99,7 @@ const ViewBeatMappingStatus = () => {
 
   useEffect(() => {
     if (startDay) {
-      getbeatmapping();
+      getBeatMapping();
     }
   }, [currentPage, search, startDay, endDay]);
 
@@ -191,7 +191,7 @@ const ViewBeatMappingStatus = () => {
     setStartDay(defaultStartDate);
     setEndDay(defaultEndDate);
     navigate("/viewBeatMappingStatus", { replace: true });
-    getbeatmapping();
+    getBeatMapping();
   };
 
   const handleDownloadExcel = () => {

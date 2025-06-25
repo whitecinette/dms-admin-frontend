@@ -120,7 +120,6 @@ function LeaveApplication() {
         message: res.data?.message || "Status updated successfully",
         type: res.data.status,
       });
-      
     } catch (error) {
       setAlert({
         show: true,
@@ -128,7 +127,7 @@ function LeaveApplication() {
         type: error.response.data?.status || "error",
       });
       console.error("Error updating status:", error);
-    }finally {
+    } finally {
       setPendingStatusChange({ applicationId: null, newStatus: "" });
       setComment("");
       closeConfirmation();
@@ -143,16 +142,28 @@ function LeaveApplication() {
 
   const canChangeStatus = (application) => {
     // Prevent status change if the leave is in the past
+    if (application?.halfDaySession === "afternoon") {
+      const now = new Date();
+      const fromDate = new Date(application.fromDate);
+      const isToday =
+        now.getFullYear() === fromDate.getFullYear() &&
+        now.getMonth() === fromDate.getMonth() &&
+        now.getDate() === fromDate.getDate();
+      if (isToday && now.getHours() < 12) {
+        return true;
+      }
+    }
+
     if (new Date(application.fromDate) < new Date()) {
       return false;
     }
 
-    if (userRole === "admin") {
-      // Prevent change if super_admin has already approved
-      return !application.approvalHistory.some(
-        (history) => history.approverId?.role === "super_admin"
-      );
-    }
+    // if (userRole === "admin") {
+    //   // Prevent change if super_admin has already approved
+    //   return !application.approvalHistory.some(
+    //     (history) => history.approverId?.role === "super_admin"
+    //   );
+    // }
 
     // Super admin can change status if not blocked by past-date rule
     return true;
@@ -255,12 +266,13 @@ function LeaveApplication() {
             <thead>
               <tr>
                 <th></th>
-                <th>Employee Name</th>
-                <th>Employee Code</th>
+                <th>Name</th>
+                <th>Code</th>
                 <th>Leave Type</th>
                 <th>From Date</th>
                 <th>To Date</th>
                 <th>Total Days</th>
+                <th>Session</th>
                 <th>Status</th>
                 <th>Applied At</th>
               </tr>
@@ -294,6 +306,9 @@ function LeaveApplication() {
                       <td>{formatDate(application.fromDate)}</td>
                       <td>{formatDate(application.toDate)}</td>
                       <td>{application.totalDays}</td>
+                      <td>
+                        {application.halfDaySession.toUpperCase() || "N/A"}
+                      </td>
                       <td>
                         {canChangeStatus(application) ? (
                           <select
