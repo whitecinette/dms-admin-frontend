@@ -142,19 +142,24 @@ function LeaveApplication() {
 
   const canChangeStatus = (application) => {
     // Prevent status change if the leave is in the past
-    if (application?.halfDaySession === "afternoon") {
-      const now = new Date();
-      const fromDate = new Date(application.fromDate);
-      const isToday =
-        now.getFullYear() === fromDate.getFullYear() &&
-        now.getMonth() === fromDate.getMonth() &&
-        now.getDate() === fromDate.getDate();
-      if (isToday && now.getHours() < 12) {
-        return true;
-      }
-    }
+    // if (application?.halfDaySession === "afternoon") {
+    //   const now = new Date();
+    //   const fromDate = new Date(application.fromDate);
+    //   const isToday =
+    //     now.getFullYear() === fromDate.getFullYear() &&
+    //     now.getMonth() === fromDate.getMonth() &&
+    //     now.getDate() === fromDate.getDate();
+    //   if (isToday && now.getHours() < 12) {
+    //     return true;
+    //   }
+    // }
 
-    if (new Date(application.fromDate) < new Date()) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() - 1);
+    tomorrow.setHours(0, 0, 0, 0); // Set to start of tomorrow for clean comparison
+
+    // Prevent status change if the leave starts before tomorrow
+    if (new Date(application.fromDate) < tomorrow) {
       return false;
     }
 

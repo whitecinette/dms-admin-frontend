@@ -203,7 +203,7 @@ export default function LatestAttendance() {
           },
         }
       );
-      console.log("API Response (getAddedAttendance):", res.data.data); // Debugging
+      // console.log("API Response (getAddedAttendance):", res.data.data); // Debugging
       setAddedAttendance(res.data.data);
     } catch (error) {
       setAddedAttendance([]);
@@ -275,7 +275,7 @@ export default function LatestAttendance() {
           },
         }
       );
-      console.log("API Response (getAttendance):", res.data.data); // Debugging
+      // console.log("API Response (getAttendance):", res.data.data); // Debugging
       setAttendance(res.data.data);
       setTotalpages(res.data.totalPages);
     } catch (error) {
@@ -569,11 +569,11 @@ export default function LatestAttendance() {
   // Check if record is absent
   const isAbsent = (record) => {
     if (!record || !record.status) {
-      console.warn("Invalid record or status:", record);
+      // console.warn("Invalid record or status:", record);
       return false;
     }
-    console.log("Record Status:", record.status); // Debugging
-    return record.status.trim().toLowerCase() === "absent";
+    // console.log("Record Status:", record.status); // Debugging
+    return record.status.trim().toLowerCase() === "absent" || "leave";
   };
 
   // Effect to fetch data
@@ -582,7 +582,7 @@ export default function LatestAttendance() {
     getAddedAttendance();
     getAttendance();
     getAttendanceCount();
-  }, [currentPage, search, date, status, selectedMonthYear]);
+  }, [currentPage, search, date, status, selectedMonthYear, tag]);
 
   // Show alert
   const showAlert = (message, type = "info") => {

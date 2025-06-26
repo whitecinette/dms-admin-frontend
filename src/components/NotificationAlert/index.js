@@ -49,18 +49,25 @@ const NotificationAlert = () => {
     try {
       if (notification.title === "Route Plan") {
         const [name, startDate, endDate] = notification.filters;
-        navigate(
-          `/routePlan?search=${encodeURIComponent(
-            name
-          )}&startDate=${startDate}&endDate=${endDate}`
-        );
+        const queryParams = `?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`;
+        
+        // Check if we're already on the route plan page
+        if (window.location.pathname === '/routePlan') {
+          // Force a reload of the current page with new parameters
+          window.location.href = `/routePlan${queryParams}`;
+        } else {
+          // Use normal navigation for different pages
+          navigate(`/routePlan${queryParams}`);
+        }
       } else if (notification.title === "Leave Request") {
         const [code, startDate, endDate] = notification.filters;
-        navigate(
-          `/leaveApplication?search=${encodeURIComponent(
-            code
-          )}&startDate=${startDate}&endDate=${endDate}`
-        );
+        const queryParams = `?search=${encodeURIComponent(code)}&startDate=${startDate}&endDate=${endDate}`;
+        
+        if (window.location.pathname === '/leaveApplication') {
+          window.location.href = `/leaveApplication${queryParams}`;
+        } else {
+          navigate(`/leaveApplication${queryParams}`);
+        }
       }
     } catch (error) {
       console.error("Error in handleNotificationClick:", error);
