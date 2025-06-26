@@ -154,12 +154,12 @@ function LeaveApplication() {
     //   }
     // }
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() - 1);
-    tomorrow.setHours(0, 0, 0, 0); // Set to start of tomorrow for clean comparison
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0); // Set to start of yesterday for clean comparison
 
-    // Prevent status change if the leave starts before tomorrow
-    if (new Date(application.fromDate) < tomorrow) {
+    // Prevent status change if the leave starts before yesterday
+    if (new Date(application.fromDate) < yesterday) {
       return false;
     }
 

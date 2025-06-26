@@ -13,8 +13,8 @@ export const FiltersProvider = ({ children }) => {
     const currentDate = new Date();
     currentDate.setDate(1);
     const start = new Date(currentDate);
-    start.setMonth(currentDate.getMonth() - 1);
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    start.setMonth(currentDate.getMonth());
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     setStartDate(start);
     setEndDate(end);
   };

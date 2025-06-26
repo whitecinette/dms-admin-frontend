@@ -148,7 +148,7 @@ export default function LatestAttendance() {
   const [firms, setFirms] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState("");
-  const [dropdownStyles, setDropdownStyles] = useState({ top: 30});
+  const [dropdownStyles, setDropdownStyles] = useState({ top: 30 });
   const [showAddAttendance, setShowAddAttendance] = useState(false);
   const [newAttendance, setNewAttendance] = useState({
     code: "",
@@ -179,8 +179,8 @@ export default function LatestAttendance() {
   const alertTimeoutRef = useRef(null);
   const [AddedAttendance, setAddedAttendance] = useState([]);
   const [showAddAttendanceTable, setShowAddAttendanceTable] = useState(false);
-  const role = localStorage.getItem("role");  
-  const [tag, setTag] = useState("")
+  const role = localStorage.getItem("role");
+  const [tag, setTag] = useState("");
 
   // Get Attendance added by admin
   const getAddedAttendance = async () => {
@@ -199,7 +199,7 @@ export default function LatestAttendance() {
             date,
             month,
             year,
-            tag
+            tag,
           },
         }
       );
@@ -239,7 +239,7 @@ export default function LatestAttendance() {
         {
           params: {
             firms,
-            tag
+            tag,
           },
           headers: {
             Authorization: localStorage.getItem("authToken"),
@@ -268,7 +268,7 @@ export default function LatestAttendance() {
             firms,
             month,
             year,
-            tag
+            tag,
           },
           headers: {
             Authorization: localStorage.getItem("authToken"),
@@ -320,7 +320,7 @@ export default function LatestAttendance() {
             firms,
             month,
             year,
-            tag
+            tag,
           },
           responseType: "blob",
           headers: {
@@ -496,12 +496,16 @@ export default function LatestAttendance() {
 
   // Handle add attendance
   const handleAddAttendance = async () => {
+    console.log("enterrringgggg");
     if (!newAttendance.code || !newAttendance.remark) {
       showAlert("Please fill in Code and Remark fields", "error");
       return;
     }
 
+    console.log("enterrringgggg222");
+
     try {
+      console.log("enterrringgggg333");
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(async (position) => {
           const updatedAttendance = {
@@ -515,8 +519,10 @@ export default function LatestAttendance() {
               ? position.coords.longitude
               : null,
           };
+          console.log("yes...");
 
           try {
+            console.log("enterrringgggg");
             await axios.post(
               `${backendUrl}/add-attendance-by-admin`,
               updatedAttendance,
@@ -573,9 +579,9 @@ export default function LatestAttendance() {
       return false;
     }
     // console.log("Record Status:", record.status); // Debugging
-    return record.status.trim().toLowerCase() === "absent" || "leave";
+    const status = record.status.trim().toLowerCase();
+    return status === "absent" || status === "leave";
   };
-
   // Effect to fetch data
   useEffect(() => {
     getAllActorTypes();
@@ -732,8 +738,14 @@ export default function LatestAttendance() {
                   <option value="Half Day">Half Day</option>
                   <option value="Leave">Leave</option>
                 </select>
-                
-                <select value={tag} onChange={(e)=>{setCurrentPage(1); setTag(e.target.value)}}>
+
+                <select
+                  value={tag}
+                  onChange={(e) => {
+                    setCurrentPage(1);
+                    setTag(e.target.value);
+                  }}
+                >
                   <option value={""}>Select Tag</option>
                   <option value={"office"}>Office</option>
                 </select>
