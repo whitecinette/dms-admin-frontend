@@ -13,7 +13,7 @@ import {
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { Link } from "react-router-dom";
 import CustomAlert from "../../components/CustomAlert";
-
+// the flow things instead of firms is created by nameera but it is used to fetches the firms and have to be changed
 const backendUrl = config.backend_url;
 
 const AddAttendancePopup = ({
@@ -132,6 +132,7 @@ const AddAttendancePopup = ({
 export default function LatestAttendance() {
   const [deleteId, setDeleteId] = useState(null);
   const [attendance, setAttendance] = useState([]);
+  const [attendanceByFirms, setAttendanceByFirms] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalpages] = useState(0);
   const [search, setSearch] = useState("");
@@ -147,6 +148,12 @@ export default function LatestAttendance() {
   const [firmList, setFirmList] = useState([]);
   const [firms, setFirms] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  // nameera
+  const [flow, setFlowList] = useState([]);
+  const [selectedFlows, setSelectedFlows] = useState([]);
+  const [firmsDropdownOpen, setFirmsDropdownOpen] = useState(false);
+  const [firmsDropdownSearch, setFirmsDropdownSearch] = useState("");
+  // nameera
   const [dropdownSearch, setDropdownSearch] = useState("");
   const [dropdownStyles, setDropdownStyles] = useState({ top: 30 });
   const [showAddAttendance, setShowAddAttendance] = useState(false);
@@ -163,6 +170,7 @@ export default function LatestAttendance() {
     punchOutLongitude: null,
   });
   const dropdownRef = useRef(null);
+  const firmsDropdownRef = useRef(null);
   const limit = 100;
   const [alert, setAlert] = useState({
     show: false,
@@ -223,65 +231,196 @@ export default function LatestAttendance() {
       console.log(error);
     }
   };
+  // nameeraaa
+  const getFirms = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/get-all-firms`);
+      setFlowList(res.data.data);
+      console.log("response data", res.data.data);
+    } catch (error) {
+      console.log("error fetching firms");
+    }
+  };
+  // nameeraaa
 
   // Get attendance count
+  // const getAttendanceCount = async () => {
+  //   let newDate = "";
+  //   if (!date) {
+  //     const date = new Date();
+  //     newDate = date.toISOString().split("T")[0];
+  //   } else {
+  //     newDate = new Date(date).toISOString().split("T")[0];
+  //   }
+  //   try {
+  //     const response = await axios.get(
+  //       `${backendUrl}/get-attendance-by-date/${newDate}`,
+  //       {
+  //         params: {
+  //           firms,
+  //           tag,
+  //         },
+  //         headers: {
+  //           Authorization: localStorage.getItem("authToken"),
+  //         },
+  //       }
+  //     );
+  //     setCount(response.data.attendanceCount);
+  //   } catch (err) {
+  //     console.error("Error fetching attendance count:", err);
+  //   }
+  // };
+  // new api nameera
+
   const getAttendanceCount = async () => {
-    let newDate = "";
-    if (!date) {
-      const date = new Date();
-      newDate = date.toISOString().split("T")[0];
-    } else {
-      newDate = new Date(date).toISOString().split("T")[0];
-    }
     try {
-      const response = await axios.get(
-        `${backendUrl}/get-attendance-by-date/${newDate}`,
-        {
-          params: {
-            firms,
-            tag,
-          },
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      setCount(response.data.attendanceCount);
+      let newDate = "";
+      if (!date) {
+        const today = new Date();
+        newDate = today.toISOString().split("T")[0];
+      } else {
+        newDate = new Date(date).toISOString().split("T")[0];
+      }
+
+      const response = await axios.get(`${backendUrl}/get-total-employee`, {
+        params: { date: newDate },
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+
+      setCount({
+        present: response.data.presentCount,
+        absent: response.data.absentCount,
+        leave: response.data.leaveCount,
+        halfDay: response.data.halfDayCount,
+        pending: response.data.pendingCount,
+        total: response.data.total,
+      });
     } catch (err) {
-      console.error("Error fetching attendance count:", err);
+      console.error("Error fetching total employee attendance:", err);
     }
   };
 
   // Get attendance
-  const getAttendance = async () => {
-    try {
-      const [month, year] = selectedMonthYear.split("-");
-      const res = await axios.get(
-        `${backendUrl}/get-latest-attendance-by-date`,
-        {
-          params: {
-            date,
-            page: currentPage,
-            limit,
-            search,
-            status,
-            firms,
-            month,
-            year,
-            tag,
-          },
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      // console.log("API Response (getAttendance):", res.data.data); // Debugging
-      setAttendance(res.data.data);
-      setTotalpages(res.data.totalPages);
-    } catch (error) {
-      console.log("Error fetching attendance:", error);
-    }
-  };
+  // const getAttendance = async () => {
+  //   try {
+  //     const [month, year] = selectedMonthYear.split("-");
+  //     const res = await axios.get(
+  //       `${backendUrl}/get-latest-attendance-by-date`,
+  //       {
+  //         params: {
+  //           date,
+  //           page: currentPage,
+  //           limit,
+  //           search,
+  //           status,
+  //           firms,
+  //           month,
+  //           year,
+  //           tag,
+  //         },
+  //         headers: {
+  //           Authorization: localStorage.getItem("authToken"),
+  //         },
+  //       }
+  //     );
+  //     // console.log("API Response (getAttendance):", res.data.data); // Debugging
+  //     setAttendance(res.data.data);
+  //     console.log("get the data", res.data.data);
+  //     setTotalpages(res.data.totalPages);
+  //   } catch (error) {
+  //     console.log("Error fetching attendance:", error);
+  //   }
+  // };
+// Nameera
+
+const getAttendance = async () => {
+ try {
+   const [month, year] = selectedMonthYear.split("-");
+   const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
+   const res = await axios.get(
+     `${backendUrl}/get-latest-attendance-by-date`,
+     {
+       params: {
+         date,
+         page: currentPage,
+         limit,
+         search,
+         status,
+         firms,
+         ...(firmCodes && { firmCodes }), // Conditionally include firmCodes
+         month,
+         year,
+         tag,
+       },
+       headers: {
+         Authorization: localStorage.getItem("authToken"),
+       },
+     }
+   );
+   // console.log("API Response (getAttendance):", res.data.data); // Debugging
+   setAttendance(res.data.data);
+   console.log("get the data", res.data.data);
+   setTotalpages(res.data.totalPages);
+ } catch (error) {
+   console.log("Error fetching attendance:", error);
+ }
+};
+// const getAttendanceByFirms = async () => {
+//  try {
+//    // Ensure selectedFlows is defined and not empty
+//    if (!selectedFlows || selectedFlows.length === 0) {
+//      console.log("No firms selected, skipping API call.");
+//      setAttendance([]);
+//      setTotalpages(0);
+//      return;
+//    }
+
+//    const [month, year] = selectedMonthYear.split("-");
+//    const firmCodes = Array.isArray(selectedFlows) ? selectedFlows.join(",") : selectedFlows;
+
+//    // Validate firmCodes
+//    if (!firmCodes || firmCodes.trim() === "") {
+//      console.log("Invalid firmCodes, skipping API call.");
+//      setAttendance([]);
+//      setTotalpages(0);
+//      return;
+//    }
+
+//    const res = await axios.get(
+//      `${backendUrl}/get-attendance-by-firms`,
+//      {
+//        params: {
+//          firmCodes, // Send firmCodes as a comma-separated string
+//          date,
+//          month,
+//          year,
+//          status,
+//          search,
+//          page: currentPage,
+//          limit,
+//        },
+//        headers: {
+//          Authorization: localStorage.getItem("authToken"),
+//        },
+//      }
+//    );
+
+//    console.log("API Response (getAttendanceByFirms):", res.data);
+//    setAttendance(res.data.data);
+//    setTotalpages(res.data.totalPages);
+//  } catch (error) {
+//    console.error("Error fetching attendance by firms:", error);
+//    if (error.response) {
+//      console.error("Server response:", error.response.data);
+//      // Optionally display error to user
+//      alert(`Error: ${error.response.data.message || "Failed to fetch attendance data"}`);
+//    }
+//    setAttendance([]);
+//    setTotalpages(0);
+//  }
+// };
 
   // Fetch address from coordinates
   const fetchAddress = async (lat, lon) => {
@@ -413,7 +552,10 @@ export default function LatestAttendance() {
   const handleDropdownClick = (event) => {
     setDropdownOpen(!dropdownOpen);
   };
-
+  // nameera
+  const handleDropdownClickForFirms = (event) => {
+    setFirmsDropdownOpen(!firmsDropdownOpen);
+  };
   // Handle firm selection
   const handleFirmSelect = (firm) => {
     if (firms.includes(firm._id)) {
@@ -430,14 +572,33 @@ export default function LatestAttendance() {
     setCurrentPage(1);
   };
 
-  // Apply firms
   const handleApplyFirms = () => {
     setDropdownOpen(false);
     setDropdownSearch("");
     getAttendance();
     getAttendanceCount();
   };
+  // nameeraaa
+  const handleFlowSelect = (flow) => {
+    if (selectedFlows.includes(flow.code)) {
+      setSelectedFlows(selectedFlows.filter((code) => code !== flow.code));
+    } else {
+      setSelectedFlows([...selectedFlows, flow.code]);
+    }
+  };
 
+  const handleClearFlows = () => {
+    setSelectedFlows([]);
+    setCurrentPage(1);
+  };
+  const handleApplyFlows = () => {
+   setFirmsDropdownOpen(false);
+    setFirmsDropdownSearch("");
+    getAttendanceCount();
+    // getAttendanceByFirms();
+    getAttendance();
+  };
+// yha tk nameera
   // Handle expand
   const handleExpand = async (record) => {
     const newExpandState = expand === record._id ? null : record._id;
@@ -588,6 +749,7 @@ export default function LatestAttendance() {
     getAddedAttendance();
     getAttendance();
     getAttendanceCount();
+    getFirms();
   }, [currentPage, search, date, status, selectedMonthYear, tag]);
 
   // Show alert
@@ -750,6 +912,96 @@ export default function LatestAttendance() {
                   <option value={"office"}>Office</option>
                 </select>
 
+                {/* nameeraaaa */}
+                <div className="custom-dropdown" ref={firmsDropdownRef}>
+                  <div
+                    className="dropdown-header"
+                    onClick={handleDropdownClickForFirms}
+                  >
+                    {selectedFlows.length > 0 ? (
+                      <span>
+                        {selectedFlows.length} firms
+                        {selectedFlows.length > 1 ? "s" : ""} selected
+                      </span>
+                    ) : (
+                      <span>Select Firms</span>
+                    )}
+                    {firmsDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
+                  </div>
+
+                  {firmsDropdownOpen && (
+                    <div
+                      className="dropdown-content"
+                      style={{
+                        position: "absolute",
+                        top: dropdownStyles.top,
+                        left: dropdownStyles.left,
+                      }}
+                    >
+                      {/* No search or filter for now */}
+                      <div className="dropdown-search">
+                        <input
+                          type="text"
+                          placeholder="Search firms..."
+                          value={firmsDropdownSearch}
+                          onChange={(e) =>
+                            setFirmsDropdownSearch(e.target.value)
+                          }
+                        />
+                      </div>
+                      {/* SELECTED */}
+                      {selectedFlows.length > 0 && (
+                        <div className="selected-firms">
+                         <div className="selected-firms-header"></div>
+                          {flow
+                            .filter((item) => selectedFlows.includes(item.code))
+                            .map((item) => (
+                              <div
+                                key={item._id}
+                                className="selected-firm-item"
+                                onClick={() => handleFlowSelect(item)}
+                              >
+                                {item.name}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                      <div className="flows-list">
+                        {flow
+                          .filter((item) =>
+                            item.name
+                              .toLowerCase()
+                              .includes(firmsDropdownSearch.toLowerCase())
+                          )
+                          .map((item) => (
+                            <div
+                              key={item._id}
+                              className="flow-item"
+                              onClick={() => handleFlowSelect(item)}
+                            >
+                              {item.name}
+                            </div>
+                          ))}
+                      </div>
+
+                      <div className="dropdown-actions">
+                        <button
+                          className="clear-btn"
+                          onClick={handleClearFlows}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          className="apply-btn"
+                          onClick={handleApplyFlows}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* flows dropdown */}
                 <div className="custom-dropdown" ref={dropdownRef}>
                   <div
                     className="dropdown-header"
@@ -761,7 +1013,7 @@ export default function LatestAttendance() {
                         selected
                       </span>
                     ) : (
-                      <span>Select Firms</span>
+                      <span>Select Flows</span>
                     )}
                     {dropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
                   </div>
@@ -778,7 +1030,7 @@ export default function LatestAttendance() {
                       <div className="dropdown-search">
                         <input
                           type="text"
-                          placeholder="Search firms..."
+                          placeholder="Search flows..."
                           value={dropdownSearch}
                           onChange={(e) => setDropdownSearch(e.target.value)}
                         />
