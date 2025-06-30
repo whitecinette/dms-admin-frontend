@@ -446,8 +446,49 @@ const getAttendance = async () => {
   };
 
   // Handle download
+  // const handleDownload = async () => {
+  //   const [month, year] = selectedMonthYear.split("-");
+  //   try {
+  //     const response = await axios.get(
+  //       `${backendUrl}/download-all-attendance/`,
+  //       {
+  //         params: {
+  //           date,
+  //           search,
+  //           status,
+  //           firms,
+  //           month,
+  //           year,
+  //           tag,
+  //         },
+  //         responseType: "blob",
+  //         headers: {
+  //           Authorization: localStorage.getItem("authToken"),
+  //         },
+  //       }
+  //     );
+
+  //     const url = window.URL.createObjectURL(new Blob([response.data]));
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = "all_attendance_data.csv";
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     document.body.removeChild(a);
+  //     window.URL.revokeObjectURL(url);
+  //     showAlert("Attendance data downloaded successfully!", "success");
+  //   } catch (error) {
+  //     console.error("Download failed:", error);
+  //     showAlert("Error downloading the file. Please try again.", "error");
+  //   }
+  // };
+
+
+
+  // nameera
   const handleDownload = async () => {
     const [month, year] = selectedMonthYear.split("-");
+    const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
     try {
       const response = await axios.get(
         `${backendUrl}/download-all-attendance/`,
@@ -460,6 +501,7 @@ const getAttendance = async () => {
             month,
             year,
             tag,
+            ...(firmCodes && { firmCodes }),
           },
           responseType: "blob",
           headers: {
