@@ -920,7 +920,7 @@ const getAttendance = async () => {
                   >
                     {selectedFlows.length > 0 ? (
                       <span>
-                        {selectedFlows.length} firms
+                        {selectedFlows.length} firm
                         {selectedFlows.length > 1 ? "s" : ""} selected
                       </span>
                     ) : (
