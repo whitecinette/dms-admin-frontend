@@ -125,7 +125,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Travel Expenses", to: "/travelExpenses" },
         { name: "Payroll", to: "/salesDate" },
         { name: "Route Plans", to: "/routePlan" },
-        { name: "View Beat Mapping Status", to: "/viewBeatMappingStatus" },
+        { name: "Market Coverage", to: "/marketCoverage" },
         { name: "Employee Management", to: "/salesDate" },
         { name: "Voucher", to: "/salesDate" },
       ],

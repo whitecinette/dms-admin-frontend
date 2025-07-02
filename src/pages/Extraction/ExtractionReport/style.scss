@@ -1,0 +1,131 @@
+.extraction-report-filter {
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+
+    .filter {
+        .date-filter {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-width: 25rem;
+            gap: 2px;
+            @media (max-width: 768px) {
+                flex-wrap: wrap;
+                justify-content: start;
+                align-items: start;
+                
+            }
+
+            input {
+                width: 100%;
+                border-radius: 10px;
+                border: 1px solid #ddd;
+                color: #808080;
+                padding: 5px;
+                font-size: 12px;
+
+                &::-webkit-calendar-picker-indicator {
+                    filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+                }
+            }
+        }
+    }
+
+    .toggle {
+        position: absolute;
+        top: 15px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
+
+        @media (max-width: 768px) {
+            position: static;
+            margin-top: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+    }
+
+}
+
+.extraction-report-table {
+    margin-top: 10px;
+    width: 100%;
+    overflow-x: auto;
+    // max-height: 65vh;
+    scrollbar-width: thin;
+
+    /* Enable vertical scrolling */
+    display: block;
+    max-width: 100%;
+    overflow-y: auto;
+
+    /* Custom scrollbar for better UX */
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+
+        thead {
+            position: sticky;
+            top: 0;
+            background-color: #6399f9;
+            color: white;
+
+            th {
+                padding: 15px 5px;
+                white-space: nowrap;
+                text-align: center;
+                // padding: 12px;
+            }
+
+
+            /* Rounded corners for first and last th */
+            th:first-child {
+                border-radius: 5px 0 0 5px;
+            }
+
+            th:last-child {
+                border-radius: 0 5px 5px 0;
+            }
+        }
+
+        tbody {
+            tr {
+
+                background-color: #f8f8f8;
+
+                &:nth-child(even) {
+                    background-color: white;
+                }
+
+                td {
+                    font-size: 12px;
+                    text-align: center;
+                    white-space: nowrap;
+                    padding: 12px 5px;
+
+                    /* Rounded corners */
+                    &:first-child {
+                        border-radius: 5px 0 0 5px;
+                    }
+
+                    &:last-child {
+                        border-radius: 0 5px 5px 0;
+                    }
+                }
+            }
+        }
+    }
+
+}

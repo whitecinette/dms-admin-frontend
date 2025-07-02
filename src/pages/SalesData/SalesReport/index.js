@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./style.scss";
 import axios from "axios";
 import config from "../../../config";
+import LoadingCards from "../../../components/LoadingCards";
 
 const backend_url = config.backend_url;
 
@@ -134,14 +135,11 @@ export const SalesReport = () => {
               <th>Total Amount</th>
             </tr>
           </thead>
+          {loading ? (
+            <LoadingCards columnCount={11}/>
+          ) : 
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} style={{ textAlign: "center" }}>
-                  Loading ...
-                </td>
-              </tr>
-            ) : salesReport.length > 0 ? (
+            {salesReport.length > 0 ? (
               salesReport.map((row, rowIndex) => (
                 <>
                   <tr key={rowIndex}>
@@ -165,7 +163,7 @@ export const SalesReport = () => {
                 </td>
               </tr>
             )}
-          </tbody>
+          </tbody>}
         </table>
       </div>
       {/* ✅ Pagination */}

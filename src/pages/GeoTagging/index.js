@@ -214,6 +214,14 @@ function Geotagging() {
     }
   };
 
+  // New utility function to handle display values
+  function getDisplayValue(val) {
+    if (val && typeof val === "object" && "$numberDecimal" in val) {
+      return val.$numberDecimal;
+    }
+    return val !== undefined && val !== null ? val : "N/A";
+  }
+
   useEffect(() => {
     getAllActorTypes();
     getUpdateCount();
@@ -358,7 +366,7 @@ function Geotagging() {
                                 {row[header]}
                               </span>
                             ) : (
-                              row[header] || "N/A"
+                              getDisplayValue(row[header])
                             )}
                           </td>
                         )
@@ -484,15 +492,17 @@ function Geotagging() {
                             Previous Location:
                           </span>
                           <span className="update-value">
-                            Lat: {update.previousData?.latitude || "N/A"}, Long:{" "}
-                            {update.previousData?.longitude || "N/A"}
+                            Lat:{" "}
+                            {getDisplayValue(update.previousData?.latitude)},
+                            Long:{" "}
+                            {getDisplayValue(update.previousData?.longitude)}
                           </span>
                         </div>
                         <div className="update-row">
                           <span className="update-label">New Location:</span>
                           <span className="update-value">
-                            Lat: {update.newData?.latitude || "N/A"}, Long:{" "}
-                            {update.newData?.longitude || "N/A"}
+                            Lat: {getDisplayValue(update.newData?.latitude)},
+                            Long: {getDisplayValue(update.newData?.longitude)}
                           </span>
                         </div>
                         <div className="update-row">
@@ -506,25 +516,40 @@ function Geotagging() {
                       </div>
                       <div className="update-maps">
                         {update.previousData?.latitude &&
-                          update.previousData?.longitude && (
+                          update.previousData?.longitude &&
+                          getDisplayValue(update.previousData.latitude) !==
+                            "N/A" &&
+                          getDisplayValue(update.previousData.longitude) !==
+                            "N/A" && (
                             <div className="map-container">
                               <h4>Previous Location</h4>
                               <iframe
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                src={`https://maps.google.com/maps?q=${update.previousData.latitude},${update.previousData.longitude}&z=16&output=embed`}
+                                src={`https://maps.google.com/maps?q=${getDisplayValue(
+                                  update.previousData.latitude
+                                )},${getDisplayValue(
+                                  update.previousData.longitude
+                                )}&z=16&output=embed`}
                                 title="Previous Location"
                               ></iframe>
                             </div>
                           )}
                         {update.newData?.latitude &&
-                          update.newData?.longitude && (
+                          update.newData?.longitude &&
+                          getDisplayValue(update.newData.latitude) !== "N/A" &&
+                          getDisplayValue(update.newData.longitude) !==
+                            "N/A" && (
                             <div className="map-container">
                               <h4>New Location</h4>
                               <iframe
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                src={`https://maps.google.com/maps?q=${update.newData.latitude},${update.newData.longitude}&z=16&output=embed`}
+                                src={`https://maps.google.com/maps?q=${getDisplayValue(
+                                  update.newData.latitude
+                                )},${getDisplayValue(
+                                  update.newData.longitude
+                                )}&z=16&output=embed`}
                                 title="New Location"
                               ></iframe>
                             </div>

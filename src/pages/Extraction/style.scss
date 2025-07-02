@@ -1,26 +1,41 @@
 .extraction-page {
+    position: relative;
     .extraction-header {
         font-size: 1.5rem;
         font-weight: 900;
     }
 
-    .toggle-container {
+    .toggle {
         position: absolute;
-        top: 70px;
-        /* Adjust the top distance */
-        right: 20px;
-        /* Adjust the right distance */
-        display: flex;
-        justify-content: end;
-        gap: 5px;
-        background-color: #fff;
-        font-size: 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        /* Add subtle shadow for depth */
-        width: 6rem;
-        height: 2rem;
+        top: -7px;
+        right: 10px;
+
+        @media (max-width: 768px) {
+            position: static;
+            margin-top: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
     }
+
+    // .toggle-container {
+    //     position: absolute;
+    //     top: 70px;
+    //     /* Adjust the top distance */
+    //     right: 20px;
+    //     /* Adjust the right distance */
+    //     display: flex;
+    //     justify-content: end;
+    //     gap: 5px;
+    //     background-color: #fff;
+    //     // font-size: 15px;
+    //     border-radius: 8px;
+    //     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    //     /* Add subtle shadow for depth */
+    //     // width: 6rem;
+    //     height: 2rem;
+    // }
 
     .toggle-button {
         padding: 10px 15px;

@@ -59,7 +59,7 @@ function App() {
             <Route path="/product" element={<Products />} />
             <Route path="/update/products" element={<UpdateProducts />} />
             <Route
-              path="/viewBeatMappingStatus"
+              path="/marketCoverage"
               element={<ViewBeatMappingStatus />}
             />
             <Route

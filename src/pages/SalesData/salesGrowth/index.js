@@ -5,16 +5,17 @@ import config from "../../../config.js";
 import { Link } from "react-router-dom";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { useFilters } from "../../../context/filterContext.js";
+import LoadingCards from "../../../components/LoadingCards/index.js";
 
 const backend_url = config.backend_url;
 
 const formatValue = (value) => {
   if (value >= 10000000) {
-    return (value / 10000000).toFixed(2) + " Cr"; // Format for crores
+    return (value / 10000000).toFixed(2) + " Cr";
   } else if (value >= 100000) {
-    return (value / 100000).toFixed(2) + " Lakh"; // Format for lakhs
+    return (value / 100000).toFixed(2) + " Lakh";
   } else {
-    return value; // Return as is for smaller values
+    return value;
   }
 };
 
@@ -34,7 +35,7 @@ const DropdownItemsCards = (item) => {
         </div>
       </div>
       <div className="card">
-        <div className="card-header">&#37; Growth</div>
+        <div className="card-header">% Growth</div>
         <div
           className="card-content"
           style={{ color: item.sell_out_growth < 0 ? "#FA5A7D" : "#3CD856" }}
@@ -47,7 +48,6 @@ const DropdownItemsCards = (item) => {
 };
 
 const SalesGrowth = ({ moreFilter }) => {
-  // Check if it’s undefined
   const {
     selectedValue,
     setSelectedValue,
@@ -59,21 +59,25 @@ const SalesGrowth = ({ moreFilter }) => {
     setDropdownValue,
     setLoading,
     loading,
-  } = useFilters(); // Use context values
+  } = useFilters();
 
   const [data, setData] = useState({});
   const [position, setPosition] = useState([]);
   const [dropdown, setDropdown] = useState("");
   const [subordinate, setSubordinate] = useState([]);
   const [dropdownSearch, setDropdownSearch] = useState("");
-  const dropdownRefs = useRef({}); // store refs for each dropdown]
+  const [tempSelection, setTempSelection] = useState([]); // Temporary selection storage
+  const dropdownRefs = useRef({});
+  const dropdownContainerRef = useRef(null); // Ref for dropdown container
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
+  const [isLoading, setIsLoading] = useState(false);
 
-  //get metrics data
+  // Get metrics data
   const getMetrics = async () => {
-    if (!startDate || !endDate) return; // Ensure both dates are set before making the API request
+    if (!startDate || !endDate) return;
 
     try {
+      setIsLoading(true);
       const res = await axios.post(
         `${backend_url}/user/sales-data/dashboard/metrics/self`,
         {
@@ -88,13 +92,15 @@ const SalesGrowth = ({ moreFilter }) => {
           },
         }
       );
-      setData(res.data.data); // Update state with the response data
+      setData(res.data.data);
     } catch (error) {
       console.log("Error fetching data: ", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  //get position and subordinate information
+  // Get position and subordinate information
   const getPositionAndSubordinate = async () => {
     try {
       const res = await axios.post(
@@ -118,61 +124,60 @@ const SalesGrowth = ({ moreFilter }) => {
     }
   };
 
-  // // Set the start and end dates for the last month
-  // const getLastMonthStartAndEndDates = () => {
-  //   const currentDate = new Date();
-  //   currentDate.setDate(1);
-
-  //   const startDate = new Date(currentDate);
-  //   startDate.setMonth(currentDate.getMonth() - 1);
-
-  //   const endDate = new Date(
-  //     startDate.getFullYear(),
-  //     startDate.getMonth() + 1,
-  //     0
-  //   );
-
-  //   setStartDate(startDate);
-  //   setEndDate(endDate);
-  // };
-
   // Handle radio button change
   const handleRadioChange = (e) => {
     setSelectedValue(e.target.value);
   };
-  
-  const NAVBAR_WIDTH = document.querySelector('.sidebar')?.offsetWidth || 0;
+
+  const NAVBAR_WIDTH = document.querySelector(".sidebar")?.offsetWidth || 0;
 
   const handleDropdownClick = (item) => {
     const element = dropdownRefs.current[item];
     if (element) {
       const rect = element.getBoundingClientRect();
       const screenWidth = window.innerWidth;
-
       const hasNavbar = screenWidth > 768;
       const calculatedLeft = rect.left - (hasNavbar ? NAVBAR_WIDTH : 0);
 
       setDropdown(item);
+      setTempSelection([...dropdownValue]); // Initialize temp with current selection
       setDropdownStyles({
         top: rect.bottom + window.scrollY,
-        left: Math.max(calculatedLeft, 0), // 👈 clamp to minimum 0
+        left: Math.max(calculatedLeft, 0),
       });
     }
   };
 
-  // useEffect(() => {
-  //   if (!startDate && !endDate) {
-  //     getLastMonthStartAndEndDates(); // Set last month's dates if not already set
-  //   }
-  // }, []);
+  // Handle clicks outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdown &&
+        dropdownContainerRef.current &&
+        !dropdownContainerRef.current.contains(event.target) &&
+        !Object.values(dropdownRefs.current).some((ref) =>
+          ref?.contains(event.target)
+        )
+      ) {
+        setDropdown(""); // Close dropdown
+        setDropdownSearch(""); // Clear search
+        setTempSelection([...dropdownValue]); // Revert to original selection
+      }
+    };
 
-  // Fetch data whenever startDate or endDate changes
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdown, dropdownValue]);
+
+  // Fetch data whenever startDate, endDate, or selectedValue changes
   useEffect(() => {
     if (startDate && endDate) {
-      getMetrics(); // Call getMetrics only after dates are set
+      getMetrics();
       getPositionAndSubordinate();
     }
-  }, [startDate, endDate, selectedValue]); // Re-run when startDate or endDate changes
+  }, [startDate, endDate, selectedValue]);
 
   if (moreFilter) {
     if (loading) return <p>Loading...</p>;
@@ -195,7 +200,6 @@ const SalesGrowth = ({ moreFilter }) => {
               onChange={handleRadioChange}
             />
             <label>Value</label>
-
             <input
               type="radio"
               name="volume"
@@ -207,38 +211,35 @@ const SalesGrowth = ({ moreFilter }) => {
           </div>
         </div>
         {moreFilter ? (
-          <>
-            <div className="salesGrowth-filter-date">
-              <div className="date">
-                <label>From:</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={startDate ? startDate.toISOString().split("T")[0] : ""}
-                  onChange={(e) => setStartDate(new Date(e.target.value))}
-                />
-              </div>
-              <div className="date">
-                <label>To:</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={endDate ? endDate.toISOString().split("T")[0] : ""}
-                  onChange={(e) => setEndDate(new Date(e.target.value))}
-                />
-              </div>
+          <div className="salesGrowth-filter-date">
+            <div className="date">
+              <label>From:</label>
+              <input
+                type="date"
+                name="startDate"
+                value={startDate ? startDate.toISOString().split("T")[0] : ""}
+                onChange={(e) => setStartDate(new Date(e.target.value))}
+              />
             </div>
-          </>
+            <div className="date">
+              <label>To:</label>
+              <input
+                type="date"
+                name="endDate"
+                value={endDate ? endDate.toISOString().split("T")[0] : ""}
+                onChange={(e) => setEndDate(new Date(e.target.value))}
+              />
+            </div>
+          </div>
         ) : (
           <Link to="/salesDashboard">see more</Link>
         )}
       </div>
       {moreFilter && (
         <div className="salesGrowth-filter-dropdown">
-          {/* Position Selection Dropdown */}
           {position.map((item, index) => {
-            const filteredCount = dropdownValue
-              ? dropdownValue.filter((val) => val.position === item).length
+            const filteredCount = tempSelection
+              ? tempSelection.filter((val) => val.position === item).length
               : null;
 
             return (
@@ -275,6 +276,7 @@ const SalesGrowth = ({ moreFilter }) => {
                 top: `${dropdownStyles.top}px`,
                 left: `${dropdownStyles.left}px`,
               }}
+              ref={dropdownContainerRef}
             >
               <div className="dropdown-search">
                 <input
@@ -286,42 +288,38 @@ const SalesGrowth = ({ moreFilter }) => {
               </div>
 
               {/* Selected Items List */}
-              {dropdownValue && dropdownValue.length > 0 ? (
+              {tempSelection && tempSelection.length > 0 ? (
                 <div className="dropdown-selected-list">
-                  {dropdownValue
+                  {tempSelection
                     .filter((item) =>
                       dropdown ? item.position === dropdown : true
-                    ) // Filter by position
+                    )
                     .map((item) => (
                       <div
-                        key={item.id || item.name} // Use a unique identifier instead of index
+                        key={item.id || item.name}
                         className="dropdown-selected-item"
                         onClick={() =>
-                          setDropdownValue(
-                            dropdownValue.filter((i) => i.name !== item.name)
+                          setTempSelection(
+                            tempSelection.filter((i) => i.name !== item.name)
                           )
                         }
                       >
-                        {item.name}({item.code})
-                        {DropdownItemsCards(item)}
+                        {item.name}({item.code}){DropdownItemsCards(item)}
                       </div>
                     ))}
                 </div>
               ) : null}
 
-              {/* Filter subordinate list based on selected position and remove already selected ones */}
+              {/* Filter subordinate list */}
               {subordinate && subordinate.length > 0 ? (
                 <div className="dropdown-list">
                   {subordinate
                     .filter(
                       (item) =>
-                        // Check if item position matches the selected dropdown position
                         (dropdown ? item.position === dropdown : true) &&
-                        // Remove already selected subordinates
-                        !dropdownValue.some(
+                        !tempSelection.some(
                           (selected) => selected.name === item.name
                         ) &&
-                        // Search by name OR code
                         ((item.name &&
                           item.name
                             .toLowerCase()
@@ -336,19 +334,18 @@ const SalesGrowth = ({ moreFilter }) => {
                         key={index}
                         className="dropdown-item"
                         onClick={() =>
-                          setDropdownValue([...dropdownValue, item])
+                          setTempSelection([...tempSelection, item])
                         }
                       >
-                        {item.name} ({item.code})
-                        {DropdownItemsCards(item)}
+                        {item.name} ({item.code}){DropdownItemsCards(item)}
                       </div>
                     ))}
                   <div className="dropdown-actions">
                     <div
                       className="dropdown-item-clear-btn"
                       onClick={() => {
-                        setDropdownValue(
-                          dropdownValue.filter(
+                        setTempSelection(
+                          tempSelection.filter(
                             (item) => item.position !== dropdown
                           )
                         );
@@ -359,6 +356,7 @@ const SalesGrowth = ({ moreFilter }) => {
                     <div
                       className="dropdown-item-apply-btn"
                       onClick={() => {
+                        setDropdownValue([...tempSelection]);
                         setDropdown("");
                         setDropdownSearch("");
                         getMetrics();
@@ -375,72 +373,78 @@ const SalesGrowth = ({ moreFilter }) => {
           )}
         </div>
       )}
-      <div className="salesGrowth-cards">
-        <div
-          className="salesGrowth-container"
-          style={{ backgroundColor: "#F3E8FF" }}
-        >
-          <div className="salesGrowth-header">MTD Sell In</div>
-          <div className="salesGrowth-content" style={{ color: "#BF83FF" }}>
-            {formatValue(data.mtd_sell_in)}
-          </div>
-        </div>
-        <div
-          className="salesGrowth-container"
-          style={{ backgroundColor: "#FFF4DE" }}
-        >
-          <div className="salesGrowth-header">LMTD Sell In</div>
-          <div className="salesGrowth-content" style={{ color: "#f0b862" }}>
-            {formatValue(data.lmtd_sell_in)}
-          </div>
-        </div>
-        <div
-          className="salesGrowth-container"
-          style={{
-            backgroundColor: data.sell_in_growth < 0 ? "#FFE2E5" : "#DCFCE7",
-          }}
-        >
-          <div className="salesGrowth-header">Growth &#37;</div>
+      {isLoading ? (
+        <LoadingCards />
+      ) : (
+        <div className="salesGrowth-cards">
           <div
-            className="salesGrowth-content"
-            style={{ color: data.sell_in_growth < 0 ? "#FA5A7D" : "#3CD856" }}
+            className="salesGrowth-container"
+            style={{ backgroundColor: "#F3E8FF" }}
           >
-            {data.sell_in_growth ? `${data.sell_in_growth}%` : "-"}
+            <div className="salesGrowth-header">MTD Sell In</div>
+            <div className="salesGrowth-content" style={{ color: "#BF83FF" }}>
+              {formatValue(data.mtd_sell_in)}
+            </div>
           </div>
-        </div>
-        <div
-          className="salesGrowth-container"
-          style={{ backgroundColor: "#F3E8FF" }}
-        >
-          <div className="salesGrowth-header">MTD Sell Out</div>
-          <div className="salesGrowth-content" style={{ color: "#BF83FF" }}>
-            {formatValue(data.mtd_sell_out)}
-          </div>
-        </div>
-        <div
-          className="salesGrowth-container"
-          style={{ backgroundColor: "#FFF4DE" }}
-        >
-          <div className="salesGrowth-header">LMTD Sell Out</div>
-          <div className="salesGrowth-content" style={{ color: "#f0b862" }}>
-            {formatValue(data.lmtd_sell_out)}
-          </div>
-        </div>
-        <div
-          className="salesGrowth-container"
-          style={{
-            backgroundColor: data.sell_out_growth < 0 ? "#FFE2E5" : "#DCFCE7",
-          }}
-        >
-          <div className="salesGrowth-header">Growth &#37;</div>
           <div
-            className="salesGrowth-content"
-            style={{ color: data.sell_out_growth < 0 ? "#FA5A7D" : "#3CD856" }}
+            className="salesGrowth-container"
+            style={{ backgroundColor: "#FFF4DE" }}
           >
-            {data.sell_out_growth ? `${data.sell_out_growth}%` : "-"}
+            <div className="salesGrowth-header">LMTD Sell In</div>
+            <div className="salesGrowth-content" style={{ color: "#f0b862" }}>
+              {formatValue(data.lmtd_sell_in)}
+            </div>
+          </div>
+          <div
+            className="salesGrowth-container"
+            style={{
+              backgroundColor: data.sell_in_growth < 0 ? "#FFE2E5" : "#DCFCE7",
+            }}
+          >
+            <div className="salesGrowth-header">Growth %</div>
+            <div
+              className="salesGrowth-content"
+              style={{ color: data.sell_in_growth < 0 ? "#FA6A7D" : "#3CD856" }}
+            >
+              {data.sell_in_growth ? `${data.sell_in_growth}%` : "-"}
+            </div>
+          </div>
+          <div
+            className="salesGrowth-container"
+            style={{ backgroundColor: "#F3E8FF" }}
+          >
+            <div className="salesGrowth-header">MTD Sell Out</div>
+            <div className="salesGrowth-content" style={{ color: "#BF83FF" }}>
+              {formatValue(data.mtd_sell_out)}
+            </div>
+          </div>
+          <div
+            className="salesGrowth-container"
+            style={{ backgroundColor: "#FFF4DE" }}
+          >
+            <div className="salesGrowth-header">LMTD Sell Out</div>
+            <div className="salesGrowth-content" style={{ color: "#f0b862" }}>
+              {formatValue(data.lmtd_sell_out)}
+            </div>
+          </div>
+          <div
+            className="salesGrowth-container"
+            style={{
+              backgroundColor: data.sell_out_growth < 0 ? "#FFE2E5" : "#DCFCE7",
+            }}
+          >
+            <div className="salesGrowth-header">Growth %</div>
+            <div
+              className="salesGrowth-content"
+              style={{
+                color: data.sell_out_growth < 0 ? "#FA5A7D" : "#3CD856",
+              }}
+            >
+              {data.sell_out_growth ? `${data.sell_out_growth}%` : "-"}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

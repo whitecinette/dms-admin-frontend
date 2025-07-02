@@ -4,6 +4,8 @@ import config from "../../../config.js";
 import axios from "axios";
 import "./style.scss";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import TextToggle from "../../../components/toggle"
+import TableBodyLoading from "../../../components/tableLoading/index.js";
 
 const backend_url = config.backend_url;
 
@@ -14,10 +16,12 @@ const SalesDataTable = () => {
   const [tableData, setTableData] = useState([]);
   const [productData, setProductData] = useState([]);
   const [expandedRow, setExpandedRow] = useState("");
+  const [isLoading, setIsLoading] = useState(false)
 
   //get table data from api
   const getTableData = async () => {
     try {
+      setIsLoading(true)
       const response = await axios.post(
         `${backend_url}/user/sales-data/report/self`,
         {
@@ -36,6 +40,8 @@ const SalesDataTable = () => {
       setTableData(response.data);
     } catch (error) {
       console.error("Error fetching table data:", error);
+    }finally{
+      setIsLoading(false)
     }
   };
 
@@ -85,22 +91,13 @@ const SalesDataTable = () => {
     <div className="salesDataTable-page">
       <div className="salesDataTable-filter">
         <div className="slider-container">
-          <div
-            className={`slider-button ${
-              sliderValue === "segment" ? "active" : ""
-            }`}
-            onClick={() => setSliderValue("segment")}
-          >
-            Segment
-          </div>
-          <div
-            className={`slider-button ${
-              sliderValue === "channel" ? "active" : ""
-            }`}
-            onClick={() => setSliderValue("channel")}
-          >
-            Channel
-          </div>
+          <TextToggle
+          textFirst="segment"
+          textSecond="channel"
+          setText={setSliderValue}
+          selectedText={sliderValue}
+          classStyle={{ minWidth: "250px" }}
+        />
         </div>
       </div>
       <div className="salesDataTable-table-container">
@@ -113,84 +110,87 @@ const SalesDataTable = () => {
               <th>Expand</th>
             </tr>
           </thead>
-          <tbody>
-            {tableData?.data?.length > 0 ? (
-              tableData.data.map((row, rowIndex) => (
-                <>
-                  <tr key={rowIndex}>
-                    {tableData.headers.map((header, cellIndex) => (
-                      <>
-                        <td key={cellIndex}>{row[header]}</td>
-                      </>
-                    ))}
-                    <td className="expand-btn">
-                      <button
-                        onClick={() => {
-                          const newExpanded =
-                            expandedRow === row["Segment/Channel"]
-                              ? null
-                              : row["Segment/Channel"];
-                          setExpandedRow(newExpanded);
-                        }}
-                      >
-                        {expandedRow === row["Segment/Channel"] ? (
-                          <>
-                            Collapse <FaChevronUp />
-                          </>
-                        ) : (
-                          <>
-                            Expand <FaChevronDown />
-                          </>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                  {Array.isArray(productData?.headers) &&
-                    Array.isArray(productData?.data) &&
-                    productData?.data.length > 0 &&
-                    expandedRow === row["Segment/Channel"] && (
-                      <tr>
-                        <td colSpan={tableData.headers.length + 1}>
-                          <div className="products-table-container">
-                            <table className="products-table">
-                              <thead>
-                                <tr>
-                                  {productData.headers.map((header, index) => (
-                                    <th key={index}>{header}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {productData.data.map((rowData, index) => (
-                                  <tr key={index}>
-                                    {productData.headers.map(
-                                      (header, cellIndex) => (
-                                        <td key={cellIndex}>
-                                          {rowData[header]}
-                                        </td>
-                                      )
-                                    )}
+          {isLoading ? <TableBodyLoading columnCount = {11} /> : (
+
+            <tbody>
+              {tableData?.data?.length > 0 ? (
+                tableData.data.map((row, rowIndex) => (
+                  <>
+                    <tr key={rowIndex}>
+                      {tableData.headers.map((header, cellIndex) => (
+                        <>
+                          <td key={cellIndex}>{row[header]}</td>
+                        </>
+                      ))}
+                      <td className="expand-btn">
+                        <button
+                          onClick={() => {
+                            const newExpanded =
+                              expandedRow === row["Segment/Channel"]
+                                ? null
+                                : row["Segment/Channel"];
+                            setExpandedRow(newExpanded);
+                          }}
+                        >
+                          {expandedRow === row["Segment/Channel"] ? (
+                            <>
+                              Collapse <FaChevronUp />
+                            </>
+                          ) : (
+                            <>
+                              Expand <FaChevronDown />
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                    {Array.isArray(productData?.headers) &&
+                      Array.isArray(productData?.data) &&
+                      productData?.data.length > 0 &&
+                      expandedRow === row["Segment/Channel"] && (
+                        <tr>
+                          <td colSpan={tableData.headers.length + 1}>
+                            <div className="products-table-container">
+                              <table className="products-table">
+                                <thead>
+                                  <tr>
+                                    {productData.headers.map((header, index) => (
+                                      <th key={index}>{header}</th>
+                                    ))}
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                </>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={tableData?.headers?.length || 1}
-                  style={{ textAlign: "center" }}
-                >
-                  No data available
-                </td>
-              </tr>
-            )}
-          </tbody>
+                                </thead>
+                                <tbody>
+                                  {productData.data.map((rowData, index) => (
+                                    <tr key={index}>
+                                      {productData.headers.map(
+                                        (header, cellIndex) => (
+                                          <td key={cellIndex}>
+                                            {rowData[header]}
+                                          </td>
+                                        )
+                                      )}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                  </>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={tableData?.headers?.length || 1}
+                    style={{ textAlign: "center" }}
+                  >
+                    No data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
     </div>

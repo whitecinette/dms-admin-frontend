@@ -6,10 +6,11 @@ import { FaDownload, FaFileUpload, FaUserCog } from "react-icons/fa";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import UploadPopup from "./uploadPopup";
 import { SalesReport } from "./SalesReport";
+import TextToggle from "../../components/toggle";
 
 function SalesData() {
   const [isUpload, setIsUpload] = useState(false);
-  const [view, setView] = useState("SalesReport")
+  const [view, setView] = useState("SalesReport");
   return (
     <div className="sales-page">
       <div className="sales-page-header">
@@ -47,31 +48,25 @@ function SalesData() {
           </button>
         </div>
         <div className="Slider">
-            <button
-            className={view === "SalesReport" ? "SalesReport active" : "SalesReport"}
-            onClick={() => setView("SalesReport")}
-          >
-            Sales Report
-          </button>
-          <button
-            className={view === "SalesData" ? "SalesData active" : "SalesData"}
-            onClick={() => setView("SalesData")}
-          >
-            Sales Data
-          </button>
+          <TextToggle
+            textFirst="SalesReport"
+            textSecond="SalesData"
+            setText={setView}
+            selectedText={view}
+            classStyle={{ minWidth: "300px" }}
+          />
         </div>
       </div>
       {view === "SalesReport" ? (
         <>
-        <div className="sales-page-container">
-          <SalesGrowth moreFilter />
-          <SalesDataTable />
-        </div>
+          <div className="sales-page-container">
+            <SalesGrowth moreFilter />
+            <SalesDataTable />
+          </div>
         </>
-      ):(
-        <SalesReport/>
-      )
-      }
+      ) : (
+        <SalesReport />
+      )}
       {isUpload && <UploadPopup close={() => setIsUpload(false)} />}
     </div>
   );
