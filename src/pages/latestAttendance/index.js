@@ -285,7 +285,7 @@ export default function LatestAttendance() {
         newDate = new Date(date).toISOString().split("T")[0];
       }
 
-      const response = await axios.get(`${backendUrl}/get-total-employee`, {
+      const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
         params: { date: newDate },
         headers: {
           Authorization: localStorage.getItem("authToken"),

@@ -10,7 +10,7 @@
     "@fontsource/public-sans": "^5.1.2",
     "@mui/icons-material": "^7.1.0",
     "@react-three/drei": "^10.4.2",
-    "@react-three/fiber": "^9.1.4",
+    "@react-three/fiber": "^9.2.0",
     "apexcharts": "^4.7.0",
     "axios": "^1.7.9",
     "cra-template": "1.2.0",

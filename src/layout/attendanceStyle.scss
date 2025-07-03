@@ -2,6 +2,68 @@
  padding: 15px;
  overflow-x: auto;
 }
+.overview-heading {
+ font-size: 1.2rem; // ~24px
+ font-weight: 700;
+ color: #1f2937; // Tailwind gray-800 (clean dark gray)
+ margin-bottom: 10px;
+ text-align: left;
+}
+
+.overview-section {
+ display: flex;
+ flex-direction: column; // 👈 switch to vertical layout
+ align-items: center;
+ gap: 12px;
+ margin-bottom: 20px;
+ padding: 16px;
+ background-color: #fff;
+ border-radius: 12px;
+ box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+ width: fit-content;
+}
+
+
+.overview-chart {
+ min-width: 220px;
+}
+
+.overview-legend {
+ display: flex;
+ gap: 16px; // now horizontal layout
+ justify-content: center;
+}
+
+.legend-item {
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ font-size: 0.95rem;
+ font-weight: 500;
+ color: #333;
+}
+
+.dot {
+ width: 12px;
+ height: 12px;
+ border-radius: 50%;
+ display: inline-block;
+}
+
+.present-dot {
+ background-color: #a855f7;
+}
+
+.absent-dot {
+ background-color: #e9d5ff;
+}
+.leave-dot {
+  background-color: #d8b4fe;
+}
+.halfday-dot {
+ background-color: #6f3bf3; // Bright Yellow
+}
+
 
 .attendance-cards-grid {
  display: flex;
@@ -15,41 +77,35 @@
 
 .attendance-card {
  flex: 0 0 auto;
- width: 220px;
+ min-width: 250px;
  border: 2px solid transparent;
- box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
  border-radius: 12px;
  background: #fff;
- transition: all 0.3s ease;
+ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
  scroll-snap-align: start;
  cursor: pointer;
+ transition: all 0.3s ease;
+ padding: 8px;
 }
 
 .attendance-card.selected {
- border-color: #2563eb; // Tailwind's blue-600
+ border-color: #6c63ff;
 }
 
 .attendance-card:hover {
  transform: translateY(-2px);
 }
 
-.card-header {
- padding: 10px;
- border-bottom: 1px solid #e2e8f0;
- display: flex;
- justify-content: space-between;
- align-items: center;
-}
-
-.firm-name {
- font-size: 1rem;
- font-weight: 600;
- color: #2d3748;
-}
-
 .chart-wrapper {
  padding: 10px;
  text-align: center;
+}
+
+.firm-name {
+ text-align: center;
+ font-weight: 600;
+ margin-top: 8px;
+ color: #333;
 }
 
 .attendance-breakdown {
@@ -70,50 +126,16 @@
 }
 
 .text-red-600 {
- color: #FF4040;
+ color: #ff4040;
  font-size: 0.875rem;
 }
 
 .text-yellow-600 {
- color: #D4A373;
+ color: #d4a373;
  font-size: 0.875rem;
 }
 
 .text-base {
  font-size: 1rem;
  font-weight: 600;
-}
-.attendance-cards-container {
- padding: 15px;
-}
-
-.attendance-cards-grid {
- display: flex;
- flex-direction: row;
- gap: 16px;
- overflow-x: auto;
- padding-bottom: 8px;
- scroll-snap-type: x mandatory;
-}
-
-.attendance-card {
- min-width: 250px;
- border: 1px solid #e2e8f0;
- border-radius: 12px;
- padding: 8px;
- background-color: #fff;
- scroll-snap-align: start;
- cursor: pointer;
- transition: all 0.2s;
-}
-
-.attendance-card.selected {
- border: 2px solid #6c63ff;
-}
-
-.firm-name {
- text-align: center;
- font-weight: 600;
- margin-top: 8px;
- color: #333;
 }
