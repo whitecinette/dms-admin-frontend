@@ -35,6 +35,8 @@ import RoutesPlan from "./pages/RoutesPlan";
 import PrivateRoute from "./components/PrivateRoute";
 import LeaveApplication from "./pages/LeaveApplication";
 import TravelExpenses from "./pages/TravelExpenses";
+import Earth from "./pages/earth/main-page";
+
 
 function App() {
   return (
@@ -96,6 +98,7 @@ function App() {
             <Route path="/routePlan" element={<RoutesPlan />} />
             <Route path="/leaveApplication" element={<LeaveApplication />} />
             <Route path="/travelExpenses" element={<TravelExpenses />} />
+            <Route path="/earth" element={<Earth />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

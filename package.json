@@ -9,6 +9,8 @@
     "@fontsource/poppins": "^5.1.1",
     "@fontsource/public-sans": "^5.1.2",
     "@mui/icons-material": "^7.1.0",
+    "@react-three/drei": "^10.4.2",
+    "@react-three/fiber": "^9.1.4",
     "apexcharts": "^4.7.0",
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
@@ -29,6 +31,7 @@
     "sass": "^1.85.1",
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.8.1",
+    "three": "^0.178.0",
     "xlsx": "^0.18.5",
     "yocto-queue": "^1.2.0"
   },

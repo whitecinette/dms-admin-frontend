@@ -21,6 +21,8 @@ import { TbTargetArrow, TbHierarchy3 } from "react-icons/tb";
 import { RiTimeLine, RiPinDistanceFill } from "react-icons/ri";
 import logo from "../../assets/images/company-logo.png";
 import "./style.scss";
+import { FcGlobe } from "react-icons/fc";
+
 // import axios from "axios";
 // import config from "../../config";
 
@@ -253,6 +255,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Alpha Messages", to: "/alphaMessages" },
       ],
     },
+    { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
     {
       name: "Logout",
       to: "/",
