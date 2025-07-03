@@ -1,34 +1,32 @@
 .attendance-cards-container {
  padding: 15px;
-}
-
-.attendance-cards-header {
- font-size: 1.25rem;
- font-weight: 600;
- margin-bottom: 15px;
- color: #333;
- text-align: center;
+ overflow-x: auto;
 }
 
 .attendance-cards-grid {
- display: grid;
- grid-template-columns: repeat(1, minmax(0, 1fr));
- gap: 5px; /* Reduced gap for tighter fit */
-
- @media (min-width: 768px) {
-   grid-template-columns: repeat(4, minmax(0, 1fr));
- }
+ display: flex;
+ flex-direction: row;
+ gap: 16px;
+ overflow-x: auto;
+ padding-bottom: 8px;
+ scroll-snap-type: x mandatory;
+ -webkit-overflow-scrolling: touch;
 }
 
 .attendance-card {
- width: 100%;
- max-width: 280px; /* Reduced max-width to fit four cards */
- border: 1px solid #e2e8f0;
+ flex: 0 0 auto;
+ width: 220px;
+ border: 2px solid transparent;
  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
- border-radius: 8px;
- overflow: hidden;
- margin: 0 auto;
- transition: transform 0.2s;
+ border-radius: 12px;
+ background: #fff;
+ transition: all 0.3s ease;
+ scroll-snap-align: start;
+ cursor: pointer;
+}
+
+.attendance-card.selected {
+ border-color: #2563eb; // Tailwind's blue-600
 }
 
 .attendance-card:hover {
@@ -36,7 +34,7 @@
 }
 
 .card-header {
- padding: 5px;
+ padding: 10px;
  border-bottom: 1px solid #e2e8f0;
  display: flex;
  justify-content: space-between;
@@ -44,26 +42,18 @@
 }
 
 .firm-name {
- color: #2d3748;
  font-size: 1rem;
-}
-
-.firm-date select {
- padding: 2px 6px;
- border-radius: 4px;
- background-color: #fff;
- border-color: #e2e8f0;
- font-size: 0.75rem;
- cursor: pointer;
+ font-weight: 600;
+ color: #2d3748;
 }
 
 .chart-wrapper {
- padding: 5px;
+ padding: 10px;
  text-align: center;
 }
 
 .attendance-breakdown {
- padding: 5px;
+ padding: 10px;
  border-top: 1px solid #e2e8f0;
  display: flex;
  justify-content: space-between;
@@ -73,23 +63,57 @@
 .breakdown-item {
  flex: 1;
  text-align: center;
- padding: 2px;
 }
 
 .breakdown-item span {
  display: block;
 }
 
-.breakdown-item .text-red-600 {
+.text-red-600 {
  color: #FF4040;
  font-size: 0.875rem;
 }
 
-.breakdown-item .text-yellow-600 {
+.text-yellow-600 {
  color: #D4A373;
  font-size: 0.875rem;
 }
 
-.breakdown-item .text-base {
+.text-base {
  font-size: 1rem;
+ font-weight: 600;
+}
+.attendance-cards-container {
+ padding: 15px;
+}
+
+.attendance-cards-grid {
+ display: flex;
+ flex-direction: row;
+ gap: 16px;
+ overflow-x: auto;
+ padding-bottom: 8px;
+ scroll-snap-type: x mandatory;
+}
+
+.attendance-card {
+ min-width: 250px;
+ border: 1px solid #e2e8f0;
+ border-radius: 12px;
+ padding: 8px;
+ background-color: #fff;
+ scroll-snap-align: start;
+ cursor: pointer;
+ transition: all 0.2s;
+}
+
+.attendance-card.selected {
+ border: 2px solid #6c63ff;
+}
+
+.firm-name {
+ text-align: center;
+ font-weight: 600;
+ margin-top: 8px;
+ color: #333;
 }

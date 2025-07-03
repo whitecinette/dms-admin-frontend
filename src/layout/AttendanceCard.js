@@ -29,90 +29,171 @@ const AttendanceCards = ({date, selectedFlows, setSelectedFlows}) => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="attendance-cards-container">
-      <div className="attendance-cards-grid grid grid-cols-1 md:grid-cols-4 gap-4">
-        {firmAttendanceData.map((firm, index) => {
-          const count = firm.attendanceCounts || { present: 0, leave: 0, absent: 0 };
-          const total = firm.totalUsers || 0;
-
-          const chartOptions = {
-            chart: {
-              type: 'donut',
-              sparkline: { enabled: true },
-            },
-            labels: ['Absent', 'Present', 'Leave'],
-            colors: ['#FF4040', '#D4A373', '#D4A373'],
-            legend: {
-              show: false,
-            },
-            plotOptions: {
-              pie: {
-                startAngle: -90,
-                endAngle: 90,
-                donut: {
-                  size: '75%',
-                  labels: {
-                    show: true,
-                    value: {
-                      show: true,
-                      fontSize: '20px',
-                      fontWeight: 600,
-                      color: '#333',
-                      formatter: (val) => val,
-                    },
-                    total: {
-                      show: true,
-                      label: 'Total',
-                      formatter: () => total,
-                    },
-                  },
-                },
-              },
-            },
-            responsive: [
-              { breakpoint: 480, options: { chart: { width: 200 } } },
-            ],
-          };
-
-          return (
-           <div
+   <div className="attendance-cards-container">
+   <div className="attendance-cards-grid">
+     {firmAttendanceData.map((firm, index) => {
+  const count = firm.attendanceCounts || { present: 0, leave: 0, absent: 0 };
+  const total = firm.totalUsers || 0;
+  
+  // 👇 get the most dominant category
+  const labels = ['Absent', 'Present', 'Leave'];
+  const values = [count.absent, count.present, count.leave];
+  const maxIndex = values.indexOf(Math.max(...values));
+  const mostLabel = labels[maxIndex];
+  
+  // 👇 configure chart
+ //  const chartOptions = {
+ //   chart: {
+ //     type: 'donut',
+ //     sparkline: { enabled: true },
+ //   },
+ //   labels: ['Absent', 'Present', 'Leave'],
+ //   colors: ['#d0a3f5', '#9b5de5', '#c084fc'],
+ //   dataLabels: {
+ //     enabled: false,
+ //   },
+ //   legend: { show: false },
+ //   plotOptions: {
+ //     pie: {
+ //       donut: {
+ //         size: '75%',
+ //         labels: {
+ //           show: true,
+ //           name: { show: true,
+ //            fontSize: '20px',
+ //            fontWeight: 700,
+ //            color: '#000',
+ //            offsetY: -20, // Move the number downward
+ //            },
+ //           value: {
+ //             show: true,
+ //             fontSize: '20px',
+ //             fontWeight: 700,
+ //             color: '#000',
+ //             offsetY: -10,
+ //           },
+ //           total: {
+ //             show: true,
+ //             showAlways: true,
+ //             label: 'Total',
+ //             fontSize: '14px',
+ //             fontWeight: 500,
+ //             color: '#888',
+ //             formatter: () => total.toString(), // Display the total number
+ //           },
+ //         },
+ //       },
+ //     },
+ //   },
+ // };
+ 
+ const chartOptions = {
+  chart: {
+    type: 'donut',
+    sparkline: { enabled: true },
+  },
+  labels: ['Absent', 'Present', 'Leave'],
+  colors: ['#d0a3f5', '#9b5de5', '#c084fc'],
+  dataLabels: {
+    enabled: true, // Enable data labels
+    formatter: function (val, opts) {
+      // Show label and value (e.g., "Present: 20")
+      return `${opts.w.globals.labels[opts.seriesIndex]}: ${opts.w.globals.series[opts.seriesIndex]}`;
+    },
+    style: {
+      fontSize: '12px',
+      fontWeight: 500,
+      colors: ['#6b21a8'], // Dark purple text to match chart theme
+    },
+    background: {
+      enabled: true, // Enable background
+      foreColor: '#f0f0f0', // Light gray background
+      padding: 4,
+      borderRadius: 2,
+      borderWidth: 1,
+      borderColor: '#ccc', // Light gray border
+      opacity: 0.8, // Slightly transparent
+    },
+    dropShadow: {
+      enabled: true,
+      top: 1,
+      left: 1,
+      blur: 1,
+      opacity: 0.45,
+    },
+  },
+  legend: { show: false },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '75%',
+        labels: {
+          show: true,
+          name: { show: true,
+           fontSize: '20px',
+           fontWeight: 800,
+           color: '#000',
+           offsetY: -10, // Move number downward
+           },
+          value: {
+            show: true,
+            fontSize: '20px',
+            fontWeight: 700,
+            color: '#000',
+            offsetY: 10, // Move number downward
+          },
+          total: {
+            show: true,
+            showAlways: true,
+            label: 'Total', // Display "Total" as the label
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#888',
+            offsetY: -10, // Move "Total" upward
+            formatter: () => total.toString(), // Display the total number
+          },
+        },
+      },
+    },
+  },
+};
+       return (
+         <div
            key={index}
            onClick={() => setSelectedFlows(firm.code)}
-           className={`attendance-card p-2 bg-white shadow rounded-lg cursor-pointer transition border-2 ${
-             selectedFlows === firm.code ? "border-blue-500" : "border-transparent"
-           }`}
-         >         
-              <div className="card-header flex justify-between items-center mb-1">
-                <div className="firm-name text-base font-semibold">{firm.name}</div>
-              </div>
-              <div className="chart-wrapper">
-                <ReactApexChart
-                  options={chartOptions}
-                  series={[count.absent, count.present, count.leave]}
-                  type="donut"
-                  height={150}
-                />
-              </div>
-              <div className="attendance-breakdown flex justify-between items-center mt-1 text-center">
-                <div className="breakdown-item flex-1">
-                  <span className="block text-red-600 font-medium text-sm">Absent</span>
-                  <span className="block text-base font-bold">{count.absent}</span>
-                </div>
-                <div className="breakdown-item flex-1">
-                  <span className="block text-yellow-600 font-medium text-sm">Present</span>
-                  <span className="block text-base font-bold">{count.present}</span>
-                </div>
-                <div className="breakdown-item flex-1">
-                  <span className="block text-yellow-600 font-medium text-sm">Leave</span>
-                  <span className="block text-base font-bold">{count.leave}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+           className={`attendance-card ${selectedFlows === firm.code ? 'selected' : ''}`}
+         >
+           <div className="chart-wrapper">
+             <ReactApexChart
+               options={chartOptions}
+               series={[count.absent, count.present, count.leave]}
+               type="donut"
+               height={160}
+             />
+           </div>
+           <div className="firm-name">{firm.name}</div>
+           {/* <div className="legend-row">
+             <span className="dot" style={{ backgroundColor: '#9b5de5' }}></span>
+             <span className="legend-label">Present</span>
+             <span className="legend-value">{count.present}</span>
+           </div>
+           <div className="legend-row">
+             <span className="dot" style={{ backgroundColor: '#d0a3f5' }}></span>
+             <span className="legend-label">Absent</span>
+             <span className="legend-value">{count.absent}</span>
+           </div>
+           <div className="legend-row">
+             <span className="dot" style={{ backgroundColor: '#c084fc' }}></span>
+             <span className="legend-label">Leave</span>
+             <span className="legend-value">{count.leave}</span>
+           </div> */}
+         </div>
+       );
+     })}
+   </div>
+ </div>
+);
+
 };
 
 export default AttendanceCards;
