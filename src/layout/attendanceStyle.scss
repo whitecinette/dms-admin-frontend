@@ -2,43 +2,57 @@
  padding: 15px;
  overflow-x: auto;
 }
+
 .overview-heading {
- font-size: 1.2rem; // ~24px
+ font-size: 1.5rem;
  font-weight: 700;
- color: #1f2937; // Tailwind gray-800 (clean dark gray)
- margin-bottom: 10px;
+ margin-bottom: 15px;
+ color: #1f2937;
  text-align: left;
 }
 
 .overview-section {
  display: flex;
- flex-direction: column; // 👈 switch to vertical layout
- align-items: center;
- gap: 12px;
- margin-bottom: 20px;
- padding: 16px;
- background-color: #fff;
- border-radius: 12px;
- box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
- width: fit-content;
+ flex-wrap: wrap;
+ gap: 20px;
+ margin-bottom: 24px;
+ justify-content: space-between;
 }
 
+.overview-chart,
+.overview-line-chart {
+ background: #fff;
+ border-radius: 12px;
+ padding: 16px;
+ flex: 1 1 300px;
+ min-width: 280px;
+ box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
 
-.overview-chart {
- min-width: 220px;
+.overview-line-chart {
+ max-width: 420px;
+}
+
+.line-chart-title {
+ font-size: 1rem;
+ font-weight: 600;
+ margin-bottom: 10px;
+ color: #1f2937;
 }
 
 .overview-legend {
  display: flex;
- gap: 16px; // now horizontal layout
+ flex-wrap: wrap;
  justify-content: center;
+ margin-top: 12px;
+ gap: 12px;
 }
 
 .legend-item {
  display: flex;
  align-items: center;
  gap: 6px;
- font-size: 0.95rem;
+ font-size: 0.9rem;
  font-weight: 500;
  color: #333;
 }
@@ -57,17 +71,20 @@
 .absent-dot {
  background-color: #e9d5ff;
 }
+
 .leave-dot {
-  background-color: #d8b4fe;
+ background-color: #d8b4fe;
 }
+
 .halfday-dot {
- background-color: #6f3bf3; // Bright Yellow
+ background-color: #6f3bf3;
 }
 
-
+/* Firm cards scrollable row */
 .attendance-cards-grid {
  display: flex;
  flex-direction: row;
+ flex-wrap: nowrap;
  gap: 16px;
  overflow-x: auto;
  padding-bottom: 8px;
@@ -75,9 +92,11 @@
  -webkit-overflow-scrolling: touch;
 }
 
+/* Each firm card */
 .attendance-card {
  flex: 0 0 auto;
  min-width: 250px;
+ max-width: 280px;
  border: 2px solid transparent;
  border-radius: 12px;
  background: #fff;
@@ -108,6 +127,7 @@
  color: #333;
 }
 
+/* Breakdown (if used inside cards) */
 .attendance-breakdown {
  padding: 10px;
  border-top: 1px solid #e2e8f0;
@@ -138,4 +158,30 @@
 .text-base {
  font-size: 1rem;
  font-weight: 600;
+}
+
+/* 📱 Responsive Tweaks */
+@media (max-width: 768px) {
+ .overview-section {
+   flex-direction: column;
+   align-items: stretch;
+ }
+
+ .overview-heading {
+   font-size: 1.25rem;
+   text-align: center;
+ }
+
+ .overview-line-chart {
+   max-width: 100%;
+ }
+
+ .attendance-cards-grid {
+   gap: 12px;
+   padding-bottom: 12px;
+ }
+
+ .attendance-card {
+   min-width: 220px;
+ }
 }
