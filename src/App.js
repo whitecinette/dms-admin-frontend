@@ -67,10 +67,16 @@ function App() {
               element={<ActorTypeHierarchy />}
             />
             <Route path="/addUser" element={<AddUser />} />
-            <Route path="/attendance" element={<Attendance />} />
+            {/* <Route path="/attendance" element={<Attendance />} />
+              {/* nameera */}
             <Route path="/attendance/:code" element={<ViewAttendance />} />
-            <Route
+            {/* <Route
               path="/attendance/allAttendance"
+              element={<LatestAttendance />}
+            /> */}
+            {/* nameera */}
+            <Route
+              path="/attendance"
               element={<LatestAttendance />}
             />
             <Route path="/hierarchy" element={<Hierarchy />} />

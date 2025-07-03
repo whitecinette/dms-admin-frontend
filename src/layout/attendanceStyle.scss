@@ -1,0 +1,95 @@
+.attendance-cards-container {
+ padding: 15px;
+}
+
+.attendance-cards-header {
+ font-size: 1.25rem;
+ font-weight: 600;
+ margin-bottom: 15px;
+ color: #333;
+ text-align: center;
+}
+
+.attendance-cards-grid {
+ display: grid;
+ grid-template-columns: repeat(1, minmax(0, 1fr));
+ gap: 5px; /* Reduced gap for tighter fit */
+
+ @media (min-width: 768px) {
+   grid-template-columns: repeat(4, minmax(0, 1fr));
+ }
+}
+
+.attendance-card {
+ width: 100%;
+ max-width: 280px; /* Reduced max-width to fit four cards */
+ border: 1px solid #e2e8f0;
+ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ border-radius: 8px;
+ overflow: hidden;
+ margin: 0 auto;
+ transition: transform 0.2s;
+}
+
+.attendance-card:hover {
+ transform: translateY(-2px);
+}
+
+.card-header {
+ padding: 5px;
+ border-bottom: 1px solid #e2e8f0;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+}
+
+.firm-name {
+ color: #2d3748;
+ font-size: 1rem;
+}
+
+.firm-date select {
+ padding: 2px 6px;
+ border-radius: 4px;
+ background-color: #fff;
+ border-color: #e2e8f0;
+ font-size: 0.75rem;
+ cursor: pointer;
+}
+
+.chart-wrapper {
+ padding: 5px;
+ text-align: center;
+}
+
+.attendance-breakdown {
+ padding: 5px;
+ border-top: 1px solid #e2e8f0;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+}
+
+.breakdown-item {
+ flex: 1;
+ text-align: center;
+ padding: 2px;
+}
+
+.breakdown-item span {
+ display: block;
+}
+
+.breakdown-item .text-red-600 {
+ color: #FF4040;
+ font-size: 0.875rem;
+}
+
+.breakdown-item .text-yellow-600 {
+ color: #D4A373;
+ font-size: 0.875rem;
+}
+
+.breakdown-item .text-base {
+ font-size: 1rem;
+}

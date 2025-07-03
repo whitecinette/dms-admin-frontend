@@ -104,10 +104,10 @@ export default function ViewAttendance() {
               <tr>
                 <th>SNo.</th>
                 <th>Date</th>
-                <th>Time</th>
                 <th>Shop Name</th>
                 <th>Time</th>
                 <th>Shop Name</th>
+                <th>Time</th>
                 <th>Status</th>
                 <th>Hours Worked</th>
                 <th>Remarks</th>
@@ -120,6 +120,7 @@ export default function ViewAttendance() {
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>{new Date(record.date).toLocaleDateString()}</td>
+                    <td>{record.punchInName || "N/A "}</td>
                     <td>
                     {record.punchIn
                       ? new Date(record.punchIn).toLocaleTimeString(
@@ -129,7 +130,8 @@ export default function ViewAttendance() {
                       : "N/A"}
 
                     </td>
-                    <td>{record.punchInName || "N/A "}</td>
+
+                    <td>{record.punchOutName || "N/A "}</td>
                     <td>
                       {record.punchOut
                         ? new Date(record.punchOut).toLocaleTimeString(
@@ -138,8 +140,6 @@ export default function ViewAttendance() {
                           )
                         : "N/A"}
                     </td>
-
-                    <td>{record.punchOutName || "N/A "}</td>
                     <td>{record.status}</td>
                     <td>{record.hoursWorked || "N/A"}</td>
                     <td>{record.remark || "N/A"}</td>

@@ -7,12 +7,14 @@ import {
   FaChevronUp,
   FaDownload,
   FaEdit,
+  FaEye,
   FaSave,
   FaTimes,
 } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import CustomAlert from "../../components/CustomAlert";
+import AttendanceCards from "../../layout/AttendanceCard.js";
 // the flow things instead of firms is created by nameera but it is used to fetches the firms and have to be changed
 const backendUrl = config.backend_url;
 
@@ -169,6 +171,7 @@ export default function LatestAttendance() {
     punchOutLatitude: null,
     punchOutLongitude: null,
   });
+  const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const firmsDropdownRef = useRef(null);
   const limit = 100;
@@ -333,94 +336,96 @@ export default function LatestAttendance() {
   //     console.log("Error fetching attendance:", error);
   //   }
   // };
-// Nameera
+  // Nameera
 
-const getAttendance = async () => {
- try {
-   const [month, year] = selectedMonthYear.split("-");
-   const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
-   const res = await axios.get(
-     `${backendUrl}/get-latest-attendance-by-date`,
-     {
-       params: {
-         date,
-         page: currentPage,
-         limit,
-         search,
-         status,
-         firms,
-         ...(firmCodes && { firmCodes }), // Conditionally include firmCodes
-         month,
-         year,
-         tag,
-       },
-       headers: {
-         Authorization: localStorage.getItem("authToken"),
-       },
-     }
-   );
-   // console.log("API Response (getAttendance):", res.data.data); // Debugging
-   setAttendance(res.data.data);
-   console.log("get the data", res.data.data);
-   setTotalpages(res.data.totalPages);
- } catch (error) {
-   console.log("Error fetching attendance:", error);
- }
-};
-// const getAttendanceByFirms = async () => {
-//  try {
-//    // Ensure selectedFlows is defined and not empty
-//    if (!selectedFlows || selectedFlows.length === 0) {
-//      console.log("No firms selected, skipping API call.");
-//      setAttendance([]);
-//      setTotalpages(0);
-//      return;
-//    }
+  const getAttendance = async () => {
+    try {
+      const [month, year] = selectedMonthYear.split("-");
+      // const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
+      const firmCodes = selectedFlows || ""; // 👈 selected firm from card
 
-//    const [month, year] = selectedMonthYear.split("-");
-//    const firmCodes = Array.isArray(selectedFlows) ? selectedFlows.join(",") : selectedFlows;
+      const res = await axios.get(
+        `${backendUrl}/get-latest-attendance-by-date`,
+        {
+          params: {
+            date,
+            page: currentPage,
+            limit,
+            search,
+            status,
+            firms,
+            ...(firmCodes && { firmCodes }), // Conditionally include firmCodes
+            month,
+            year,
+            tag,
+          },
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      // console.log("API Response (getAttendance):", res.data.data); // Debugging
+      setAttendance(res.data.data);
+      console.log("get the data", res.data.data);
+      setTotalpages(res.data.totalPages);
+    } catch (error) {
+      console.log("Error fetching attendance:", error);
+    }
+  };
+  // const getAttendanceByFirms = async () => {
+  //  try {
+  //    // Ensure selectedFlows is defined and not empty
+  //    if (!selectedFlows || selectedFlows.length === 0) {
+  //      console.log("No firms selected, skipping API call.");
+  //      setAttendance([]);
+  //      setTotalpages(0);
+  //      return;
+  //    }
 
-//    // Validate firmCodes
-//    if (!firmCodes || firmCodes.trim() === "") {
-//      console.log("Invalid firmCodes, skipping API call.");
-//      setAttendance([]);
-//      setTotalpages(0);
-//      return;
-//    }
+  //    const [month, year] = selectedMonthYear.split("-");
+  //    const firmCodes = Array.isArray(selectedFlows) ? selectedFlows.join(",") : selectedFlows;
 
-//    const res = await axios.get(
-//      `${backendUrl}/get-attendance-by-firms`,
-//      {
-//        params: {
-//          firmCodes, // Send firmCodes as a comma-separated string
-//          date,
-//          month,
-//          year,
-//          status,
-//          search,
-//          page: currentPage,
-//          limit,
-//        },
-//        headers: {
-//          Authorization: localStorage.getItem("authToken"),
-//        },
-//      }
-//    );
+  //    // Validate firmCodes
+  //    if (!firmCodes || firmCodes.trim() === "") {
+  //      console.log("Invalid firmCodes, skipping API call.");
+  //      setAttendance([]);
+  //      setTotalpages(0);
+  //      return;
+  //    }
 
-//    console.log("API Response (getAttendanceByFirms):", res.data);
-//    setAttendance(res.data.data);
-//    setTotalpages(res.data.totalPages);
-//  } catch (error) {
-//    console.error("Error fetching attendance by firms:", error);
-//    if (error.response) {
-//      console.error("Server response:", error.response.data);
-//      // Optionally display error to user
-//      alert(`Error: ${error.response.data.message || "Failed to fetch attendance data"}`);
-//    }
-//    setAttendance([]);
-//    setTotalpages(0);
-//  }
-// };
+  //    const res = await axios.get(
+  //      `${backendUrl}/get-attendance-by-firms`,
+  //      {
+  //        params: {
+  //          firmCodes, // Send firmCodes as a comma-separated string
+  //          date,
+  //          month,
+  //          year,
+  //          status,
+  //          search,
+  //          page: currentPage,
+  //          limit,
+  //        },
+  //        headers: {
+  //          Authorization: localStorage.getItem("authToken"),
+  //        },
+  //      }
+  //    );
+
+  //    console.log("API Response (getAttendanceByFirms):", res.data);
+  //    setAttendance(res.data.data);
+  //    setTotalpages(res.data.totalPages);
+  //  } catch (error) {
+  //    console.error("Error fetching attendance by firms:", error);
+  //    if (error.response) {
+  //      console.error("Server response:", error.response.data);
+  //      // Optionally display error to user
+  //      alert(`Error: ${error.response.data.message || "Failed to fetch attendance data"}`);
+  //    }
+  //    setAttendance([]);
+  //    setTotalpages(0);
+  //  }
+  // };
 
   // Fetch address from coordinates
   const fetchAddress = async (lat, lon) => {
@@ -482,8 +487,6 @@ const getAttendance = async () => {
   //     showAlert("Error downloading the file. Please try again.", "error");
   //   }
   // };
-
-
 
   // nameera
   const handleDownload = async () => {
@@ -621,26 +624,26 @@ const getAttendance = async () => {
     getAttendanceCount();
   };
   // nameeraaa
-  const handleFlowSelect = (flow) => {
-    if (selectedFlows.includes(flow.code)) {
-      setSelectedFlows(selectedFlows.filter((code) => code !== flow.code));
-    } else {
-      setSelectedFlows([...selectedFlows, flow.code]);
-    }
-  };
+  // const handleFlowSelect = (flow) => {
+  //   if (selectedFlows.includes(flow.code)) {
+  //     setSelectedFlows(selectedFlows.filter((code) => code !== flow.code));
+  //   } else {
+  //     setSelectedFlows([...selectedFlows, flow.code]);
+  //   }
+  // };
 
-  const handleClearFlows = () => {
-    setSelectedFlows([]);
-    setCurrentPage(1);
-  };
-  const handleApplyFlows = () => {
-   setFirmsDropdownOpen(false);
-    setFirmsDropdownSearch("");
-    getAttendanceCount();
-    // getAttendanceByFirms();
-    getAttendance();
-  };
-// yha tk nameera
+  // const handleClearFlows = () => {
+  //   setSelectedFlows([]);
+  //   setCurrentPage(1);
+  // };
+  // const handleApplyFlows = () => {
+  //   setFirmsDropdownOpen(false);
+  //   setFirmsDropdownSearch("");
+  //   getAttendanceCount();
+  //   // getAttendanceByFirms();
+  //   getAttendance();
+  // };
+  // yha tk nameera
   // Handle expand
   const handleExpand = async (record) => {
     const newExpandState = expand === record._id ? null : record._id;
@@ -792,7 +795,7 @@ const getAttendance = async () => {
     getAttendance();
     getAttendanceCount();
     getFirms();
-  }, [currentPage, search, date, status, selectedMonthYear, tag]);
+  }, [currentPage, search, date, status, selectedMonthYear, tag, selectedFlows]);
 
   // Show alert
   const showAlert = (message, type = "info") => {
@@ -821,7 +824,8 @@ const getAttendance = async () => {
       )}
       <div className="latestAttendance-page-header-line">
         <div className="latestAttendance-page-header">
-          <Link to="/attendance">Attendance</Link> /<span>All Attendance</span>
+          {/* <Link to="/attendance">Attendance</Link> */}
+          <span>Attendance</span>
         </div>
         <button
           className="add-attendance-button"
@@ -830,7 +834,7 @@ const getAttendance = async () => {
           Add Attendance
         </button>
       </div>
-      <div className="latestAttendance-page-counter-container">
+      {/* <div className="latestAttendance-page-counter-container">
         <div className="latestAttendance-page-counter-container-header">
           {date ? (
             <>{new Date(date).toISOString().split("T")[0]} Attendance</>
@@ -870,8 +874,23 @@ const getAttendance = async () => {
             <span>{count.leave || 0}</span>
           </div>
         </div>
+      </div> */}
+      <div className="latestAttendance-page-counter-container">
+        {/* <div className="latestAttendance-page-counter-container-header">
+        {date ? (
+          <>{new Date(date).toISOString().split('T')[0]} Attendance</>
+        ) : (
+          <>Today's Attendance</>
+        )}
+      </div> */}
+       <div className="latestAttendance-page-counter">
+  <AttendanceCards
+    date={date}
+    selectedFlows={selectedFlows}
+    setSelectedFlows={setSelectedFlows}
+  />
+</div>
       </div>
-
       <div className="latestAttendance-page-container">
         <div className="latestAttendance-page-first-line">
           <div className="latestAttendance-page-filters">
@@ -954,95 +973,7 @@ const getAttendance = async () => {
                   <option value={"office"}>Office</option>
                 </select>
 
-                {/* nameeraaaa */}
-                <div className="custom-dropdown" ref={firmsDropdownRef}>
-                  <div
-                    className="dropdown-header"
-                    onClick={handleDropdownClickForFirms}
-                  >
-                    {selectedFlows.length > 0 ? (
-                      <span>
-                        {selectedFlows.length} firm
-                        {selectedFlows.length > 1 ? "s" : ""} selected
-                      </span>
-                    ) : (
-                      <span>Select Firms</span>
-                    )}
-                    {firmsDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
-                  </div>
-
-                  {firmsDropdownOpen && (
-                    <div
-                      className="dropdown-content"
-                      style={{
-                        position: "absolute",
-                        top: dropdownStyles.top,
-                        left: dropdownStyles.left,
-                      }}
-                    >
-                      {/* No search or filter for now */}
-                      <div className="dropdown-search">
-                        <input
-                          type="text"
-                          placeholder="Search firms..."
-                          value={firmsDropdownSearch}
-                          onChange={(e) =>
-                            setFirmsDropdownSearch(e.target.value)
-                          }
-                        />
-                      </div>
-                      {/* SELECTED */}
-                      {selectedFlows.length > 0 && (
-                        <div className="selected-firms">
-                         <div className="selected-firms-header"></div>
-                          {flow
-                            .filter((item) => selectedFlows.includes(item.code))
-                            .map((item) => (
-                              <div
-                                key={item._id}
-                                className="selected-firm-item"
-                                onClick={() => handleFlowSelect(item)}
-                              >
-                                {item.name}
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                      <div className="flows-list">
-                        {flow
-                          .filter((item) =>
-                            item.name
-                              .toLowerCase()
-                              .includes(firmsDropdownSearch.toLowerCase())
-                          )
-                          .map((item) => (
-                            <div
-                              key={item._id}
-                              className="flow-item"
-                              onClick={() => handleFlowSelect(item)}
-                            >
-                              {item.name}
-                            </div>
-                          ))}
-                      </div>
-
-                      <div className="dropdown-actions">
-                        <button
-                          className="clear-btn"
-                          onClick={handleClearFlows}
-                        >
-                          Clear
-                        </button>
-                        <button
-                          className="apply-btn"
-                          onClick={handleApplyFlows}
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                
                 {/* flows dropdown */}
                 <div className="custom-dropdown" ref={dropdownRef}>
                   <div
@@ -1348,6 +1279,7 @@ const getAttendance = async () => {
                                 </>
                               ) : (
                                 <>
+                               
                                   <button
                                     className="action-btn edit"
                                     onClick={() => handleEdit(record)}
@@ -1681,6 +1613,17 @@ const getAttendance = async () => {
                                 </>
                               ) : (
                                 <>
+                                {/* nameera */}
+                                  <button
+                                    className="action-btn view"
+                                    onClick={() =>
+                                      navigate(`/attendance/${record.code}`)
+                                    }
+                                    title="View full record"
+                                  >
+                                    <FaEye />
+                                    <span>View</span>
+                                  </button>
                                   <button
                                     className="action-btn edit"
                                     onClick={() => handleEdit(record)}
