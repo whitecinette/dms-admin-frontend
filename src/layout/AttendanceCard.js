@@ -181,7 +181,7 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
 
   return (
     <div className="attendance-cards-container">
-      <h2 className="overview-heading">Attendance Overview</h2>
+      <h2 className="overview-heading">Overview</h2>
 
       {/* Overview Section */}
       <div className="overview-section">
@@ -232,8 +232,8 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
 
           const chartOptions = {
             chart: { type: 'donut', sparkline: { enabled: true } },
-            labels: ['Absent', 'Present', 'Leave'],
-            colors: ['#d0a3f5', '#9b5de5', '#c084fc'],
+            labels: ['Absent', 'Present', 'Leave', 'Half Day'],
+            colors: ['#d0a3f5', '#9b5de5', '#c084fc', '#ebc160'],
             dataLabels: {
               enabled: true,
               formatter: (val, opts) =>
@@ -298,21 +298,24 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
           };
 
           return (
-            <div
-              key={index}
-              onClick={() => setSelectedFlows(firm.code)}
-              className={`attendance-card ${selectedFlows === firm.code ? 'selected' : ''}`}
-            >
-              <div className="chart-wrapper">
-                <ReactApexChart
-                  options={chartOptions}
-                  series={[count.absent, count.present, count.leave]}
-                  type="donut"
-                  height={160}
-                />
-              </div>
-              <div className="firm-name">{firm.name}</div>
-            </div>
+           <div
+           key={index}
+           onClick={() => {
+             // If the clicked firm's code is already selected, deselect it; otherwise, select it
+             setSelectedFlows(selectedFlows === firm.code ? '' : firm.code);
+           }}
+           className={`attendance-card ${selectedFlows === firm.code ? 'selected' : ''}`}
+         >
+           <div className="chart-wrapper">
+             <ReactApexChart
+               options={chartOptions}
+               series={[count.absent, count.present, count.leave, count.halfDay]}
+               type="donut"
+               height={160}
+             />
+           </div>
+           <div className="firm-name">{firm.name}</div>
+         </div>
           );
         })}
       </div>
