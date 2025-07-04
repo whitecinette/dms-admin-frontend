@@ -18,9 +18,8 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     total: 0,
   });
   const [selectedWeek, setSelectedWeek] = useState("this");
-const [lineChartSeries, setLineChartSeries] = useState([]);
-const [lineChartCategories, setLineChartCategories] = useState([]);
-
+  const [lineChartSeries, setLineChartSeries] = useState([]);
+  const [lineChartCategories, setLineChartCategories] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -35,115 +34,70 @@ const [lineChartCategories, setLineChartCategories] = useState([]);
     }
   };
 
-  // const getAttendanceCount = async () => {
-  //   try {
-  //     let newDate = "";
-  //     if (!date) {
-  //       const today = new Date();
-  //       newDate = today.toISOString().split("T")[0];
-  //     } else {
-  //       newDate = new Date(date).toISOString().split("T")[0];
-  //     }
-
-  //     const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
-  //       params: { date: newDate },
-  //       headers: { Authorization: localStorage.getItem("authToken") },
-  //     });
-
-  //     setOverviewCounts({
-  //       present: response.data.presentCount,
-  //       absent: response.data.absentCount,
-  //       leave: response.data.leaveCount,
-  //       halfDay: response.data.halfDayCount,
-  //       pending: response.data.pendingCount,
-  //       total: response.data.total,
-  //     });
-  //   } catch (err) {
-  //     console.error("Error fetching total employee attendance:", err);
-  //   }
-  // };
-
-
   const getAttendanceCount = async (startDate, endDate) => {
-   try {
-     const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
-       params: {
-         startDate, // yyyy-mm-dd
-         endDate,   // yyyy-mm-dd
-       },
-       headers: {
-         Authorization: localStorage.getItem("authToken"),
-       },
-     });
- 
-     const data = response.data;
- 
-     setOverviewCounts({
-       present: data.presentCount,
-       absent: data.absentCount,
-       leave: data.leaveCount,
-       halfDay: data.halfDayCount,
-       pending: data.pendingCount,
-       total: data.total,
-     });
- 
-     // ✅ Set line chart series from weeklyChart
-     const weekly = data.weeklyChart;
- 
-     const present = weekly.map((d) => d.Present);
-     const absent = weekly.map((d) => d.Absent);
-     const leave = weekly.map((d) => d.Leave);
-     const halfDay = weekly.map((d) => d["Half Day"]);
-     const dates = weekly.map((d) => d.date); // Optional: x-axis labels
- 
-     setLineChartSeries([
-       { name: "Present", data: present },
-       { name: "Absent", data: absent },
-       { name: "Leave", data: leave },
-       { name: "Half Day", data: halfDay },
-     ]);
- 
-     setLineChartCategories(dates); // for dynamic x-axis
-   } catch (err) {
-     console.error("Error fetching weekly attendance:", err);
-   }
- };
- 
+    try {
+      const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
+        params: { startDate, endDate },
+        headers: { Authorization: localStorage.getItem("authToken") },
+      });
+
+      const data = response.data;
+
+      setOverviewCounts({
+        present: data.presentCount,
+        absent: data.absentCount,
+        leave: data.leaveCount,
+        halfDay: data.halfDayCount,
+        pending: data.pendingCount,
+        total: data.total,
+      });
+
+      const weekly = data.weeklyChart;
+
+      const present = weekly.map((d) => d.Present);
+      const absent = weekly.map((d) => d.Absent);
+      const leave = weekly.map((d) => d.Leave);
+      const halfDay = weekly.map((d) => d["Half Day"]);
+      const dates = weekly.map((d) => d.date);
+
+      setLineChartSeries([
+        { name: "Present", data: present },
+        { name: "Absent", data: absent },
+        { name: "Leave", data: leave },
+        { name: "Half Day", data: halfDay },
+      ]);
+
+      setLineChartCategories(dates);
+    } catch (err) {
+      console.error("Error fetching weekly attendance:", err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    getAttendanceCount();
   }, [date]);
+
   useEffect(() => {
-   const today = new Date();
-   const startOfWeek = (daysBack) => {
-     const date = new Date(today);
-     date.setDate(date.getDate() - date.getDay() + 1 - daysBack); // Monday
-     return date;
-   };
- 
-   const endOfWeek = (daysBack) => {
-     const date = new Date(today);
-     date.setDate(date.getDate() - date.getDay() + 7 - daysBack); // Sunday
-     return date;
-   };
- 
-   let startDate = "";
-   let endDate = "";
- 
-   if (selectedWeek === "this") {
-     startDate = startOfWeek(0).toISOString().split("T")[0];
-     endDate = endOfWeek(0).toISOString().split("T")[0];
-   } else if (selectedWeek === "last") {
-     startDate = startOfWeek(7).toISOString().split("T")[0];
-     endDate = endOfWeek(7).toISOString().split("T")[0];
-   } else if (selectedWeek === "beforeLast") {
-     startDate = startOfWeek(14).toISOString().split("T")[0];
-     endDate = endOfWeek(14).toISOString().split("T")[0];
-   }
- 
-   getAttendanceCount(startDate, endDate);
- }, [selectedWeek]);
- 
+    const today = new Date();
+
+    let daysBack = 0;
+    if (selectedWeek === "this") daysBack = 0;
+    else if (selectedWeek === "last") daysBack = 7;
+    else if (selectedWeek === "beforeLast") daysBack = 14;
+    else if (selectedWeek === "fourth") daysBack = 21;
+
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1 - daysBack);
+
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() - today.getDay() + 7 - daysBack);
+
+    const startDate = startOfWeek.toISOString().split("T")[0];
+    const endDate = endOfWeek.toISOString().split("T")[0];
+
+    getAttendanceCount(startDate, endDate);
+  }, [selectedWeek]);
+
   const overviewChartOptions = {
     chart: { type: 'donut' },
     labels: ['Present', 'Absent', 'Leave', 'Half Day'],
@@ -192,44 +146,36 @@ const [lineChartCategories, setLineChartCategories] = useState([]);
   ];
 
   const lineChartOptions = {
-   chart: {
-     type: 'area',
-     toolbar: { show: false },
-     zoom: { enabled: false },
-   },
-   stroke: {
-     curve: 'smooth',
-     width: 3,
-     colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'], // Matching colors
-   },
-   fill: {
-     type: 'gradient',
-     gradient: {
-       shadeIntensity: 1,
-       opacityFrom: 0.3,
-       opacityTo: 0.05,
-       stops: [0, 90, 100],
-     },
-     colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'], // Matching fill
-   },
-   xaxis: {
-     categories: lineChartCategories,
-     labels: { style: { colors: '#666', fontSize: '12px' } },
-   },
-   yaxis: {
-     labels: { style: { colors: '#666', fontSize: '12px' } },
-   },
-   grid: { show: false },
-   dataLabels: { enabled: false },
- };
- 
-
-  // const lineChartSeries = [
-  //   {
-  //     name: 'Attendance',
-  //     data: [12, 22, 35, 27, 44, 30, 52],
-  //   },
-  // ];
+    chart: {
+      type: 'area',
+      toolbar: { show: false },
+      zoom: { enabled: false },
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3,
+      colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'],
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.3,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
+      },
+      colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'],
+    },
+    xaxis: {
+      categories: lineChartCategories,
+      labels: { style: { colors: '#666', fontSize: '12px' } },
+    },
+    yaxis: {
+      labels: { style: { colors: '#666', fontSize: '12px' } },
+    },
+    grid: { show: false },
+    dataLabels: { enabled: false },
+  };
 
   if (loading) return <div>Loading...</div>;
 
@@ -237,7 +183,7 @@ const [lineChartCategories, setLineChartCategories] = useState([]);
     <div className="attendance-cards-container">
       <h2 className="overview-heading">Attendance Overview</h2>
 
-      {/* ✅ Overview Section */}
+      {/* Overview Section */}
       <div className="overview-section">
         <div className="overview-chart">
           <ReactApexChart
@@ -247,61 +193,38 @@ const [lineChartCategories, setLineChartCategories] = useState([]);
             height={200}
           />
           <div className="overview-legend">
-            <div className="legend-item">
-              <span className="dot present-dot" />
-              <span>Present</span>
-            </div>
-            <div className="legend-item">
-              <span className="dot absent-dot" />
-              <span>Absent</span>
-            </div>
-            <div className="legend-item">
-              <span className="dot leave-dot" />
-              <span>Leave</span>
-            </div>
-            <div className="legend-item">
-              <span className="dot halfday-dot" />
-              <span>Half Day</span>
-            </div>
+            <div className="legend-item"><span className="dot present-dot" /> <span>Present</span></div>
+            <div className="legend-item"><span className="dot absent-dot" /> <span>Absent</span></div>
+            <div className="legend-item"><span className="dot leave-dot" /> <span>Leave</span></div>
+            <div className="legend-item"><span className="dot halfday-dot" /> <span>Half Day</span></div>
           </div>
         </div>
 
-        {/* ✅ Line Chart */}
-        {/* <div className="overview-line-chart">
-          <h3 className="line-chart-title">Last 7 Days</h3>
+        {/* Line Chart */}
+        <div className="overview-line-chart">
+          <div className="line-chart-header">
+            <h3 className="line-chart-title">Last 7 Days</h3>
+            <select
+              className="week-selector"
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(e.target.value)}
+            >
+              <option value="this">This Week</option>
+              <option value="last">Last Week</option>
+              <option value="beforeLast">Week Before Last</option>
+              <option value="fourth">4 Weeks Ago</option>
+            </select>
+          </div>
           <ReactApexChart
             options={lineChartOptions}
             series={lineChartSeries}
             type="area"
             height={200}
           />
-        </div> */}
-        <div className="overview-line-chart">
-  <div className="line-chart-header">
-    <h3 className="line-chart-title">Last 7 Days</h3>
-   <select
-  className="week-selector"
-  value={selectedWeek}
-  onChange={(e) => setSelectedWeek(e.target.value)}
->
-  <option value="this">This Week</option>
-  <option value="last">Last Week</option>
-  <option value="beforeLast">Week Before Last</option>
-</select>
-
-  </div>
-
-  <ReactApexChart
-    options={lineChartOptions}
-    series={lineChartSeries}
-    type="area"
-    height={200}
-  />
-</div>
-
+        </div>
       </div>
 
-      {/* ✅ Firm Cards */}
+      {/* Firm Cards */}
       <div className="attendance-cards-grid">
         {firmAttendanceData.map((firm, index) => {
           const count = firm.attendanceCounts || { present: 0, leave: 0, absent: 0 };
