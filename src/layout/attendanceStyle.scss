@@ -4,7 +4,7 @@
 }
 
 .overview-heading {
- font-size: 1.5rem;
+ font-size: 1.2rem;
  font-weight: 700;
  margin-bottom: 15px;
  color: #1f2937;
@@ -38,6 +38,33 @@
  font-weight: 600;
  margin-bottom: 10px;
  color: #1f2937;
+}
+.line-chart-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 10px;
+}
+
+.week-selector {
+ padding: 6px 10px;
+ border: 1px solid #ddd;
+ border-radius: 6px;
+ font-size: 0.875rem;
+ font-weight: 500;
+ background: #fff;
+ color: #333;
+ cursor: pointer;
+ transition: border-color 0.3s;
+
+ &:hover {
+   border-color: #a855f7;
+ }
+
+ &:focus {
+   outline: none;
+   border-color: #7c3aed;
+ }
 }
 
 .overview-legend {
@@ -73,11 +100,11 @@
 }
 
 .leave-dot {
- background-color: #d8b4fe;
+ background-color: #ee8e65;
 }
 
 .halfday-dot {
- background-color: #6f3bf3;
+ background-color: #ebc160;
 }
 
 /* Firm cards scrollable row */

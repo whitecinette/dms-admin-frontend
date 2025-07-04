@@ -17,6 +17,10 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     pending: 0,
     total: 0,
   });
+  const [selectedWeek, setSelectedWeek] = useState("this");
+const [lineChartSeries, setLineChartSeries] = useState([]);
+const [lineChartCategories, setLineChartCategories] = useState([]);
+
 
   const fetchData = async () => {
     try {
@@ -31,43 +35,119 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     }
   };
 
-  const getAttendanceCount = async () => {
-    try {
-      let newDate = "";
-      if (!date) {
-        const today = new Date();
-        newDate = today.toISOString().split("T")[0];
-      } else {
-        newDate = new Date(date).toISOString().split("T")[0];
-      }
+  // const getAttendanceCount = async () => {
+  //   try {
+  //     let newDate = "";
+  //     if (!date) {
+  //       const today = new Date();
+  //       newDate = today.toISOString().split("T")[0];
+  //     } else {
+  //       newDate = new Date(date).toISOString().split("T")[0];
+  //     }
 
-      const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
-        params: { date: newDate },
-        headers: { Authorization: localStorage.getItem("authToken") },
-      });
+  //     const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
+  //       params: { date: newDate },
+  //       headers: { Authorization: localStorage.getItem("authToken") },
+  //     });
 
-      setOverviewCounts({
-        present: response.data.presentCount,
-        absent: response.data.absentCount,
-        leave: response.data.leaveCount,
-        halfDay: response.data.halfDayCount,
-        pending: response.data.pendingCount,
-        total: response.data.total,
-      });
-    } catch (err) {
-      console.error("Error fetching total employee attendance:", err);
-    }
-  };
+  //     setOverviewCounts({
+  //       present: response.data.presentCount,
+  //       absent: response.data.absentCount,
+  //       leave: response.data.leaveCount,
+  //       halfDay: response.data.halfDayCount,
+  //       pending: response.data.pendingCount,
+  //       total: response.data.total,
+  //     });
+  //   } catch (err) {
+  //     console.error("Error fetching total employee attendance:", err);
+  //   }
+  // };
 
+
+  const getAttendanceCount = async (startDate, endDate) => {
+   try {
+     const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
+       params: {
+         startDate, // yyyy-mm-dd
+         endDate,   // yyyy-mm-dd
+       },
+       headers: {
+         Authorization: localStorage.getItem("authToken"),
+       },
+     });
+ 
+     const data = response.data;
+ 
+     setOverviewCounts({
+       present: data.presentCount,
+       absent: data.absentCount,
+       leave: data.leaveCount,
+       halfDay: data.halfDayCount,
+       pending: data.pendingCount,
+       total: data.total,
+     });
+ 
+     // ✅ Set line chart series from weeklyChart
+     const weekly = data.weeklyChart;
+ 
+     const present = weekly.map((d) => d.Present);
+     const absent = weekly.map((d) => d.Absent);
+     const leave = weekly.map((d) => d.Leave);
+     const halfDay = weekly.map((d) => d["Half Day"]);
+     const dates = weekly.map((d) => d.date); // Optional: x-axis labels
+ 
+     setLineChartSeries([
+       { name: "Present", data: present },
+       { name: "Absent", data: absent },
+       { name: "Leave", data: leave },
+       { name: "Half Day", data: halfDay },
+     ]);
+ 
+     setLineChartCategories(dates); // for dynamic x-axis
+   } catch (err) {
+     console.error("Error fetching weekly attendance:", err);
+   }
+ };
+ 
   useEffect(() => {
     fetchData();
     getAttendanceCount();
   }, [date]);
-
+  useEffect(() => {
+   const today = new Date();
+   const startOfWeek = (daysBack) => {
+     const date = new Date(today);
+     date.setDate(date.getDate() - date.getDay() + 1 - daysBack); // Monday
+     return date;
+   };
+ 
+   const endOfWeek = (daysBack) => {
+     const date = new Date(today);
+     date.setDate(date.getDate() - date.getDay() + 7 - daysBack); // Sunday
+     return date;
+   };
+ 
+   let startDate = "";
+   let endDate = "";
+ 
+   if (selectedWeek === "this") {
+     startDate = startOfWeek(0).toISOString().split("T")[0];
+     endDate = endOfWeek(0).toISOString().split("T")[0];
+   } else if (selectedWeek === "last") {
+     startDate = startOfWeek(7).toISOString().split("T")[0];
+     endDate = endOfWeek(7).toISOString().split("T")[0];
+   } else if (selectedWeek === "beforeLast") {
+     startDate = startOfWeek(14).toISOString().split("T")[0];
+     endDate = endOfWeek(14).toISOString().split("T")[0];
+   }
+ 
+   getAttendanceCount(startDate, endDate);
+ }, [selectedWeek]);
+ 
   const overviewChartOptions = {
     chart: { type: 'donut' },
     labels: ['Present', 'Absent', 'Leave', 'Half Day'],
-    colors: ['#a855f7', '#e9d5ff', '#d8b4fe', '#4842ee'],
+    colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'],
     legend: { show: false },
     dataLabels: { enabled: false },
     plotOptions: {
@@ -112,43 +192,44 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
   ];
 
   const lineChartOptions = {
-    chart: {
-      type: 'area',
-      toolbar: { show: false },
-      zoom: { enabled: false },
-    },
-    stroke: {
-      curve: 'smooth',
-      width: 3,
-      colors: ['#a855f7'],
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.3,
-        opacityTo: 0.05,
-        stops: [0, 90, 100],
-      },
-      colors: ['#a855f7'],
-    },
-    xaxis: {
-      categories: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
-      labels: { style: { colors: '#666', fontSize: '12px' } },
-    },
-    yaxis: {
-      labels: { style: { colors: '#666', fontSize: '12px' } },
-    },
-    grid: { show: false },
-    dataLabels: { enabled: false },
-  };
+   chart: {
+     type: 'area',
+     toolbar: { show: false },
+     zoom: { enabled: false },
+   },
+   stroke: {
+     curve: 'smooth',
+     width: 3,
+     colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'], // Matching colors
+   },
+   fill: {
+     type: 'gradient',
+     gradient: {
+       shadeIntensity: 1,
+       opacityFrom: 0.3,
+       opacityTo: 0.05,
+       stops: [0, 90, 100],
+     },
+     colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'], // Matching fill
+   },
+   xaxis: {
+     categories: lineChartCategories,
+     labels: { style: { colors: '#666', fontSize: '12px' } },
+   },
+   yaxis: {
+     labels: { style: { colors: '#666', fontSize: '12px' } },
+   },
+   grid: { show: false },
+   dataLabels: { enabled: false },
+ };
+ 
 
-  const lineChartSeries = [
-    {
-      name: 'Attendance',
-      data: [12, 22, 35, 27, 44, 30, 52],
-    },
-  ];
+  // const lineChartSeries = [
+  //   {
+  //     name: 'Attendance',
+  //     data: [12, 22, 35, 27, 44, 30, 52],
+  //   },
+  // ];
 
   if (loading) return <div>Loading...</div>;
 
@@ -186,7 +267,7 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
         </div>
 
         {/* ✅ Line Chart */}
-        <div className="overview-line-chart">
+        {/* <div className="overview-line-chart">
           <h3 className="line-chart-title">Last 7 Days</h3>
           <ReactApexChart
             options={lineChartOptions}
@@ -194,7 +275,30 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
             type="area"
             height={200}
           />
-        </div>
+        </div> */}
+        <div className="overview-line-chart">
+  <div className="line-chart-header">
+    <h3 className="line-chart-title">Last 7 Days</h3>
+   <select
+  className="week-selector"
+  value={selectedWeek}
+  onChange={(e) => setSelectedWeek(e.target.value)}
+>
+  <option value="this">This Week</option>
+  <option value="last">Last Week</option>
+  <option value="beforeLast">Week Before Last</option>
+</select>
+
+  </div>
+
+  <ReactApexChart
+    options={lineChartOptions}
+    series={lineChartSeries}
+    type="area"
+    height={200}
+  />
+</div>
+
       </div>
 
       {/* ✅ Firm Cards */}
