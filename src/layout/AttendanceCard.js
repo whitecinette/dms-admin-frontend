@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import axios from 'axios';
-import config from "../config";
+import config from '../config';
 import './attendanceStyle.scss';
+import ShimmerLoader from '../utils/shimmerLoader';
 
 const backendUrl = config.backend_url;
 
@@ -17,32 +18,29 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     pending: 0,
     total: 0,
   });
-  const [selectedWeek, setSelectedWeek] = useState("this");
+  const [selectedWeek, setSelectedWeek] = useState('this');
   const [lineChartSeries, setLineChartSeries] = useState([]);
   const [lineChartCategories, setLineChartCategories] = useState([]);
 
-  const fetchData = async () => {
+  const fetchAllData = async (startDate, endDate) => {
+    setLoading(true); // Start loading
     try {
-      const res = await axios.get(`${backendUrl}/get-attendance-count-by-firms`, {
+      // Fetch firm attendance data
+      const firmRes = await axios.get(`${backendUrl}/get-attendance-count-by-firms`, {
         headers: { Authorization: localStorage.getItem('authToken') },
       });
-      setFirmAttendanceData(res.data.data || []);
-    } catch (error) {
-      console.error('Error fetching attendance data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const getAttendanceCount = async (startDate, endDate) => {
-    try {
-      const response = await axios.get(`${backendUrl}/get-total-employee-count`, {
+      // Fetch weekly attendance data
+      const weeklyRes = await axios.get(`${backendUrl}/get-total-employee-count`, {
         params: { startDate, endDate },
-        headers: { Authorization: localStorage.getItem("authToken") },
+        headers: { Authorization: localStorage.getItem('authToken') },
       });
 
-      const data = response.data;
+      // Update firm attendance data
+      setFirmAttendanceData(firmRes.data.data || []);
 
+      // Update weekly attendance data
+      const data = weeklyRes.data;
       setOverviewCounts({
         present: data.presentCount,
         absent: data.absentCount,
@@ -52,39 +50,34 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
         total: data.total,
       });
 
-      const weekly = data.weeklyChart;
-
-      const present = weekly.map((d) => d.Present);
-      const absent = weekly.map((d) => d.Absent);
-      const leave = weekly.map((d) => d.Leave);
-      const halfDay = weekly.map((d) => d["Half Day"]);
-      const dates = weekly.map((d) => d.date);
+      const weekly = data.weeklyChart || [];
+      const present = weekly.map((d) => d.Present || 0);
+      const absent = weekly.map((d) => d.Absent || 0);
+      const leave = weekly.map((d) => d.Leave || 0);
+      const halfDay = weekly.map((d) => d['Half Day'] || 0);
+      const dates = weekly.map((d) => d.date || '');
 
       setLineChartSeries([
-        { name: "Present", data: present },
-        { name: "Absent", data: absent },
-        { name: "Leave", data: leave },
-        { name: "Half Day", data: halfDay },
+        { name: 'Present', data: present },
+        { name: 'Absent', data: absent },
+        { name: 'Leave', data: leave },
+        { name: 'Half Day', data: halfDay },
       ]);
-
       setLineChartCategories(dates);
-    } catch (err) {
-      console.error("Error fetching weekly attendance:", err);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, [date]);
-
-  useEffect(() => {
     const today = new Date();
-
     let daysBack = 0;
-    if (selectedWeek === "this") daysBack = 0;
-    else if (selectedWeek === "last") daysBack = 7;
-    else if (selectedWeek === "beforeLast") daysBack = 14;
-    else if (selectedWeek === "fourth") daysBack = 21;
+    if (selectedWeek === 'this') daysBack = 0;
+    else if (selectedWeek === 'last') daysBack = 7;
+    else if (selectedWeek === 'beforeLast') daysBack = 14;
+    else if (selectedWeek === 'fourth') daysBack = 21;
 
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay() + 1 - daysBack);
@@ -92,11 +85,11 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     const endOfWeek = new Date(today);
     endOfWeek.setDate(today.getDate() - today.getDay() + 7 - daysBack);
 
-    const startDate = startOfWeek.toISOString().split("T")[0];
-    const endDate = endOfWeek.toISOString().split("T")[0];
+    const startDate = startOfWeek.toISOString().split('T')[0];
+    const endDate = endOfWeek.toISOString().split('T')[0];
 
-    getAttendanceCount(startDate, endDate);
-  }, [selectedWeek]);
+    fetchAllData(startDate, endDate);
+  }, [date, selectedWeek]);
 
   const overviewChartOptions = {
     chart: { type: 'donut' },
@@ -177,7 +170,12 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     dataLabels: { enabled: false },
   };
 
-  if (loading) return <div>Loading...</div>;
+  // if (loading) return <div>Loading...</div>;
+  if (loading) return <ShimmerLoader />; //
+
+  // Ensure charts only render when data is available
+  const hasOverviewData = overviewSeries.some((value) => value > 0);
+  const hasLineChartData = lineChartSeries.length > 0 && lineChartCategories.length > 0;
 
   return (
     <div className="attendance-cards-container">
@@ -186,12 +184,17 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
       {/* Overview Section */}
       <div className="overview-section">
         <div className="overview-chart">
-          <ReactApexChart
-            options={overviewChartOptions}
-            series={overviewSeries}
-            type="donut"
-            height={200}
-          />
+          {hasOverviewData ? (
+            <ReactApexChart
+              key={`overview-${overviewCounts.total}`} // Force re-render on data change
+              options={overviewChartOptions}
+              series={overviewSeries}
+              type="donut"
+              height={200}
+            />
+          ) : (
+            <div>No data available</div>
+          )}
           <div className="overview-legend">
             <div className="legend-item"><span className="dot present-dot" /> <span>Present</span></div>
             <div className="legend-item"><span className="dot absent-dot" /> <span>Absent</span></div>
@@ -215,19 +218,24 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
               <option value="fourth">4 Weeks Ago</option>
             </select>
           </div>
-          <ReactApexChart
-            options={lineChartOptions}
-            series={lineChartSeries}
-            type="area"
-            height={200}
-          />
+          {hasLineChartData ? (
+            <ReactApexChart
+              key={`line-${lineChartCategories.join('-')}`} // Force re-render on data change
+              options={lineChartOptions}
+              series={lineChartSeries}
+              type="area"
+              height={200}
+            />
+          ) : (
+            <div>No data available</div>
+          )}
         </div>
       </div>
 
       {/* Firm Cards */}
       <div className="attendance-cards-grid">
         {firmAttendanceData.map((firm, index) => {
-          const count = firm.attendanceCounts || { present: 0, leave: 0, absent: 0 };
+          const count = firm.attendanceCounts || { present: 0, leave: 0, absent: 0, halfDay: 0 };
           const total = firm.totalUsers || 0;
 
           const chartOptions = {
@@ -298,24 +306,23 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
           };
 
           return (
-           <div
-           key={index}
-           onClick={() => {
-             // If the clicked firm's code is already selected, deselect it; otherwise, select it
-             setSelectedFlows(selectedFlows === firm.code ? '' : firm.code);
-           }}
-           className={`attendance-card ${selectedFlows === firm.code ? 'selected' : ''}`}
-         >
-           <div className="chart-wrapper">
-             <ReactApexChart
-               options={chartOptions}
-               series={[count.absent, count.present, count.leave, count.halfDay]}
-               type="donut"
-               height={160}
-             />
-           </div>
-           <div className="firm-name">{firm.name}</div>
-         </div>
+            <div
+              key={index}
+              onClick={() => {
+                setSelectedFlows(selectedFlows === firm.code ? '' : firm.code);
+              }}
+              className={`attendance-card ${selectedFlows === firm.code ? 'selected' : ''}`}
+            >
+              <div className="chart-wrapper">
+                <ReactApexChart
+                  options={chartOptions}
+                  series={[count.absent, count.present, count.leave, count.halfDay]}
+                  type="donut"
+                  height={160}
+                />
+              </div>
+              <div className="firm-name">{firm.name}</div>
+            </div>
           );
         })}
       </div>

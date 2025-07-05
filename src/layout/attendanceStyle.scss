@@ -1,6 +1,8 @@
 .attendance-cards-container {
  padding: 15px;
- overflow-x: auto;
+  min-height: 100%;
+  overflow: visible;
+
 }
 
 .overview-heading {

@@ -1,0 +1,93 @@
+/* Shimmer Loader Styles */
+.shimmer-wrapper {
+ width: 100%;
+ height: 100%;
+}
+
+.shimmer {
+ background: linear-gradient(
+   90deg,
+   #f0f0f0 25%,
+   #e0e0e0 50%,
+   #f0f0f0 75%
+ );
+ background-size: 200% 100%;
+ animation: shimmer 1.5s infinite;
+ border-radius: 8px;
+}
+
+@keyframes shimmer {
+ 0% {
+   background-position: 200% 0;
+ }
+ 100% {
+   background-position: -200% 0;
+ }
+}
+
+/* Overview Section Shimmer */
+.overview-section-shimmer {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 20px;
+ margin-bottom: 20px;
+}
+
+.overview-chart-shimmer {
+ flex: 1;
+ min-width: 300px;
+ height: 200px; /* Match chart height */
+}
+
+.overview-line-chart-shimmer {
+ flex: 1;
+ min-width: 300px;
+ height: 250px; /* Match line chart height */
+}
+
+.line-chart-header-shimmer {
+ display: flex;
+ justify-content: space-between;
+ margin-bottom: 10px;
+}
+
+.line-chart-title-shimmer {
+ width: 100px;
+ height: 20px;
+}
+
+.week-selector-shimmer {
+ width: 120px;
+ height: 30px;
+}
+
+/* Firm Cards Grid Shimmer */
+.attendance-cards-grid-shimmer {
+ display: grid;
+ grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+ gap: 20px;
+}
+
+.attendance-card-shimmer {
+ height: 200px; /* Match firm card height */
+}
+
+.chart-wrapper-shimmer {
+ width: 100%;
+ height: 160px; /* Match donut chart height */
+}
+
+.firm-name-shimmer {
+ width: 80%;
+ height: 20px;
+ margin: 10px auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+ .overview-chart-shimmer,
+ .overview-line-chart-shimmer {
+   flex: 1 1 100%;
+   max-width: 100%;
+ }
+}
