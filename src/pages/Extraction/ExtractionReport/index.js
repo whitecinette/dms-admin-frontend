@@ -195,21 +195,46 @@ function ExtractionReport() {
     return isNaN(num) ? NaN : num;
   };
 
-  // Modified heatmap color function using only red shades
-  const getRedShadeColor = (value, min, max) => {
-    const numValue = parseNumericValue(value);
-    if (isNaN(numValue) || min === max) return "";
+// Modified heatmap color function using row-based min/max
+const getRedShadeColor = (value, rowMin, rowMax) => {
+  const numValue = parseNumericValue(value);
+  if (isNaN(numValue) || rowMin === rowMax) return { background: "", text: "" };
 
-    // Normalize value between 0 and 1
-    const normalized = (numValue - min) / (max - min);
+  // Normalize value between 0 and 1
+  const normalized = (numValue - rowMin) / (rowMax - rowMin);
 
-    // Calculate red shade (lighter red [255,200,200] to darker red [139,0,0])
-    const r = Math.floor(255 - (255 - 139) * normalized);
-    const g = Math.floor(200 - 200 * normalized);
-    const b = Math.floor(200 - 200 * normalized);
+  // Calculate red shade (lighter red [255,200,200] to darker red [139,0,0])
+  const r = Math.floor(255 - (255 - 139) * normalized);
+  const g = Math.floor(200 - 200 * normalized);
+  const b = Math.floor(200 - 200 * normalized);
 
-    return `rgb(${r},${g},${b})`;
+  // Calculate luminance for dynamic text color
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const textColor = luminance < 0.5 ? "#ffffff" : "#333333";
+
+  return {
+    background: `rgb(${r},${g},${b})`,
+    text: textColor
   };
+};
+
+// Calculate min and max values for each row
+const calculateRowHeatmapRange = (row, header) => {
+  let min = Infinity;
+  let max = -Infinity;
+
+  header.forEach((headerKey) => {
+    if (!["Price Class", "Rank of Samsung", "Total"].includes(headerKey)) {
+      const numValue = parseNumericValue(row[headerKey]);
+      if (!isNaN(numValue)) {
+        min = Math.min(min, numValue);
+        max = Math.max(max, numValue);
+      }
+    }
+  });
+
+  return { min, max };
+};
 
   // Inside your ExtractionReport component, replace the heatmap calculation and table rendering:
 
@@ -436,56 +461,62 @@ function ExtractionReport() {
           ) : (
             <tbody>
               {extractionReport.length > 0 ? (
-                extractionReport.map((row, i) => (
-                  <tr key={i}>
-                    {header.map((headerKey) => {
-                      const value =
-                        row[headerKey] !== undefined
-                          ? row[headerKey]
-                          : headerKey === "Total"
-                          ? "0"
-                          : "";
-                      const isHeatmapColumn = ![
-                        "Price Class",
-                        "Rank of Samsung",
-                        "Total",
-                      ].includes(headerKey);
-                      const isNumeric = !isNaN(parseNumericValue(value));
+                extractionReport.map((row, i) => {
+                  const { min: rowMin, max: rowMax } = calculateRowHeatmapRange(
+                    row,
+                    header
+                  );
+                  return (
+                    <tr key={i}>
+                      {header.map((headerKey) => {
+                        const value =
+                          row[headerKey] !== undefined
+                            ? row[headerKey]
+                            : headerKey === "Total"
+                            ? "0"
+                            : "";
+                        const isHeatmapColumn = ![
+                          "Price Class",
+                          "Rank of Samsung",
+                          "Total",
+                        ].includes(headerKey);
+                        const isNumeric = !isNaN(parseNumericValue(value));
 
-                      return (
-                        <td
-                          key={headerKey}
-                          style={{textAlign: "center" }}
-                        >
-                          {isHeatmapColumn && isNumeric ? (
-                            <span
-                              className="heatmap-badge"
-                              style={{
-                                backgroundColor: getRedShadeColor(
-                                  value,
-                                  min,
-                                  max
-                                ),
-                                color: "#fff",
-                                display: "inline-block",
-                                minWidth: 48,
-                                padding: "10px",
-                                borderRadius: 16,
-                                fontWeight: "bold",
-                                fontSize: "0.97em",
-                                margin: 2,
-                              }}
-                            >
-                              {formatIndianNumber(value)}
-                            </span>
-                          ) : (
-                            headerKey === "Total" ? formatIndianNumber(value) : value
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                        const { background, text } =
+                          isHeatmapColumn && isNumeric
+                            ? getRedShadeColor(value, rowMin, rowMax)
+                            : { background: "", text: "" };
+
+                        return (
+                          <td key={headerKey} style={{ textAlign: "center" }}>
+                            {isHeatmapColumn && isNumeric ? (
+                              <span
+                                className="heatmap-badge"
+                                style={{
+                                  backgroundColor: background,
+                                  color: text,
+                                  display: "inline-block",
+                                  minWidth: 48,
+                                  padding: "10px",
+                                  borderRadius: 16,
+                                  fontWeight: "bold",
+                                  fontSize: "0.97em",
+                                  margin: 2,
+                                }}
+                              >
+                                {view === "share" ? value : formatIndianNumber(value)}
+                              </span>
+                            ) : headerKey === "Total" ? (
+                              formatIndianNumber(value)
+                            ) : (
+                              value
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={header.length} style={{ textAlign: "center" }}>
