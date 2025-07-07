@@ -177,7 +177,7 @@ const SalesGrowth = ({ moreFilter }) => {
       getMetrics();
       getPositionAndSubordinate();
     }
-  }, [startDate, endDate, selectedValue]);
+  }, [startDate, endDate, selectedValue, dropdownValue]);
 
   if (moreFilter) {
     if (loading) return <p>Loading...</p>;
@@ -359,7 +359,6 @@ const SalesGrowth = ({ moreFilter }) => {
                         setDropdownValue([...tempSelection]);
                         setDropdown("");
                         setDropdownSearch("");
-                        getMetrics();
                       }}
                     >
                       Apply

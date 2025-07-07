@@ -195,7 +195,7 @@ function ExtractionReport() {
     return isNaN(num) ? NaN : num;
   };
 
-// Modified heatmap color function using row-based min/max
+// Modified heatmap color function using row-based min/max with orange shades
 const getRedShadeColor = (value, rowMin, rowMax) => {
   const numValue = parseNumericValue(value);
   if (isNaN(numValue) || rowMin === rowMax) return { background: "", text: "" };
@@ -203,10 +203,26 @@ const getRedShadeColor = (value, rowMin, rowMax) => {
   // Normalize value between 0 and 1
   const normalized = (numValue - rowMin) / (rowMax - rowMin);
 
-  // Calculate red shade (lighter red [255,200,200] to darker red [139,0,0])
-  const r = Math.floor(255 - (255 - 139) * normalized);
-  const g = Math.floor(200 - 200 * normalized);
-  const b = Math.floor(200 - 200 * normalized);
+  // Use orange shades for the gradient
+  // Lower values: light orange [255, 229, 204]
+  // Middle values: medium orange [255, 153, 51]
+  // Higher values: deep orange [204, 85, 0]
+
+  let r, g, b;
+
+  if (normalized < 0.5) {
+    // Transition from light orange to medium orange
+    const factor = normalized * 2; // Scale to 0-1 range for first half
+    r = Math.floor(255);
+    g = Math.floor(229 - (229 - 153) * factor);
+    b = Math.floor(204 - (204 - 51) * factor);
+  } else {
+    // Transition from medium orange to deep orange
+    const factor = (normalized - 0.5) * 2; // Scale to 0-1 range for second half
+    r = Math.floor(255 - (255 - 204) * factor);
+    g = Math.floor(153 - (153 - 85) * factor);
+    b = Math.floor(51 - 51 * factor);
+  }
 
   // Calculate luminance for dynamic text color
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -488,24 +504,20 @@ const calculateRowHeatmapRange = (row, header) => {
                             : { background: "", text: "" };
 
                         return (
-                          <td key={headerKey} style={{ textAlign: "center" }}>
+                          <td 
+                            key={headerKey} 
+                            style={{ 
+                              textAlign: "center",
+                              ...(isHeatmapColumn && isNumeric ? {
+                                backgroundColor: background,
+                                color: text,
+                                fontWeight: "bold",
+                                padding: "8px 5px"
+                              } : {})
+                            }}
+                          >
                             {isHeatmapColumn && isNumeric ? (
-                              <span
-                                className="heatmap-badge"
-                                style={{
-                                  backgroundColor: background,
-                                  color: text,
-                                  display: "inline-block",
-                                  minWidth: 48,
-                                  padding: "10px",
-                                  borderRadius: 16,
-                                  fontWeight: "bold",
-                                  fontSize: "0.97em",
-                                  margin: 2,
-                                }}
-                              >
-                                {view === "share" ? value : formatIndianNumber(value)}
-                              </span>
+                              view === "share" ? value : formatIndianNumber(value)
                             ) : headerKey === "Total" ? (
                               formatIndianNumber(value)
                             ) : (

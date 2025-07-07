@@ -118,6 +118,7 @@ const ViewBeatMappingStatus = () => {
         type: "success",
         message: res.data.message || "Daily Beat Mapping Added Successfully",
       });
+      getBeatMapping();
     } catch (err) {
       setAlert({
         show: true,
