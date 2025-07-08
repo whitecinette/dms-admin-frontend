@@ -1,4 +1,4 @@
-import axios from "axios";
+ import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import "./style.scss";
 import config from "../../config.js";
@@ -343,6 +343,7 @@ export default function LatestAttendance() {
       const [month, year] = selectedMonthYear.split("-");
       // const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
       const firmCodes = selectedFlows || ""; // 👈 selected firm from card
+      console.log("firm codes", firmCodes);
 
       const res = await axios.get(
         `${backendUrl}/get-latest-attendance-by-date`,
@@ -354,7 +355,7 @@ export default function LatestAttendance() {
             search,
             status,
             firms,
-            ...(firmCodes && { firmCodes }), // Conditionally include firmCodes
+            firmCodes, // Always include firmCodes
             month,
             year,
             tag,
@@ -491,26 +492,28 @@ export default function LatestAttendance() {
   // nameera
   const handleDownload = async () => {
     const [month, year] = selectedMonthYear.split("-");
-    const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
+    console.log("selectedFlows", selectedFlows);
+    const firmCodes = selectedFlows || "";
+
     try {
       const response = await axios.get(
-        `${backendUrl}/download-all-attendance/`,
-        {
-          params: {
-            date,
-            search,
-            status,
-            firms,
-            month,
-            year,
-            tag,
-            ...(firmCodes && { firmCodes }),
-          },
-          responseType: "blob",
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
+          `${backendUrl}/download-all-attendance/`,
+          {
+            params: {
+              date,
+              search,
+              status,
+              firms,
+              month,
+              year,
+              tag,
+              firmCodes,
+            },
+            responseType: "blob",
+            headers: {
+              Authorization: localStorage.getItem("authToken"),
+            },
+          }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -527,6 +530,7 @@ export default function LatestAttendance() {
       showAlert("Error downloading the file. Please try again.", "error");
     }
   };
+
 
   // Delete employee attendance by id
   const deleteRow = async () => {
@@ -973,7 +977,7 @@ export default function LatestAttendance() {
                   <option value={"office"}>Office</option>
                 </select>
 
-                
+
                 {/* flows dropdown */}
                 <div className="custom-dropdown" ref={dropdownRef}>
                   <div
@@ -1279,7 +1283,7 @@ export default function LatestAttendance() {
                                 </>
                               ) : (
                                 <>
-                               
+
                                   <button
                                     className="action-btn edit"
                                     onClick={() => handleEdit(record)}
