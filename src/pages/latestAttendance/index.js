@@ -15,6 +15,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import CustomAlert from "../../components/CustomAlert";
 import AttendanceCards from "../../layout/AttendanceCard.js";
+ import TableBodyLoading from "../../components/tableLoading";
 // the flow things instead of firms is created by nameera but it is used to fetches the firms and have to be changed
 const backendUrl = config.backend_url;
 
@@ -140,7 +141,10 @@ export default function LatestAttendance() {
   const [search, setSearch] = useState("");
   const [editID, setEditId] = useState("");
   const [editData, setEditData] = useState({});
-  const [date, setdate] = useState("");
+  const [date, setdate] = useState(() => {
+      const today = new Date();
+      return today.toISOString().split("T")[0];
+    });
   const [expand, setExpand] = useState("");
   const [punchInAddress, setPunchInAddress] = useState({});
   const [punchOutAddress, setPunchOutAddress] = useState({});
@@ -192,10 +196,12 @@ export default function LatestAttendance() {
   const [showAddAttendanceTable, setShowAddAttendanceTable] = useState(false);
   const role = localStorage.getItem("role");
   const [tag, setTag] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get Attendance added by admin
   const getAddedAttendance = async () => {
     const [month, year] = selectedMonthYear.split("-");
+    setIsLoading(true); // Set loading to true before making the API call
 
     try {
       const res = await axios.get(
@@ -216,10 +222,12 @@ export default function LatestAttendance() {
       );
       // console.log("API Response (getAddedAttendance):", res.data.data); // Debugging
       setAddedAttendance(res.data.data);
+      setIsLoading(false); // Set loading to false after data is loaded
     } catch (error) {
       setAddedAttendance([]);
       setShowAddAttendanceTable(false);
       console.error("Error fetching added attendance:", error);
+      setIsLoading(false); // Set loading to false if there's an error
     }
   };
 
@@ -341,6 +349,7 @@ export default function LatestAttendance() {
   const getAttendance = async () => {
     try {
       const [month, year] = selectedMonthYear.split("-");
+      setIsLoading(true);
       // const firmCodes = selectedFlows.length > 0 ? selectedFlows.join(",") : "";
       const firmCodes = selectedFlows || ""; // 👈 selected firm from card
       console.log("firm codes", firmCodes);
@@ -369,8 +378,10 @@ export default function LatestAttendance() {
       setAttendance(res.data.data);
       console.log("get the data", res.data.data);
       setTotalpages(res.data.totalPages);
+      setIsLoading(false); // Set loading to false after data is loaded
     } catch (error) {
       console.log("Error fetching attendance:", error);
+      setIsLoading(false); // Set loading to false if there's an error
     }
   };
   // const getAttendanceByFirms = async () => {
@@ -910,13 +921,17 @@ export default function LatestAttendance() {
             )}
             <input
               type="date"
+              value={date}
               onChange={(e) => {
                 setCurrentPage(1);
                 const dateValue = e.target.value;
                 if (!dateValue) {
                   setdate("");
                 } else {
-                  setdate(new Date(dateValue).toISOString().split("T")[0]);
+                  const newDate = new Date(dateValue);
+                  setdate(newDate.toISOString().split("T")[0]);
+                  // Update month dropdown when date changes
+                  setSelectedMonthYear(`${newDate.getMonth() + 1}-${newDate.getFullYear()}`);
                 }
               }}
             />
@@ -924,7 +939,27 @@ export default function LatestAttendance() {
               value={selectedMonthYear}
               onChange={(e) => {
                 setCurrentPage(1);
-                setSelectedMonthYear(e.target.value);
+                const newMonthYear = e.target.value;
+                setSelectedMonthYear(newMonthYear);
+
+                // Update date if a date is already selected
+                if (date) {
+                  const [month, year] = newMonthYear.split("-");
+                  const currentDate = new Date(date);
+                  const newDate = new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    currentDate.getDate()
+                  );
+
+                  // Handle invalid dates (e.g., Feb 30)
+                  if (newDate.getMonth() !== parseInt(month) - 1) {
+                    // Set to last day of the month
+                    newDate.setDate(0);
+                  }
+
+                  setdate(newDate.toISOString().split("T")[0]);
+                }
               }}
             >
               {(() => {
@@ -1115,7 +1150,9 @@ export default function LatestAttendance() {
                 </tr>
               </thead>
               <tbody>
-                {AddedAttendance.length > 0 ? (
+                {isLoading ? (
+                  <TableBodyLoading columnCount = {13}/>
+                ) :AddedAttendance.length > 0 ? (
                   AddedAttendance.map((record, index) => (
                     <React.Fragment key={record._id || index}>
                       <tr>
@@ -1449,7 +1486,9 @@ export default function LatestAttendance() {
                 </tr>
               </thead>
               <tbody>
-                {attendance.length > 0 ? (
+                {isLoading ? (
+                        <TableBodyLoading columnCount = {13}/>
+                    ) : attendance.length > 0 ? (
                   attendance.map((record, index) => (
                     <React.Fragment key={record._id || index}>
                       <tr>
