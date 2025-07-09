@@ -1,99 +1,154 @@
 .ViewAttendance-page {
     .ViewAttendance-header {
-        font-size: 1rem;
+        font-size: 1.5rem;
         font-weight: 900;
+        margin-bottom: 1rem;
     }
 
     .ViewAttendance-container {
-        // background-color: #fff;
         padding: 15px;
 
-        // border-radius: 10px;
         .ViewAttendance-page-firstLine {
             display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 16px;
             flex-wrap: wrap;
+            gap: 24px;
+            align-items: flex-start;
 
-            .ViewAttendance-count {
-                display: flex;
-                gap: 5px;
+            .ViewAttendance-overview {
+                background: #fff;
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                width: 100%;
 
-                .attendance-item {
-                    padding: 5px;
-                    // color: #fff;
-                    border-radius: 5px;
+                h3 {
+                    font-size: 1rem;
+                    margin-bottom: 8px;
+                    color: #333;
                 }
 
-                .red {
-                    background: #FFE2E5;
-                    border: 1px solid #FFCCD1;
+                .ViewAttendance-count {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px;
 
-                    .label {
-                        color: #931B1B;
+                    .attendance-item {
+                        flex: 1 1 150px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 16px;
+                        border-radius: 12px;
+                        text-align: center;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                        transition: transform 0.2s ease, box-shadow 0.2s ease;
+                        cursor: default;
+
+                        &:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                        }
+
+                        .label {
+                            font-weight: 600;
+                            margin-bottom: 4px;
+                            font-size: 0.95rem;
+                        }
+
+                        .value {
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                        }
                     }
 
-                    .value {
-                        color: #FF3B30;
+                    .red {
+                        background: #ffe2e5;
+                        border: 1px solid #ffccd1;
+
+                        .label {
+                            color: #931b1b;
+                        }
+
+                        .value {
+                            color: #ff3b30;
+                        }
                     }
-                }
 
-                .yellow {
-                    background: #FFF4DE;
-                    border: 1px solid #FFE5BC;
+                    .yellow {
+                        background: #fff4de;
+                        border: 1px solid #ffe5bc;
 
-                    .label {
-                        color: #946200;
+                        .label {
+                            color: #946200;
+                        }
+
+                        .value {
+                            color: #ff9f0a;
+                        }
                     }
 
-                    .value {
-                        color: #FF9F0A;
+                    .green {
+                        background: #e2f9f3;
+                        border: 1px solid #c6f4e4;
+
+                        .label {
+                            color: #0c6b58;
+                        }
+
+                        .value {
+                            color: #34c759;
+                        }
                     }
-                }
 
-                .green {
-                    background: #E2F9F3;
-                    border: 1px solid #C6F4E4;
-                    .label { color: #0C6B58; }
-                    .value { color: #34C759; }
-                }
+                    .orange {
+                        background: #fff0e8;
+                        border: 1px solid #ffe0cc;
 
-                .orange {
-                    background: #FFF0E8;
-                    border: 1px solid #FFE0CC;
-                    .label { color: #8B4000; }
-                    .value { color: #FF9500; }
+                        .label {
+                            color: #8b4000;
+                        }
+
+                        .value {
+                            color: #ff9500;
+                        }
+                    }
                 }
             }
 
             .ViewAttendance-filter {
+                background: #fff;
+                padding: 16px;
+                border-radius: 12px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                width: 100%;
                 display: flex;
-                flex-direction: row;
-                align-items: center;
-                gap: 8px;
+                flex-wrap: wrap;
+                gap: 16px;
+                margin-top: 12px;
 
-                input,
-                select {
-                    width: 100%;
-                    border-radius: 10px;
-                    border: 2px solid #808080;
-                    color: #808080;
-                    padding: 5px;
-                    font-size: 12px;
+                label {
+                    font-weight: 500;
+                    font-size: 14px;
+
+                    input,
+                    select {
+                        margin-left: 8px;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        border: 1px solid #ccc;
+                        font-size: 14px;
+                        min-width: 150px;
+                    }
                 }
-
             }
         }
 
         .ViewAttendance-table-container {
-            margin-top: 5px;
+            margin-top: 16px;
             width: 100%;
             overflow-x: auto;
             max-height: 60vh;
-            scrollbar-width: thin;
-
-            /* Enable vertical scrolling */
             display: block;
             max-width: 100%;
             overflow-y: auto;
@@ -110,12 +165,10 @@
                     color: white;
 
                     th {
-                        // border: 2px solid gray;          
                         white-space: nowrap;
                         text-align: center;
                     }
 
-                    // Rounded corners for the first and last th in the main-header row
                     .main-header th:first-child {
                         border-radius: 5px 0 0 0px;
                     }
@@ -127,7 +180,6 @@
 
                 tbody {
                     tr {
-
                         background-color: #f8f8f8;
 
                         &:nth-child(even) {
@@ -140,7 +192,6 @@
                             text-align: center;
                             white-space: nowrap;
 
-                            /* Rounded corners */
                             &:first-child {
                                 border-radius: 5px 0 0 5px;
                             }
@@ -160,171 +211,38 @@
             }
         }
     }
-    .ViewAttendance-table-container {
-            margin-top: 5px;
-            width: 100%;
-            overflow-x: auto;
-            max-height: 60vh;
-            scrollbar-width: thin;
-
-            /* Enable vertical scrolling */
-            display: block;
-            max-width: 100%;
-            overflow-y: auto;
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                min-width: 700px;
-
-                thead {
-                    position: sticky;
-                    top: 0;
-                    background-color: #6399f9;
-                    color: white;
-
-                    th {
-                        // border: 2px solid gray;          
-                        white-space: nowrap;
-                        text-align: center;
-                    }
-
-                    // Rounded corners for the first and last th in the main-header row
-                    .main-header th:first-child {
-                        border-radius: 5px 0 0 0px;
-                    }
-
-                    .main-header th:last-child {
-                        border-radius: 0 5px 0px 0;
-                    }
-                }
-
-                tbody {
-                    tr {
-
-                        background-color: #f8f8f8;
-
-                        &:nth-child(even) {
-                            background-color: white;
-                        }
-
-                        td {
-                            padding: 12px;
-                            font-size: 12px;
-                            text-align: center;
-                            white-space: nowrap;
-
-                            /* Rounded corners */
-                            &:first-child {
-                                border-radius: 5px 0 0 5px;
-                            }
-
-                            &:last-child {
-                                border-radius: 0 5px 5px 0;
-                            }
-
-                            img {
-                                width: 5rem;
-                                height: 5rem;
-                                border-radius: 50%;
-                            }
-                        }
-                    }
-                }
-            }
-        }
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-    .ViewAttendance-page-firstLine {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .ViewAttendance-table-container {
-        max-height: 50vh;
-    }
-}
-
-@media (max-width: 600px) {
-    .ViewAttendance-header {
-        font-size: 0.9rem;
-    }
-
-    .ViewAttendance-page-firstLine {
-        flex-direction: column;
-        align-items: stretch;
-
-        .ViewAttendance-count {
-            flex-wrap: wrap;
-        }
-    }
-
-    .ViewAttendance-filter {
-        margin-top: 10px;
-        max-width: 10rem;
-    }
-
-    .ViewAttendance-table-container {
-        max-height: 40vh;
-
-        table {
-            min-width: 100%;
-            font-size: 10px;
-        }
-    }
-}
-
+/* Responsive Design Enhancements */
 @media (max-width: 768px) {
-    .ViewAttendance-page {
-        .ViewAttendance-header {
-            font-size: 1.1rem;
-        }
+    .ViewAttendance-header {
+        font-size: 1.1rem;
+    }
 
-        .ViewAttendance-container {
-            padding: 8px;
+    .ViewAttendance-container {
+        padding: 10px;
 
-            .ViewAttendance-page-firstLine {
-                flex-direction: column;
+        .ViewAttendance-page-firstLine {
+            flex-direction: column;
+
+            .ViewAttendance-count,
+            .ViewAttendance-filter {
+                width: 100%;
                 gap: 10px;
-
-                .ViewAttendance-count,
-                .ViewAttendance-filter {
-                    width: 100%;
-                    flex-direction: row;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                }
-
-                .ViewAttendance-filter {
-
-                    input,
-                    select {
-                        width: 100%;
-                        min-width: 100px;
-                        font-size: 12px;
-                        height: 28px;
-                        padding: 2px 6px;
-                    }
-                }
             }
 
-            .ViewAttendance-table-container {
-                margin-top: 8px;
-                width: 100%;
-                overflow-x: auto;
-
-                table {
-                    min-width: 600px;
+            .ViewAttendance-filter {
+                input,
+                select {
+                    width: 100%;
                     font-size: 12px;
-
-                    th,
-                    td {
-                        padding: 6px;
-                        font-size: 12px;
-                    }
                 }
+            }
+        }
+
+        .ViewAttendance-table-container {
+            table {
+                font-size: 11px;
             }
         }
     }
