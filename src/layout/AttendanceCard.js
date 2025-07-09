@@ -96,7 +96,33 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
     labels: ['Present', 'Absent', 'Leave', 'Half Day'],
     colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'],
     legend: { show: false },
-    dataLabels: { enabled: false },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val, opts) {
+        return `${opts.w.globals.labels[opts.seriesIndex]}: ${overviewSeries[opts.seriesIndex] || 0}`;
+      },
+      style: {
+        fontSize: '12px',
+        fontWeight: 500,
+        colors: ['#6b21a8'],
+      },
+      background: {
+        enabled: true,
+        foreColor: '#f0f0f0',
+        padding: 4,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        opacity: 0.8,
+      },
+      dropShadow: {
+        enabled: true,
+        top: 1,
+        left: 1,
+        blur: 1,
+        opacity: 0.45,
+      },
+    },
     plotOptions: {
       pie: {
         donut: {
@@ -116,6 +142,7 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
               fontWeight: 700,
               color: '#000',
               offsetY: 10,
+              formatter: () => overviewCounts.total.toString(), // Optional customization
             },
             total: {
               show: true,
@@ -130,6 +157,47 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
       },
     },
   };
+
+
+  // const overviewChartOptions = {
+  //   chart: { type: 'donut' },
+  //   labels: ['Present', 'Absent', 'Leave', 'Half Day'],
+  //   colors: ['#a855f7', '#e9d5ff', '#ee8e65', '#ebc160'],
+  //   legend: { show: false },
+  //   dataLabels: { enabled: false },
+  //   plotOptions: {
+  //     pie: {
+  //       donut: {
+  //         size: '75%',
+  //         labels: {
+  //           show: true,
+  //           name: {
+  //             show: true,
+  //             offsetY: -10,
+  //             fontSize: '20px',
+  //             fontWeight: 800,
+  //             color: '#000',
+  //           },
+  //           value: {
+  //             show: true,
+  //             fontSize: '22px',
+  //             fontWeight: 700,
+  //             color: '#000',
+  //             offsetY: 10,
+  //           },
+  //           total: {
+  //             show: true,
+  //             label: 'Total',
+  //             fontSize: '14px',
+  //             fontWeight: 500,
+  //             color: '#888',
+  //             formatter: () => overviewCounts.total.toString(),
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  // };
 
   const overviewSeries = [
     overviewCounts.present,
@@ -185,13 +253,13 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
       <div className="overview-section">
         <div className="overview-chart">
           {hasOverviewData ? (
-            <ReactApexChart
-              key={`overview-${overviewCounts.total}`} // Force re-render on data change
-              options={overviewChartOptions}
-              series={overviewSeries}
-              type="donut"
-              height={200}
-            />
+              <ReactApexChart
+                  key={`overview-${overviewCounts.total}`}
+                  options={overviewChartOptions}
+                  series={[overviewCounts.present, overviewCounts.absent, overviewCounts.leave, overviewCounts.halfDay]}
+                  type="donut"
+                  height={200}
+              />
           ) : (
             <div>No data available</div>
           )}
