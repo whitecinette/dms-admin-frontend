@@ -140,28 +140,28 @@ function LeaveApplication() {
     setComment("");
   };
 
-  const canChangeStatus = (application) => {
-    // Prevent status change if the leave is in the past
-    // if (application?.halfDaySession === "afternoon") {
-    //   const now = new Date();
-    //   const fromDate = new Date(application.fromDate);
-    //   const isToday =
-    //     now.getFullYear() === fromDate.getFullYear() &&
-    //     now.getMonth() === fromDate.getMonth() &&
-    //     now.getDate() === fromDate.getDate();
-    //   if (isToday && now.getHours() < 12) {
-    //     return true;
-    //   }
-    // }
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0); // Set to start of yesterday for clean comparison
-
-    // Prevent status change if the leave starts before yesterday
-    if (new Date(application.fromDate) < yesterday) {
-      return false;
-    }
+  // const canChangeStatus = (application) => {
+  //   // Prevent status change if the leave is in the past
+  //   // if (application?.halfDaySession === "afternoon") {
+  //   //   const now = new Date();
+  //   //   const fromDate = new Date(application.fromDate);
+  //   //   const isToday =
+  //   //     now.getFullYear() === fromDate.getFullYear() &&
+  //   //     now.getMonth() === fromDate.getMonth() &&
+  //   //     now.getDate() === fromDate.getDate();
+  //   //   if (isToday && now.getHours() < 12) {
+  //   //     return true;
+  //   //   }
+  //   // }
+  //
+  //   const yesterday = new Date();
+  //   yesterday.setDate(yesterday.getDate() - 1);
+  //   yesterday.setHours(0, 0, 0, 0); // Set to start of yesterday for clean comparison
+  //
+  //   // Prevent status change if the leave starts before yesterday
+  //   if (new Date(application.fromDate) < yesterday) {
+  //     return false;
+  //   }
 
     // if (userRole === "admin") {
     //   // Prevent change if super_admin has already approved
@@ -171,8 +171,8 @@ function LeaveApplication() {
     // }
 
     // Super admin can change status if not blocked by past-date rule
-    return true;
-  };
+  //   return true;
+  // };
   const totalPages = Math.ceil(totalRecords / 50);
 
   // ✅ Handle Pagination
@@ -317,7 +317,6 @@ function LeaveApplication() {
                           : "N/A"}
                       </td>
                       <td>
-                        {canChangeStatus(application) ? (
                           <select
                             value={application.status}
                             onChange={(e) =>
@@ -332,13 +331,6 @@ function LeaveApplication() {
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
                           </select>
-                        ) : (
-                          <span
-                            className={`status-badge ${application.status.toLowerCase()}`}
-                          >
-                            {application.status}
-                          </span>
-                        )}
                       </td>
                       <td>{formatDate(application.appliedAt)}</td>
                     </tr>

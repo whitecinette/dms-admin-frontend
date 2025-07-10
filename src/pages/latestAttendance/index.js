@@ -197,6 +197,7 @@ export default function LatestAttendance() {
   const role = localStorage.getItem("role");
   const [tag, setTag] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Get Attendance added by admin
   const getAddedAttendance = async () => {
@@ -507,6 +508,7 @@ export default function LatestAttendance() {
     const firmCodes = selectedFlows || "";
 
     try {
+      setIsDownloading(true)
       const response = await axios.get(
           `${backendUrl}/download-all-attendance/`,
           {
@@ -539,6 +541,8 @@ export default function LatestAttendance() {
     } catch (error) {
       console.error("Download failed:", error);
       showAlert("Error downloading the file. Please try again.", "error");
+    }finally {
+      setIsDownloading(false)
     }
   };
 
@@ -1111,7 +1115,7 @@ export default function LatestAttendance() {
               onClick={handleDownload}
             >
               <FaDownload />
-              Download All Attendance
+              {isDownloading ? "Downloading..." : "Download Attendance"}
             </button>
             {role === "super_admin" && (
               <button
