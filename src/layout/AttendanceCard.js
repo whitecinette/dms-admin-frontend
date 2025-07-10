@@ -122,13 +122,13 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
         const midAngle = (startAngle + endAngle) / 2;
 
         const innerPoint = {
-          x: centerX + Math.cos(midAngle) * (outerRadius + 10),
-          y: centerY + Math.sin(midAngle) * (outerRadius + 10),
+          x: centerX + Math.cos(midAngle) * (outerRadius + 5),
+          y: centerY + Math.sin(midAngle) * (outerRadius + 5),
         };
 
         const outerPoint = {
-          x: centerX + Math.cos(midAngle) * (outerRadius + 30),
-          y: centerY + Math.sin(midAngle) * (outerRadius + 30),
+          x: centerX + Math.cos(midAngle) * (outerRadius + 20),
+          y: centerY + Math.sin(midAngle) * (outerRadius + 20),
         };
 
         const isRightSide = Math.cos(midAngle) > 0;
@@ -146,7 +146,7 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
 
         // Draw label background
         const labelText = `${labels[index]}: ${value}`; // Include header in external label
-        ctx.font = 'bold 14px Inter, sans-serif'; // Increased font size for clarity
+        ctx.font = 'bold 10px Inter, sans-serif'; // Increased font size for clarity
         const labelWidth = ctx.measureText(labelText).width;
         const labelHeight = 24; // Increased height for better visibility
 
@@ -346,7 +346,7 @@ const AttendanceCards = ({ date, selectedFlows, setSelectedFlows }) => {
                     <p style={{ fontSize: '24px', fontWeight: '700', color: '#1F2937' }}>
                       {overviewCounts.total}
                     </p>
-                    <p style={{ fontSize: '10px', color: '#6B7280' }}>employees</p>
+                    {/* <p style={{ fontSize: '10px', color: '#6B7280' }}>employees</p> */}
                   </div>
                 </div>
             ) : (
