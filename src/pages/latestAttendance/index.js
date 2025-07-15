@@ -161,7 +161,6 @@ export default function LatestAttendance() {
   const [firmsDropdownSearch, setFirmsDropdownSearch] = useState("");
   // nameera
   const [dropdownSearch, setDropdownSearch] = useState("");
-  const [dropdownStyles, setDropdownStyles] = useState({ top: 30 });
   const [showAddAttendance, setShowAddAttendance] = useState(false);
   const [newAttendance, setNewAttendance] = useState({
     code: "",
@@ -1038,9 +1037,7 @@ export default function LatestAttendance() {
                     <div
                       className="dropdown-content"
                       style={{
-                        position: "absolute",
-                        top: dropdownStyles.top,
-                        left: dropdownStyles.left,
+                        position: "absolute"
                       }}
                     >
                       <div className="dropdown-search">

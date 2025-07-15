@@ -23,10 +23,10 @@ import logo from "../../assets/images/company-logo.png";
 import "./style.scss";
 import { FcGlobe } from "react-icons/fc";
 
-// import axios from "axios";
-// import config from "../../config";
-
-// const backend_url = config.backend_url;
+ // import axios from "axios";
+ // import config from "../../config";
+ //
+ // const backend_url = config.backend_url;
 
 function Sidebar({ isCollapsed, open, toggleSidebar }) {
   const navigate = useNavigate();
@@ -41,24 +41,24 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
   };
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Track screen size
 
-  // // handle logout
-  // const handleLogout = async () => {
-  //   try {
-  //     await axios.post(
-  //       `${backend_url}/user/logout`,
-  //       {}, // empty body
-  //       {
-  //         headers: {
-  //           Authorization: localStorage.getItem("authToken"),
-  //         },
-  //       }
-  //     );
-  //     localStorage.clear();
-  //     navigate("/login");
-  //   } catch (error) {
-  //     console.error("Error during logout:", error);
-  //   }
-  // };
+   // handle logout
+   // const handleLogout = async () => {
+   //   try {
+   //     await axios.post(
+   //       `${backend_url}/user/logout`,
+   //       {}, // empty body
+   //       {
+   //         headers: {
+   //           Authorization: localStorage.getItem("authToken"),
+   //         },
+   //       }
+   //     );
+   //     localStorage.clear();
+   //     navigate("/login");
+   //   } catch (error) {
+   //     console.error("Error during logout:", error);
+   //   }
+   // };
 
   const navItems = [
     {
@@ -125,7 +125,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Attendance", to: "/attendance" },
         { name: "Leave Application", to: "/leaveApplication" },
         { name: "Travel Expenses", to: "/travelExpenses" },
-        { name: "Payroll", to: "/salesDate" },
+        { name: "Payroll", to: "/payroll" },
         { name: "Route Plans", to: "/routePlan" },
         { name: "Market Coverage", to: "/marketCoverage" },
         { name: "Employee Management", to: "/salesDate" },
@@ -260,6 +260,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       name: "Logout",
       to: "/",
       icon: <MdLogout size={20} />,
+      // onClick:(handleLogout)
       onClick: () => {
         localStorage.clear();
         window.location.href = "/login";
