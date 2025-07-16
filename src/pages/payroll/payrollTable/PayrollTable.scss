@@ -279,7 +279,14 @@ $red-600: #dc2626;
         background-color: $gray-50;
       }
     }
-
+    .no-data{
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.875rem;
+      background-color: #f9cfd0;
+      color: #cc0000;
+      font-weight: 700;
+    }
     .table-cell {
       padding: 1rem 1.5rem;
       white-space: nowrap;
