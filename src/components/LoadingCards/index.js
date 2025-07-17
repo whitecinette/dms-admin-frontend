@@ -1,10 +1,11 @@
 import './style.scss'
-function LoadingCards() {
+function LoadingCards( {card = 3} ) {
   return (
     <div className="loading-cards-container">
-      <div className="loading-card"></div>
-      <div className="loading-card"></div>
-      <div className="loading-card"></div>
+        {Array(card).fill(0).map((_, index) => (
+            <div key={index} className="loading-card"></div>
+        ))}
+
     </div>
   );
 }export default LoadingCards;

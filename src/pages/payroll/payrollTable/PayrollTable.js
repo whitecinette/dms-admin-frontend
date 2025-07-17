@@ -1,21 +1,20 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {payrollEmployees} from "../dummyData";
-import {ChevronDown, ChevronUp, CreditCard, Clock, Mail, Phone, FileText, Calculator} from 'lucide-react';
-import './PayrollTable.scss';
-import {FaChevronDown, FaChevronUp} from "react-icons/fa";
+import React, { useEffect, useRef, useState } from "react";
+import { payrollEmployees } from "../dummyData";
+import { ChevronDown, ChevronUp, CreditCard, Clock, Mail, Phone, FileText, Calculator } from "lucide-react";
+import "./PayrollTable.scss";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import axios from "axios";
 import config from "../../../config.js";
 import TableLoading from "../../../components/tableLoading";
 
 const backendUrl = config.backend_url;
 
-const PayrollTable = () => {
+const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthYearChange }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [expandedRows, setExpandedRows] = useState("");
     const [search, setSearch] = useState("");
     const [selectedMonthYear, setSelectedMonthYear] = useState(() => {
-        const now = new Date();
-        return `${now.getMonth() + 1}-${now.getFullYear()}`;
+        return propMonthYear || `${new Date().getMonth() + 1}-${new Date().getFullYear()}`;
     });
     const [status, setStatus] = useState("");
     const [payrollData, setPayrollData] = useState([]);
@@ -25,50 +24,61 @@ const PayrollTable = () => {
     const [firms, setFirms] = useState([]);
     const [tempFirms, setTempFirms] = useState([]);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [firmsDropdownOpen, setFirmsDropdownOpen] = useState(false);
     const [dropdownSearch, setDropdownSearch] = useState("");
     const dropdownRef = useRef(null);
+
+    // Update firms and monthYear when props change
+    useEffect(() => {
+        if (selectedFirm && selectedFirm.length > 0) {
+            setFirms(selectedFirm);
+            setTempFirms(selectedFirm);
+        }
+        if (propMonthYear && propMonthYear !== selectedMonthYear) {
+            setSelectedMonthYear(propMonthYear);
+        }
+    }, [selectedFirm, propMonthYear]);
+
+    // Notify parent when selectedMonthYear changes
+    useEffect(() => {
+        if (onMonthYearChange) {
+            onMonthYearChange(selectedMonthYear);
+        }
+    }, [selectedMonthYear, onMonthYearChange]);
 
     // Handle click outside to close dropdown
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
-                // Reset tempFirms to current firms when clicking outside without applying
                 setTempFirms([...firms]);
                 setDropdownSearch("");
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [firms]);
 
-    // Initialize tempFirms when firms change
-    useEffect(() => {
-        setTempFirms([...firms]);
-    }, [firms]);
-    //get payroll data
+    // Get payroll data
     const getPayrollData = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(`${backendUrl}/admin/get-payroll`,
-                {
-                    params: {
-                        search,
-                        status,
-                        firm: firms,
-                        month: selectedMonthYear.split("-")[0],
-                        year: selectedMonthYear.split("-")[1],
-                        page: currentPage,
-                        limit: 10,
-                    },
-                    headers: {
-                        Authorization: localStorage.getItem("authToken"),
-                    },
-                });
+            const response = await axios.get(`${backendUrl}/admin/get-payroll`, {
+                params: {
+                    search,
+                    status,
+                    firm: firms,
+                    month: selectedMonthYear.split("-")[0],
+                    year: selectedMonthYear.split("-")[1],
+                    page: currentPage,
+                    limit: 10,
+                },
+                headers: {
+                    Authorization: localStorage.getItem("authToken"),
+                },
+            });
             setPayrollData(response.data.data);
             setTotalRecords(response.data.total);
         } catch (error) {
@@ -79,15 +89,14 @@ const PayrollTable = () => {
         }
     };
 
-    //get firm dropdown
+    // Get firm dropdown
     const getFirmDropdown = async () => {
         try {
-            const response = await axios.get(`${backendUrl}/get-firms-for-dropdown`,
-                {
-                    headers: {
-                        Authorization: localStorage.getItem("authToken"),
-                    },
-                });
+            const response = await axios.get(`${backendUrl}/get-firms-for-dropdown`, {
+                headers: {
+                    Authorization: localStorage.getItem("authToken"),
+                },
+            });
             setFirmList(response.data.data);
         } catch (error) {
             console.error(error);
@@ -95,8 +104,8 @@ const PayrollTable = () => {
     };
 
     useEffect(() => {
-        console.log("firms", firms)
-    }, [firms])
+        console.log("firms", firms);
+    }, [firms]);
 
     useEffect(() => {
         getFirmDropdown();
@@ -105,7 +114,6 @@ const PayrollTable = () => {
 
     const handleDropdownClick = (event) => {
         setDropdownOpen(!dropdownOpen);
-        // Initialize tempFirms with current firms when opening dropdown
         if (!dropdownOpen) {
             setTempFirms([...firms]);
         }
@@ -119,7 +127,6 @@ const PayrollTable = () => {
         }
     };
 
-    // Clear firms
     const handleClearFirms = () => {
         setTempFirms([]);
     };
@@ -138,13 +145,13 @@ const PayrollTable = () => {
         setTempFirms([]);
         setCurrentPage(1);
         const now = new Date();
-        setSelectedMonthYear(`${now.getMonth() + 1}-${now.getFullYear()}`);
-        // No need to call getPayrollData here as the useEffect with dependencies will trigger it
+        const defaultMonthYear = `${now.getMonth() + 1}-${now.getFullYear()}`;
+        setSelectedMonthYear(defaultMonthYear);
+        // No need to call onMonthYearChange here as useEffect will handle it
     };
 
     const totalPages = Math.ceil(totalRecords / 50);
 
-    // ✅ Handle Pagination
     const prevPage = () => {
         if (currentPage > 1) {
             setCurrentPage((prev) => prev - 1);
@@ -165,22 +172,21 @@ const PayrollTable = () => {
         }
     };
 
-
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
+        return new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
         }).format(amount);
     };
 
     const getStatusBadge = (status) => {
-        const baseClasses = 'status-badge';
+        const baseClasses = "status-badge";
         switch (status) {
-            case 'Paid':
+            case "Paid":
                 return `${baseClasses} status-paid`;
-            case 'Pending':
+            case "Pending":
                 return `${baseClasses} status-pending`;
-            case 'Generated':
+            case "Generated":
                 return `${baseClasses} status-generated`;
             default:
                 return `${baseClasses} status-default`;
@@ -189,14 +195,14 @@ const PayrollTable = () => {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'Paid':
-                return <CreditCard className="icon green"/>;
-            case 'Pending':
-                return <Clock className="icon orange"/>;
-            case 'Generated':
-                return <FileText className="icon purple"/>;
+            case "Paid":
+                return <CreditCard className="icon green" />;
+            case "Pending":
+                return <Clock className="icon orange" />;
+            case "Generated":
+                return <FileText className="icon purple" />;
             default:
-                return <Clock className="icon gray"/>;
+                return <Clock className="icon gray" />;
         }
     };
 
@@ -260,16 +266,15 @@ const PayrollTable = () => {
                         <div className="dropdown-header" onClick={handleDropdownClick}>
                             {tempFirms.length > 0 ? (
                                 <span>
-                {tempFirms.length} firm{tempFirms.length > 1 ? "s" : ""} selected
-            </span>
+                  {tempFirms.length} firm{tempFirms.length > 1 ? "s" : ""} selected
+                </span>
                             ) : (
                                 <span>Select Firms</span>
                             )}
-                            {dropdownOpen ? <FaChevronUp/> : <FaChevronDown/>}
+                            {dropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
                         </div>
-
                         {dropdownOpen && (
-                            <div className="dropdown-content" style={{position: "absolute"}}>
+                            <div className="dropdown-content" style={{ position: "absolute" }}>
                                 <div className="dropdown-search">
                                     <input
                                         type="text"
@@ -278,7 +283,6 @@ const PayrollTable = () => {
                                         onChange={(e) => setDropdownSearch(e.target.value)}
                                     />
                                 </div>
-
                                 {tempFirms.length > 0 && (
                                     <div className="selected-firms">
                                         {firmList
@@ -294,7 +298,6 @@ const PayrollTable = () => {
                                             ))}
                                     </div>
                                 )}
-
                                 <div className="firms-list">
                                     {firmList
                                         .filter(
@@ -312,7 +315,6 @@ const PayrollTable = () => {
                                             </div>
                                         ))}
                                 </div>
-
                                 <div className="dropdown-actions">
                                     <button className="clear-btn" onClick={handleClearFirms}>
                                         Clear
@@ -335,7 +337,6 @@ const PayrollTable = () => {
                 <table className="payroll-table">
                     <thead className="table-header">
                     <tr>
-
                         <th className="table-header-cell">
                             <span>Employee</span>
                         </th>
@@ -351,32 +352,37 @@ const PayrollTable = () => {
                     </tr>
                     </thead>
                     {isLoading ? (
-                        <TableLoading/>
+                        <TableLoading />
                     ) : (
                         <tbody className="table-body">
                         {payrollData.length === 0 ? (
                             <tr>
-                                <td className={"table-cell no-data"} colSpan="6">No data available</td>
+                                <td className={"table-cell no-data"} colSpan="6">
+                                    No data available
+                                </td>
                             </tr>
                         ) : (
                             payrollData.map((employee) => (
                                 <React.Fragment key={employee._id}>
-                                    <tr
-                                        className="table-row"
-                                    >
+                                    <tr className="table-row">
                                         <td className="table-cell">
                                             <div className="employee-info">
                                                 <div className="avatar">
                                                     <div className="avatar-circle">
-                                                    <span className="avatar-initials">
-                                                        {employee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                                    </span>
+                              <span className="avatar-initials">
+                                {employee.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .slice(0, 2)}
+                              </span>
                                                     </div>
                                                 </div>
                                                 <div className="employee-details">
                                                     <div className="employee-name">{employee.name}</div>
-                                                    <div
-                                                        className="employee-meta">{employee.code} • {employee.position}</div>
+                                                    <div className="employee-meta">
+                                                        {employee.code} • {employee.position}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -389,16 +395,22 @@ const PayrollTable = () => {
                                             <div className="status-container">
                                                 {getStatusIcon(employee.status)}
                                                 <span className={getStatusBadge(employee.status)}>
-                                                {employee.status}
-                                            </span>
+                            {employee.status}
+                          </span>
                                             </div>
                                         </td>
                                         <td className="table-cell">
                                             <div className="working-days">
-                                                <span>{employee.workingDaysCounted}/{employee.salaryDays}</span>
+                          <span>
+                            {employee.workingDaysCounted}/{employee.salaryDays}
+                          </span>
                                                 <span className="working-days-percentage">
-                                                {((employee.workingDaysCounted / employee.salaryDays) * 100).toFixed(0)}%
-                                            </span>
+                            {(
+                                (employee.workingDaysCounted / employee.salaryDays) *
+                                100
+                            ).toFixed(0)}
+                                                    %
+                          </span>
                                             </div>
                                         </td>
                                         <td className="table-cell">
@@ -411,7 +423,7 @@ const PayrollTable = () => {
                                                     onClick={() => toggleRowExpansion(employee._id)}
                                                     className="action-button details-button"
                                                 >
-                                                    {expandedRows && expandedRows === employee._id ? 'Hide' : 'Details'}
+                                                    {expandedRows && expandedRows === employee._id ? "Hide" : "Details"}
                                                 </button>
                                             )}
                                         </td>
@@ -420,162 +432,167 @@ const PayrollTable = () => {
                                         <tr className="expanded-row">
                                             <td colSpan={6} className="expanded-content">
                                                 <div className="expanded-grid">
-                                                    {/* Contact Information */}
                                                     <div className="section">
                                                         <h4 className="section-title">
-                                                            <Mail className="section-icon"/>
+                                                            <Mail className="section-icon" />
                                                             Contact Information
                                                         </h4>
                                                         <div className="section-content">
                                                             <div className="info-item">
-                                                                <Mail className="info-icon"/>
+                                                                <Mail className="info-icon" />
                                                                 <span>{employee.email}</span>
                                                             </div>
                                                             <div className="info-item">
-                                                                <Phone className="info-icon"/>
+                                                                <Phone className="info-icon" />
                                                                 <span>{employee.phone}</span>
                                                             </div>
                                                             <div className="info-item">
-                                                                <CreditCard className="info-icon"/>
+                                                                <CreditCard className="info-icon" />
                                                                 <span>{employee.bankAccount}</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {/* Salary Breakdown */}
                                                     <div className="section">
                                                         <h4 className="section-title">
-                                                            <Calculator className="section-icon"/>
+                                                            <Calculator className="section-icon" />
                                                             Salary Breakdown
                                                         </h4>
                                                         <div className="section-content">
                                                             <div className="info-item">
                                                                 <span className="info-label">Base Salary:</span>
-                                                                <span
-                                                                    className="info-value">{formatCurrency(employee.salaryDetails.baseSalary)}</span>
+                                                                <span className="info-value">
+                                    {formatCurrency(employee.salaryDetails.baseSalary)}
+                                  </span>
                                                             </div>
                                                             <div className="info-item">
                                                                 <span className="info-label">Calculated Salary:</span>
-                                                                <span
-                                                                    className="info-value">{formatCurrency(employee.calculatedSalary)}</span>
+                                                                <span className="info-value">
+                                    {formatCurrency(employee.calculatedSalary)}
+                                  </span>
                                                             </div>
                                                             <div className="info-item">
                                                                 <span className="info-label">Gross Pay:</span>
-                                                                <span
-                                                                    className="info-value text-green-600">{formatCurrency(employee.grossPay)}</span>
+                                                                <span className="info-value text-green-600">
+                                    {formatCurrency(employee.grossPay)}
+                                  </span>
                                                             </div>
                                                             <div className="info-item">
                                                                 <span className="info-label">Total Deductions:</span>
-                                                                <span
-                                                                    className="info-value text-red-600">-{formatCurrency(employee.totalDeductions)}</span>
+                                                                <span className="info-value text-red-600">
+                                    -{formatCurrency(employee.totalDeductions)}
+                                  </span>
                                                             </div>
                                                             <div className="info-item border-top">
-                                                                <span
-                                                                    className="info-label font-semibold">Net Payable:</span>
-                                                                <span
-                                                                    className="info-value text-blue-600 font-bold">{formatCurrency(employee.netPayable)}</span>
+                                                                <span className="info-label font-semibold">Net Payable:</span>
+                                                                <span className="info-value text-blue-600 font-bold">
+                                    {formatCurrency(employee.netPayable)}
+                                  </span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {/* Bonuses & Additions */}
                                                     <div className="section">
                                                         <h4 className="section-title">Bonuses & Additions</h4>
                                                         <div className="section-content">
                                                             {employee.salaryDetails.bonuses.map((bonus, index) => (
                                                                 <div key={index} className="info-item">
                                                                     <span className="info-label">{bonus.name}:</span>
-                                                                    <span
-                                                                        className="info-value text-green-600">+{formatCurrency(bonus.amount)}</span>
+                                                                    <span className="info-value text-green-600">
+                                      +{formatCurrency(bonus.amount)}
+                                    </span>
                                                                 </div>
                                                             ))}
                                                             {employee.salaryDetails.other
-                                                                .filter(item => item.type === 'addition')
+                                                                .filter((item) => item.type === "addition")
                                                                 .map((addition, index) => (
                                                                     <div key={index} className="info-item">
-                                                                        <span
-                                                                            className="info-label">{addition.name}:</span>
-                                                                        <span
-                                                                            className="info-value text-green-600">+{formatCurrency(addition.amount)}</span>
+                                                                        <span className="info-label">{addition.name}:</span>
+                                                                        <span className="info-value text-green-600">
+                                        +{formatCurrency(addition.amount)}
+                                      </span>
                                                                     </div>
                                                                 ))}
                                                             {employee.salaryDetails.reimbursedExpenses > 0 && (
                                                                 <div className="info-item">
                                                                     <span className="info-label">Reimbursements:</span>
-                                                                    <span
-                                                                        className="info-value text-green-600">+{formatCurrency(employee.salaryDetails.reimbursedExpenses)}</span>
+                                                                    <span className="info-value text-green-600">
+                                      +{formatCurrency(employee.salaryDetails.reimbursedExpenses)}
+                                    </span>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    {/* Deductions */}
                                                     <div className="section">
                                                         <h4 className="section-title">Deductions</h4>
                                                         <div className="section-content">
                                                             {employee.salaryDetails.deductions
-                                                                .filter(deduction => deduction.isActive)
+                                                                .filter((deduction) => deduction.isActive)
                                                                 .map((deduction, index) => (
                                                                     <div key={index} className="info-item">
-                                                                    <span className="info-label">
-                                                                        {deduction.name} ({deduction.type === 'percentage' ? `${deduction.value}%` : formatCurrency(deduction.value)}):
-                                                                    </span>
+                                      <span className="info-label">
+                                        {deduction.name} (
+                                          {deduction.type === "percentage"
+                                              ? `${deduction.value}%`
+                                              : formatCurrency(deduction.value)}
+                                          ):
+                                      </span>
                                                                         <span className="info-value text-red-600">
-                                                                        -{formatCurrency(
-                                                                            deduction.type === 'percentage'
+                                        -{formatCurrency(
+                                                                            deduction.type === "percentage"
                                                                                 ? (employee.calculatedSalary * deduction.value) / 100
                                                                                 : deduction.value
                                                                         )}
-                                                                    </span>
+                                      </span>
                                                                     </div>
                                                                 ))}
                                                             {employee.salaryDetails.other
-                                                                .filter(item => item.type === 'deduction')
+                                                                .filter((item) => item.type === "deduction")
                                                                 .map((deduction, index) => (
                                                                     <div key={index} className="info-item">
-                                                                        <span
-                                                                            className="info-label">{deduction.name}:</span>
-                                                                        <span
-                                                                            className="info-value text-red-600">-{formatCurrency(deduction.amount)}</span>
+                                                                        <span className="info-label">{deduction.name}:</span>
+                                                                        <span className="info-value text-red-600">
+                                        -{formatCurrency(deduction.amount)}
+                                      </span>
                                                                     </div>
                                                                 ))}
                                                         </div>
                                                     </div>
-                                                    {/* Carry Forward */}
-                                                    {(employee.carryForward.pendingSalary > 0 || employee.carryForward.unpaidExpenses > 0) && (
+                                                    {(employee.carryForward.pendingSalary > 0 ||
+                                                        employee.carryForward.unpaidExpenses > 0) && (
                                                         <div className="section full-width">
                                                             <h4 className="section-title">Carry Forward</h4>
                                                             <div className="section-content grid-2">
                                                                 {employee.carryForward.pendingSalary > 0 && (
                                                                     <div className="info-item">
-                                                                        <span
-                                                                            className="info-label">Pending Salary:</span>
-                                                                        <span
-                                                                            className="info-value text-blue-600">{formatCurrency(employee.carryForward.pendingSalary)}</span>
+                                                                        <span className="info-label">Pending Salary:</span>
+                                                                        <span className="info-value text-blue-600">
+                                        {formatCurrency(employee.carryForward.pendingSalary)}
+                                      </span>
                                                                     </div>
                                                                 )}
                                                                 {employee.carryForward.unpaidExpenses > 0 && (
                                                                     <div className="info-item">
-                                                                        <span
-                                                                            className="info-label">Unpaid Expenses:</span>
-                                                                        <span
-                                                                            className="info-value text-orange-600">{formatCurrency(employee.carryForward.unpaidExpenses)}</span>
+                                                                        <span className="info-label">Unpaid Expenses:</span>
+                                                                        <span className="info-value text-orange-600">
+                                        {formatCurrency(employee.carryForward.unpaidExpenses)}
+                                      </span>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                             {employee.carryForward.remarks && (
                                                                 <div className="info-item">
                                                                     <span className="info-label">Remarks: </span>
-                                                                    <span
-                                                                        className="info-value">{employee.carryForward.remarks}</span>
+                                                                    <span className="info-value">
+                                      {employee.carryForward.remarks}
+                                    </span>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     )}
-                                                    {/* Additional Info */}
                                                     <div className="section full-width additional-info">
                                                         <div className="grid-3">
                                                             <div>
                                                                 <span className="info-label">Salary Month: </span>
-                                                                <span
-                                                                    className="info-value">{employee.salaryMonth}</span>
+                                                                <span className="info-value">{employee.salaryMonth}</span>
                                                             </div>
                                                             <div>
                                                                 <span className="info-label">Created By: </span>
@@ -589,7 +606,7 @@ const PayrollTable = () => {
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                     >
-                                                                        <FileText className="info-icon"/>
+                                                                        <FileText className="info-icon" />
                                                                         <span>View Payslip</span>
                                                                     </a>
                                                                 </div>
@@ -607,29 +624,29 @@ const PayrollTable = () => {
                                         </tr>
                                     )}
                                 </React.Fragment>
-                            )))}
+                            ))
+                        )}
                         </tbody>
                     )}
                 </table>
             </div>
-            {/* ✅ Pagination */}
-            <div className="pagination" style={{marginBottom: '1rem'}}>
+            <div className="pagination" style={{ marginBottom: "1rem" }}>
                 <button
                     onClick={prevPage}
                     className="page-btn"
                     disabled={currentPage === 1}
                 >
-                    &lt;
+                    {"<"}
                 </button>
                 <span>
-            Page {currentPage} of {totalPages}
-          </span>
+          Page {currentPage} of {totalPages}
+        </span>
                 <button
                     onClick={nextPage}
                     className="page-btn"
                     disabled={currentPage === totalPages}
                 >
-                    &gt;
+                    {">"}
                 </button>
             </div>
         </>

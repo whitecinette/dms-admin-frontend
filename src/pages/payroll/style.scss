@@ -167,6 +167,21 @@
       min-width: 220px;
       transition: all 0.3s ease;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      
+      &.selected {
+        border-color: #8c4acb;
+        background-color: #f8fafc;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+
+        
+        .firm-name {
+          color: #3b82f6;
+          font-weight: 600;
+        }
+      }
 
       @media (max-width: 480px) {
         min-width: 200px;
@@ -186,6 +201,7 @@
         text-overflow: ellipsis;
         color: #334155;
         font-size: 15px;
+        transition: color 0.2s ease;
       }
 
       .chart-wrapper {
