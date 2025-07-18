@@ -238,7 +238,7 @@ function RoutesPlan() {
 
   const handleRouteClick = (route) => {
     navigate(
-      `/viewBeatMappingStatus?search=${encodeURIComponent(
+      `/marketCoverage?search=${encodeURIComponent(
         route.EmpName
       )}&startDate=${route.startDate}&endDate=${route.endDate}&route=${
         route.id
@@ -278,20 +278,25 @@ function RoutesPlan() {
           </div>
           <div className="route-itinerary">
             <h4 className="route-itinerary-header">Itinerary</h4>
-            {route.itinerary.district.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>District:</strong> {route.itinerary.district.join(", ")}
-              </div>
+            {route.itinerary?.district?.length > 0 && (
+                <div className="route-itinerary-content">
+                  <strong>District:</strong> {route.itinerary.district.join(", ")}
+                </div>
             )}
-            {route.itinerary.zone.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
-              </div>
+            {route.itinerary?.zone?.length > 0 && (
+                <div className="route-itinerary-content">
+                  <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
+                </div>
             )}
-            {route.itinerary.taluka.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
-              </div>
+            {route.itinerary?.taluka?.length > 0 && (
+                <div className="route-itinerary-content">
+                  <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
+                </div>
+            )}
+            {route.itinerary?.town?.length > 0 && (
+                <div className="route-itinerary-content">
+                  <strong>Town:</strong> {route.itinerary.town.join(", ")}
+                </div>
             )}
           </div>
           <div className="status-count">
