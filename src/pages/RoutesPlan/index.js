@@ -266,22 +266,43 @@ function RoutesPlan() {
     getRoutePlan();
   };
 
-  const handleApproval = async (routeId, isApproved, status = "active") => {
-    try {
-      await axios.put(
-        `${backend_url}/admin/route-plan/update/${routeId}`,
-        { approved: isApproved, status },
-        {
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      getRoutePlan();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  // const handleApproval = async (routeId, isApproved, status = "active") => {
+  //   try {
+  //     await axios.put(
+  //       `${backend_url}/admin/route-plan/update/${routeId}`,
+  //       { approved: isApproved, status },
+  //       {
+  //         headers: {
+  //           Authorization: localStorage.getItem("authToken"),
+  //         },
+  //       }
+  //     );
+  //     getRoutePlan();
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
+  
+  
+  const handleRejectRequestedRoute = async (requestId) => {
+   try {
+     await axios.post(
+       `${backend_url}/reject-requested-route/${requestId}`,
+       { status: "rejected" },
+       {
+         headers: {
+           Authorization: localStorage.getItem("authToken"),
+         },
+       }
+     );
+     alert("Route Rejected Successfully");
+     getRoutePlan(); // Refresh the list
+   } catch (err) {
+     console.error("Error rejecting requested route:", err);
+     alert("Failed to reject the requested route");
+   }
+ };
+ 
   const handleApproveRequestedRoute = async (requestId) => {
    try {
      const res = await axios.post(
@@ -476,7 +497,7 @@ function RoutesPlan() {
     </button>
     <button
       className="action-btn reject"
-      onClick={() => handleApproval(route.id)}
+      onClick={() => handleRejectRequestedRoute(route.id)}
     >
       Reject
     </button>
