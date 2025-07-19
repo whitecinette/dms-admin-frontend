@@ -54,7 +54,7 @@ const SalesDataTable = () => {
         const res = await axios.post(
           `${backend_url}/user/sales-data/product-wise`,
           {
-            selected_subord: dropdownValue.map((item) => item.code),
+            subordinate_codes: dropdownValue.map((item) => item.code),
             start_date: startDate.toISOString().split("T")[0],
             end_date: endDate.toISOString().split("T")[0],
             filter_type: selectedValue,
@@ -76,9 +76,6 @@ const SalesDataTable = () => {
     fetchProductData();
   }, [expandedRow]);
 
-  useEffect(() => {
-    console.log(productData);
-  }, [productData]);
 
   useEffect(() => {
     if (startDate && endDate) {
