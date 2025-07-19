@@ -75,7 +75,16 @@ function Notification({ onClose, count }) {
         } else {
           navigate(`/leaveApplication${queryParams}`);
         }
-      }
+      }else if (notification.title === "Route Request") {
+       const [name, startDate, endDate] = notification.filters;
+       const queryParams = `?search=${encodeURIComponent(name)}&startDate=${startDate}&endDate=${endDate}`;
+ 
+       if (window.location.pathname === '/routePlan') {
+         window.location.href = `/routePlan${queryParams}`;
+       } else {
+         navigate(`/routePlan${queryParams}`);
+       }
+     }
       handleClose();
     } catch (error) {
       console.error("Error in handleNotificationClick:", error);

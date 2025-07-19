@@ -525,7 +525,7 @@ function RoutesPlan() {
               </div>
               <div className="routePlan-status-filter">
                 <label htmlFor="status">Status </label>
-                <select
+                {/* <select
                   id="status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -533,7 +533,21 @@ function RoutesPlan() {
                   <option value="">All</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
-                </select>
+                </select> */}
+                <select
+  id="status"
+  value={status}
+  onChange={(e) => {
+    setStatus(e.target.value);
+    getRoutePlan(e.target.value); // fetch with selected status
+  }}
+>
+  <option value="">All</option>
+  <option value="requested">Requested</option>
+  <option value="approved">Approved</option>
+  <option value="rejected">Rejected</option>
+</select>
+
               </div>
               <div className="routePlan-status-filter">
                 <label htmlFor="approved">Approved </label>
