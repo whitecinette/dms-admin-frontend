@@ -357,23 +357,56 @@
           }
         }
 
+        // .status {
+        //   font-size: 12px;
+        //   padding: 4px 10px;
+        //   border-radius: 9999px;
+        //   text-transform: capitalize;
+        //   font-weight: 500;
+
+        //   &.active {
+        //     background-color: #e3f2fd;
+        //     color: #1e88e5;
+        //   }
+
+        //   &.inactive {
+        //     background-color: #ffebee;
+        //     color: #e53935;
+        //   }
+        // }
         .status {
-          font-size: 12px;
-          padding: 4px 10px;
-          border-radius: 9999px;
-          text-transform: capitalize;
-          font-weight: 500;
-
-          &.active {
-            background-color: #e3f2fd;
-            color: #1e88e5;
-          }
-
-          &.inactive {
-            background-color: #ffebee;
-            color: #e53935;
-          }
-        }
+         font-size: 12px;
+         padding: 4px 10px;
+         border-radius: 9999px;
+         text-transform: capitalize;
+         font-weight: 500;
+       
+         &.active {
+           background-color: #e3f2fd;
+           color: #1e88e5;
+         }
+       
+         &.inactive {
+           background-color: #ffebee;
+           color: #e53935;
+         }
+       
+         &.approved {
+           background-color: #e6f4ea;
+           color: #2e7d32; // green
+         }
+       
+         &.rejected {
+           background-color: #b2afaf;
+           color: #616161; // grey
+         }
+       
+         &.requested {
+           background-color: #fff8e1;
+           color: #ee9d1a; // yellow
+         }
+       }
+       
       }
 
       &-content {

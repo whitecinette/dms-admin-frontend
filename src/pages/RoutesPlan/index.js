@@ -123,34 +123,94 @@ function RoutesPlan() {
 
     return formattedDate || "N/A";
   };
-
+  const getRequestedRoutes = async () => {
+   try {
+     const res = await axios.get(`${backend_url}/get-requested-route-for-admin`, {
+       headers: {
+         Authorization: localStorage.getItem("authToken"),
+       },
+       params: {
+         startDate,
+         endDate,
+         status, // can be "requested", "approved", "rejected"
+       },
+     });
+     return res.data.data || [];
+   } catch (err) {
+     console.log("Error fetching requested routes", err);
+     return [];
+   }
+ };
+  // const getRoutePlan = async () => {
+  //   if (!startDate || !endDate) {
+  //     return;
+  //   }
+  //   setIsRouteLoading(true);
+  //   try {
+  //     const res = await axios.get(`${backend_url}/admin/route-plan/get`, {
+  //       headers: {
+  //         Authorization: localStorage.getItem("authToken"),
+  //       },
+  //       params: {
+  //         search,
+  //         startDate,
+  //         endDate,
+  //         status,
+  //         approved,
+  //         itinerary: JSON.stringify(dropdownValue),
+  //       },
+  //     });
+  //     setRoutePlan(res.data.data);
+  //   } catch (err) {
+  //     console.log(err);
+  //     setRoutePlan([]);
+  //   } finally {
+  //     setIsRouteLoading(false);
+  //   }
+  // };
+ 
   const getRoutePlan = async () => {
-    if (!startDate || !endDate) {
-      return;
-    }
-    setIsRouteLoading(true);
-    try {
-      const res = await axios.get(`${backend_url}/admin/route-plan/get`, {
-        headers: {
-          Authorization: localStorage.getItem("authToken"),
-        },
-        params: {
-          search,
-          startDate,
-          endDate,
-          status,
-          approved,
-          itinerary: JSON.stringify(dropdownValue),
-        },
-      });
-      setRoutePlan(res.data.data);
-    } catch (err) {
-      console.log(err);
-      setRoutePlan([]);
-    } finally {
-      setIsRouteLoading(false);
-    }
-  };
+   if (!startDate || !endDate) return;
+   setIsRouteLoading(true);
+ 
+   try {
+     const [routePlanRes, requestedRoutes] = await Promise.all([
+       axios.get(`${backend_url}/admin/route-plan/get`, {
+         headers: {
+           Authorization: localStorage.getItem("authToken"),
+         },
+         params: {
+           search,
+           startDate,
+           endDate,
+           status,
+           approved,
+           itinerary: JSON.stringify(dropdownValue),
+         },
+       }),
+       getRequestedRoutes(),
+     ]);
+ 
+     const approvedRoutePlans = routePlanRes.data.data || [];
+ 
+     const formattedRequestedRoutes = (requestedRoutes || []).map((item) => ({
+       ...item,
+       approved: false,
+  source: "requested",         // 👈 add this to identify it's a requested route
+  status: item.status,  
+       // approved: false,
+       // status: "requested", // Custom status to differentiate
+     }));
+ 
+     setRoutePlan([...approvedRoutePlans, ...formattedRequestedRoutes]);
+   } catch (err) {
+     console.log("Error in getRoutePlan", err);
+     setRoutePlan([]);
+   } finally {
+     setIsRouteLoading(false);
+   }
+ };
+ 
 
   const getItinerary = async () => {
     try {
@@ -222,7 +282,25 @@ function RoutesPlan() {
       console.log(err);
     }
   };
-
+  const handleApproveRequestedRoute = async (requestId) => {
+   try {
+     const res = await axios.post(
+       `${backend_url}/requested-route/approve/${requestId}`,
+       {},
+       {
+         headers: {
+           Authorization: localStorage.getItem("authToken"),
+         },
+       }
+     );
+     alert("Route Approved Successfully");
+     getRoutePlan(); // refresh list
+   } catch (err) {
+     console.error("Error approving requested route:", err);
+     alert("Failed to approve the requested route");
+   }
+ };
+ 
   if (isLoading) {
     return (
       <div className="RoutePlan-page">
@@ -259,9 +337,9 @@ function RoutesPlan() {
             </h3>
             <div className="header-code-status">
               <span className="route-code">{route.code}</span>
-              {route.approved && (
+              {/* {route.approved && (
                 <span className="approved-header">Approved</span>
-              )}
+              )} */}
             </div>
           </div>
           <span className={`status ${route.status}`}>{route.status}</span>
@@ -299,23 +377,26 @@ function RoutesPlan() {
                 </div>
             )}
           </div>
-          <div className="status-count">
-            <div className="status-item">
-              <strong>Total:</strong>
-              <span className="badge total">{route.total}</span>
-            </div>
-            <div className="status-item">
-              <strong>Done:</strong>
-              <span className="badge done">{route.done}</span>
-            </div>
-            <div className="status-item">
-              <strong>Pending:</strong>
-              <span className="badge pending">{route.pending}</span>
-            </div>
-          </div>
+          {route.source !== "requested" && (
+  <div className="status-count">
+    <div className="status-item">
+      <strong>Total:</strong>
+      <span className="badge total">{route.total}</span>
+    </div>
+    <div className="status-item">
+      <strong>Done:</strong>
+      <span className="badge done">{route.done}</span>
+    </div>
+    <div className="status-item">
+      <strong>Pending:</strong>
+      <span className="badge pending">{route.pending}</span>
+    </div>
+  </div>
+)}
+
         </div>
       </div>
-      <div className="route-card-actions">
+      {/* <div className="route-card-actions">
         {route.approved ? (
           route.status === "active" ? (
             <button
@@ -348,7 +429,60 @@ function RoutesPlan() {
             </button>
           </>
         )}
-      </div>
+      </div> */}
+      {/* {route.status === "requested" && (
+  <div className="route-card-actions">
+    {route.approved ? (
+      route.status === "active" ? (
+        <button
+          className="action-btn reject"
+          onClick={() => handleApproval(route.id, true, "inactive")}
+        >
+          Change to Inactive
+        </button>
+      ) : (
+        <button
+          className="action-btn approve"
+          onClick={() => handleApproval(route.id, true)}
+        >
+          Change to Active
+        </button>
+      )
+    ) : (
+      <>
+        <button
+          className="action-btn approve"
+          onClick={() => handleApproveRequestedRoute(route.id, true)}
+        >
+          Approve
+        </button>
+        <button
+          className="action-btn reject"
+          onClick={() => handleApproval(route.id, false, "inactive")}
+        >
+          Reject
+        </button>
+      </>
+    )}
+  </div>
+)} */}
+{route.status === "requested" && (
+  <div className="route-card-actions">
+    <button
+      className="action-btn approve"
+      onClick={() => handleApproveRequestedRoute(route.id)}
+    >
+      Approve
+    </button>
+    <button
+      className="action-btn reject"
+      onClick={() => handleApproval(route.id)}
+    >
+      Reject
+    </button>
+  </div>
+)}
+
     </div>
   );
 
