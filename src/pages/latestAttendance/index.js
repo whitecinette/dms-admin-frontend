@@ -1266,9 +1266,7 @@ export default function LatestAttendance() {
                             </select>
                           </td>
                         ) : (
-                          <td>
-                           {/* <span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span> */}
-                           </td>
+                          <td><span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span></td>
                         )}
                         <td>{record.hoursWorked || "N/A"}</td>
                         <td className="expand-btn">
@@ -1604,9 +1602,7 @@ export default function LatestAttendance() {
                             </select>
                           </td>
                         ) : (
-                            <td>
-                             {/* <span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span> */}
-                             </td>
+                            <td><span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span></td>
                         )}
                         <td>{record.hoursWorked || "N/A"}</td>
                         <td className="expand-btn">
