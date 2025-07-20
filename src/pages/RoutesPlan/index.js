@@ -14,7 +14,7 @@ const backend_url = config.backend_url;
 function RoutesPlan() {
   const location = useLocation();
   const navigate = useNavigate();
-
+  const [successMsg, setSuccessMsg] = useState("");
   // Parse query parameters from the URL
   const queryParams = new URLSearchParams(location.search);
   const initialSearch = queryParams.get("search") || "";
@@ -107,7 +107,7 @@ function RoutesPlan() {
     };
   }, [dropdown, prevDropdownValue]);
 
-    const formatDate = (dateInput) => {
+  const formatDate = (dateInput) => {
     // Get only the date part to avoid time zone shift
     const datePart = dateInput?.slice(0, 10); // "YYYY-MM-DD"
     if (!datePart) return "N/A";
@@ -124,23 +124,26 @@ function RoutesPlan() {
     return formattedDate || "N/A";
   };
   const getRequestedRoutes = async () => {
-   try {
-     const res = await axios.get(`${backend_url}/get-requested-route-for-admin`, {
-       headers: {
-         Authorization: localStorage.getItem("authToken"),
-       },
-       params: {
-         startDate,
-         endDate,
-         status, // can be "requested", "approved", "rejected"
-       },
-     });
-     return res.data.data || [];
-   } catch (err) {
-     console.log("Error fetching requested routes", err);
-     return [];
-   }
- };
+    try {
+      const res = await axios.get(
+        `${backend_url}/get-requested-route-for-admin`,
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+          params: {
+            startDate,
+            endDate,
+            status, // can be "requested", "approved", "rejected"
+          },
+        }
+      );
+      return res.data.data || [];
+    } catch (err) {
+      console.log("Error fetching requested routes", err);
+      return [];
+    }
+  };
   // const getRoutePlan = async () => {
   //   if (!startDate || !endDate) {
   //     return;
@@ -168,49 +171,48 @@ function RoutesPlan() {
   //     setIsRouteLoading(false);
   //   }
   // };
- 
+
   const getRoutePlan = async () => {
-   if (!startDate || !endDate) return;
-   setIsRouteLoading(true);
- 
-   try {
-     const [routePlanRes, requestedRoutes] = await Promise.all([
-       axios.get(`${backend_url}/admin/route-plan/get`, {
-         headers: {
-           Authorization: localStorage.getItem("authToken"),
-         },
-         params: {
-           search,
-           startDate,
-           endDate,
-           status,
-           approved,
-           itinerary: JSON.stringify(dropdownValue),
-         },
-       }),
-       getRequestedRoutes(),
-     ]);
- 
-     const approvedRoutePlans = routePlanRes.data.data || [];
- 
-     const formattedRequestedRoutes = (requestedRoutes || []).map((item) => ({
-       ...item,
-       approved: false,
-  source: "requested",         // 👈 add this to identify it's a requested route
-  status: item.status,  
-       // approved: false,
-       // status: "requested", // Custom status to differentiate
-     }));
- 
-     setRoutePlan([...approvedRoutePlans, ...formattedRequestedRoutes]);
-   } catch (err) {
-     console.log("Error in getRoutePlan", err);
-     setRoutePlan([]);
-   } finally {
-     setIsRouteLoading(false);
-   }
- };
- 
+    if (!startDate || !endDate) return;
+    setIsRouteLoading(true);
+
+    try {
+      const [routePlanRes, requestedRoutes] = await Promise.all([
+        axios.get(`${backend_url}/admin/route-plan/get`, {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+          params: {
+            search,
+            startDate,
+            endDate,
+            status,
+            approved,
+            itinerary: JSON.stringify(dropdownValue),
+          },
+        }),
+        getRequestedRoutes(),
+      ]);
+
+      const approvedRoutePlans = routePlanRes.data.data || [];
+
+      const formattedRequestedRoutes = (requestedRoutes || []).map((item) => ({
+        ...item,
+        approved: false,
+        source: "requested", // 👈 add this to identify it's a requested route
+        status: item.status,
+        // approved: false,
+        // status: "requested", // Custom status to differentiate
+      }));
+
+      setRoutePlan([...approvedRoutePlans, ...formattedRequestedRoutes]);
+    } catch (err) {
+      console.log("Error in getRoutePlan", err);
+      setRoutePlan([]);
+    } finally {
+      setIsRouteLoading(false);
+    }
+  };
 
   const getItinerary = async () => {
     try {
@@ -282,46 +284,45 @@ function RoutesPlan() {
   //     console.log(err);
   //   }
   // };
-  
-  
+
   const handleRejectRequestedRoute = async (requestId) => {
-   try {
-     await axios.post(
-       `${backend_url}/reject-requested-route/${requestId}`,
-       { status: "rejected" },
-       {
-         headers: {
-           Authorization: localStorage.getItem("authToken"),
-         },
-       }
-     );
-     alert("Route Rejected Successfully");
-     getRoutePlan(); // Refresh the list
-   } catch (err) {
-     console.error("Error rejecting requested route:", err);
-     alert("Failed to reject the requested route");
-   }
- };
- 
+    try {
+      await axios.post(
+        `${backend_url}/reject-requested-route/${requestId}`,
+        { status: "rejected" },
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      setSuccessMsg("Route Rejected Successfully");
+      getRoutePlan(); // Refresh the list
+    } catch (err) {
+      console.error("Error rejecting requested route:", err);
+      setSuccessMsg("Failed to reject the requested route");
+    }
+  };
+
   const handleApproveRequestedRoute = async (requestId) => {
-   try {
-     const res = await axios.post(
-       `${backend_url}/requested-route/approve/${requestId}`,
-       {},
-       {
-         headers: {
-           Authorization: localStorage.getItem("authToken"),
-         },
-       }
-     );
-     alert("Route Approved Successfully");
-     getRoutePlan(); // refresh list
-   } catch (err) {
-     console.error("Error approving requested route:", err);
-     alert("Failed to approve the requested route");
-   }
- };
- 
+    try {
+      const res = await axios.post(
+        `${backend_url}/requested-route/approve/${requestId}`,
+        {},
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      setSuccessMsg("Route Approved Successfully");
+      getRoutePlan(); // refresh list
+    } catch (err) {
+      console.error("Error approving requested route:", err);
+      setSuccessMsg("Failed to approve the requested route");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="RoutePlan-page">
@@ -337,11 +338,9 @@ function RoutesPlan() {
 
   const handleRouteClick = (route) => {
     navigate(
-      `/marketCoverage?search=${encodeURIComponent(
-        route.EmpName
-      )}&startDate=${route.startDate}&endDate=${route.endDate}&route=${
-        route.id
-      }`
+      `/marketCoverage?search=${encodeURIComponent(route.EmpName)}&startDate=${
+        route.startDate
+      }&endDate=${route.endDate}&route=${route.id}`
     );
   };
 
@@ -378,43 +377,42 @@ function RoutesPlan() {
           <div className="route-itinerary">
             <h4 className="route-itinerary-header">Itinerary</h4>
             {route.itinerary?.district?.length > 0 && (
-                <div className="route-itinerary-content">
-                  <strong>District:</strong> {route.itinerary.district.join(", ")}
-                </div>
+              <div className="route-itinerary-content">
+                <strong>District:</strong> {route.itinerary.district.join(", ")}
+              </div>
             )}
             {route.itinerary?.zone?.length > 0 && (
-                <div className="route-itinerary-content">
-                  <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
-                </div>
+              <div className="route-itinerary-content">
+                <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
+              </div>
             )}
             {route.itinerary?.taluka?.length > 0 && (
-                <div className="route-itinerary-content">
-                  <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
-                </div>
+              <div className="route-itinerary-content">
+                <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
+              </div>
             )}
             {route.itinerary?.town?.length > 0 && (
-                <div className="route-itinerary-content">
-                  <strong>Town:</strong> {route.itinerary.town.join(", ")}
-                </div>
+              <div className="route-itinerary-content">
+                <strong>Town:</strong> {route.itinerary.town.join(", ")}
+              </div>
             )}
           </div>
           {route.source !== "requested" && (
-  <div className="status-count">
-    <div className="status-item">
-      <strong>Total:</strong>
-      <span className="badge total">{route.total}</span>
-    </div>
-    <div className="status-item">
-      <strong>Done:</strong>
-      <span className="badge done">{route.done}</span>
-    </div>
-    <div className="status-item">
-      <strong>Pending:</strong>
-      <span className="badge pending">{route.pending}</span>
-    </div>
-  </div>
-)}
-
+            <div className="status-count">
+              <div className="status-item">
+                <strong>Total:</strong>
+                <span className="badge total">{route.total}</span>
+              </div>
+              <div className="status-item">
+                <strong>Done:</strong>
+                <span className="badge done">{route.done}</span>
+              </div>
+              <div className="status-item">
+                <strong>Pending:</strong>
+                <span className="badge pending">{route.pending}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {/* <div className="route-card-actions">
@@ -487,29 +485,44 @@ function RoutesPlan() {
     )}
   </div>
 )} */}
-{route.status === "requested" && (
-  <div className="route-card-actions">
-    <button
-      className="action-btn approve"
-      onClick={() => handleApproveRequestedRoute(route.id)}
-    >
-      Approve
-    </button>
-    <button
-      className="action-btn reject"
-      onClick={() => handleRejectRequestedRoute(route.id)}
-    >
-      Reject
-    </button>
-  </div>
-)}
-
+      {route.status === "requested" && (
+        <div className="route-card-actions">
+          <button
+            className="action-btn approve"
+            onClick={() => handleApproveRequestedRoute(route.id)}
+          >
+            Approve
+          </button>
+          <button
+            className="action-btn reject"
+            onClick={() => handleRejectRequestedRoute(route.id)}
+          >
+            Reject
+          </button>
+        </div>
+      )}
     </div>
   );
 
   return (
     <div className="RoutePlan-page">
       <div className="routePlan-header">Route Plans</div>
+      {successMsg && (
+        <div
+          style={{
+            background: "#d4edda",
+            color: "#155724",
+            padding: "10px 15px",
+            borderRadius: "5px",
+            margin: "10px 0",
+            border: "1px solid #c3e6cb",
+            fontWeight: "500",
+          }}
+        >
+          {successMsg}
+        </div>
+      )}
+
       <div className="routePlan-container">
         <div className="content">
           <div className="routePlan-first-line">
@@ -556,19 +569,18 @@ function RoutesPlan() {
                   <option value="inactive">Inactive</option>
                 </select> */}
                 <select
-  id="status"
-  value={status}
-  onChange={(e) => {
-    setStatus(e.target.value);
-    getRoutePlan(e.target.value); // fetch with selected status
-  }}
->
-  <option value="">All</option>
-  <option value="requested">Requested</option>
-  <option value="approved">Approved</option>
-  <option value="rejected">Rejected</option>
-</select>
-
+                  id="status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    getRoutePlan(e.target.value); // fetch with selected status
+                  }}
+                >
+                  <option value="">All</option>
+                  <option value="requested">Requested</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
               </div>
               <div className="routePlan-status-filter">
                 <label htmlFor="approved">Approved </label>
@@ -712,7 +724,7 @@ function RoutesPlan() {
             {routePlan.map((route) => renderRouteCard(route))}
           </div>
         ) : (
-          <NoCardsFound icon={<FiMap size={60}/>} text={"No Routes Found"} />
+          <NoCardsFound icon={<FiMap size={60} />} text={"No Routes Found"} />
         )}
       </div>
     </div>
