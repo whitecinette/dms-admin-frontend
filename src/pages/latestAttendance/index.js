@@ -1266,7 +1266,9 @@ export default function LatestAttendance() {
                             </select>
                           </td>
                         ) : (
-                          <td><span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span></td>
+                          <td>
+                           {/* <span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span> */}
+                           </td>
                         )}
                         <td>{record.hoursWorked || "N/A"}</td>
                         <td className="expand-btn">
@@ -1492,7 +1494,7 @@ export default function LatestAttendance() {
                     ) : attendance.length > 0 ? (
                   attendance.map((record, index) => (
                     <React.Fragment key={record._id || index}>
-                      <tr>
+                    <tr className={`${record.status?.toLowerCase().replace(/\s/g, "-")}-row`}>
                         <td>{(currentPage - 1) * limit + index + 1}</td>
                         <td>{record.code}</td>
                         <td>{record.name}</td>
@@ -1602,7 +1604,9 @@ export default function LatestAttendance() {
                             </select>
                           </td>
                         ) : (
-                            <td><span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span></td>
+                            <td>
+                             {/* <span className={"status-badge " + record.status.toLowerCase() + "-badge"}>{record.status}</span> */}
+                             </td>
                         )}
                         <td>{record.hoursWorked || "N/A"}</td>
                         <td className="expand-btn">

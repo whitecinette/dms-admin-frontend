@@ -322,32 +322,44 @@
 
                         background-color: #f8f8f8;
 
-                        &:nth-child(even) {
-                            background-color: white;
-                        }
+                        &.present-row {
+                         background-color: rgba(197, 238, 197, 0.7); // light green
+                       }
+                    
+                       &.absent-row {
+                         background-color: rgba(249, 199, 199, 0.9); // light gray
+                       }
+                    
+                       &.leave-row {
+                         background-color: rgba(248, 215, 182, 0.9); // light yellow
+                       }
+                    
+                       &.half-day-row {
+                         background-color: rgba(255, 235, 200, 0.9); // light orange
+                       }
 
-                        .status-badge {
-                            padding: 2px 8px;
-                            border-radius: 10px;
-                            font-size: 12px;
-                            font-weight: 500;
-                        }
-                        .present-badge {
-                            background-color: rgba(76, 175, 80, 0.8);
-                            color: white;
-                        }
-                        .absent-badge {
-                            background-color: rgba(244, 67, 54, 0.8);
-                            color: white;
-                        }
-                        .leave-badge {
-                            background-color: rgba(255, 193, 7, 0.8);
-                            color: white;
-                        }
-                        .half-day-badge {
-                            background-color: rgba(0, 115, 255, 0.8);
-                            color: white;
-                        }
+                        // .status-badge {
+                        //     padding: 2px 8px;
+                        //     border-radius: 10px;
+                        //     font-size: 12px;
+                        //     font-weight: 500;
+                        // }
+                        // .present-badge {
+                        //     background-color: rgba(76, 175, 80, 0.8);
+                        //     color: white;
+                        // }
+                        // .absent-badge {
+                        //     background-color: rgba(244, 67, 54, 0.8);
+                        //     color: white;
+                        // }
+                        // .leave-badge {
+                        //     background-color: rgba(255, 193, 7, 0.8);
+                        //     color: white;
+                        // }
+                        // .half-day-badge {
+                        //     background-color: rgba(0, 115, 255, 0.8);
+                        //     color: white;
+                        // }
 
                         td {
                             padding: 10px;
