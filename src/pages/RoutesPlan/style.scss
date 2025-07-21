@@ -1,6 +1,5 @@
 .RoutePlan-page {
 
-
   .routePlan-header {
     font-size: 24px;
     font-weight: 600;
@@ -410,6 +409,7 @@
       }
 
       &-content {
+       min-height: 160px; // added 
         margin-bottom: 16px;
         padding-bottom: 16px;
         border-bottom: 1px solid #e0e0e0;
@@ -473,6 +473,7 @@
       }
 
       &-actions {
+       margin-top: auto; // added;
         display: flex;
         gap: 10px;
 
@@ -509,10 +510,89 @@
               background-color: #d32f2f;
             }
           }
+          &.delete {
+           background-color: #ffcc80; /* light orange */
+           color: #5d4037; /* dark brown */
+          width: 100%;
+         }
+         
+        &.hover {
+           background-color: #ffb74d; /* slightly darker orange */
+         }
+         
         }
       }
     }
 
   }
-  
+  .modal-overlay {
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background: rgba(0, 0, 0, 0.6);
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   z-index: 999;
+
+   .modal {
+     background: #fff;
+     padding: 20px 30px;
+     border-radius: 10px;
+     max-width: 400px;
+     width: 90%;
+     text-align: center;
+     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+     h3 {
+       font-size: 20px;
+       font-weight: 600;
+       margin-bottom: 10px;
+       color: #2c3e50;
+     }
+
+     p {
+       font-size: 14px;
+       color: #555;
+       margin-bottom: 20px;
+     }
+
+     .modal-buttons {
+       display: flex;
+       justify-content: space-around;
+       gap: 10px;
+
+       .confirm-btn {
+         background-color: #e53935;
+         color: white;
+         padding: 8px 16px;
+         border: none;
+         border-radius: 6px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+
+         &:hover {
+           background-color: #c62828;
+         }
+       }
+
+       .cancel-btn {
+         background-color: #9e9e9e;
+         color: white;
+         padding: 8px 16px;
+         border: none;
+         border-radius: 6px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+
+         &:hover {
+           background-color: #757575;
+         }
+       }
+     }
+   }
+ }
+
 }

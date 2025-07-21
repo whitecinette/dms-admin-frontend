@@ -52,6 +52,9 @@ function RoutesPlan() {
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isRouteLoading, setIsRouteLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [routeToDelete, setRouteToDelete] = useState(null);
+
 
   const NAVBAR_WIDTH = document.querySelector(".sidebar")?.offsetWidth || 0;
 
@@ -353,7 +356,7 @@ function RoutesPlan() {
       }&endDate=${route.endDate}&route=${route.id}`
     );
   };
-
+ 
   const renderRouteCard = (route) => (
     <div key={route.id} className="route-card">
       <div
@@ -511,9 +514,25 @@ function RoutesPlan() {
           </button>
         </div>
       )}
+   {route.status?.toLowerCase() === "approved" && (
+  <div className="route-card-actions">
+    <button
+      className="action-btn delete"
+      onClick={() => {
+        console.log("Clicked Delete Button");
+        setRouteToDelete(route.id);
+        setShowDeleteModal(true);
+      }}
+    >
+      Delete Route Plan
+    </button>
+  </div>
+)}
+
+
     </div>
   );
-
+ 
   return (
     <div className="RoutePlan-page">
       <div className="routePlan-header">Route Plans</div>
@@ -739,6 +758,54 @@ function RoutesPlan() {
           <NoCardsFound icon={<FiMap size={60} />} text={"No Routes Found"} />
         )}
       </div>
+      {showDeleteModal && (
+   <div className="modal-overlay">
+     <div className="modal">
+       <h3>Are you sure?</h3>
+       <p>This will delete the approved route and its beat mapping data.</p>
+       <div className="modal-buttons">
+         <button
+           className="confirm-btn"
+           onClick={async () => {
+             try {
+               const res = await axios.delete(
+                 `${backend_url}/route-plan/delete/${routeToDelete}`,
+                 {
+                   headers: {
+                     Authorization: localStorage.getItem("authToken"),
+                   },
+                 }
+               );
+               setSuccessMsg("✅ Route and beat mapping deleted.");
+               setMessageType("success");
+               getRoutePlan(); // Refresh
+             } catch (err) {
+               console.error("❌ Error:", err);
+               setSuccessMsg(
+                 `❌ Failed: ${err.response?.data?.message || "Server error"}`
+               );
+               setMessageType("error");
+             } finally {
+               setShowDeleteModal(false);
+               setRouteToDelete(null);
+             }
+           }}
+         >
+           Yes, Delete
+         </button>
+         <button
+           className="cancel-btn"
+           onClick={() => {
+             setShowDeleteModal(false);
+             setRouteToDelete(null);
+           }}
+         >
+           Cancel
+         </button>
+       </div>
+     </div>
+   </div>
+ )}
     </div>
   );
 }
