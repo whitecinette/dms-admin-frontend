@@ -15,6 +15,7 @@ function RoutesPlan() {
   const location = useLocation();
   const navigate = useNavigate();
   const [successMsg, setSuccessMsg] = useState("");
+  const [messageType, setMessageType] = useState(""); // ✅ new
   // Parse query parameters from the URL
   const queryParams = new URLSearchParams(location.search);
   const initialSearch = queryParams.get("search") || "";
@@ -297,11 +298,13 @@ function RoutesPlan() {
         }
       );
       setSuccessMsg("Route Rejected Successfully");
+       setMessageType("success"); 
       getRoutePlan(); // Refresh the list
     } catch (err) {
       console.error("Error rejecting requested route:", err);
       setSuccessMsg("Failed to reject the requested route");
     }
+    setMessageType("error"); // ✅ red
   };
 
   const handleApproveRequestedRoute = async (requestId) => {
@@ -316,10 +319,17 @@ function RoutesPlan() {
         }
       );
       setSuccessMsg("Route Approved Successfully");
+      setMessageType("success"); 
       getRoutePlan(); // refresh list
     } catch (err) {
       console.error("Error approving requested route:", err);
-      setSuccessMsg("Failed to approve the requested route");
+      const backendMsg = err.response?.data?.message;
+      if (backendMsg?.includes("already exists")) {
+        setSuccessMsg(`❌ Approval failed: ${backendMsg}`);
+      } else {
+        setSuccessMsg("❌ Failed to approve the requested route");
+      }
+      setMessageType("error"); // ✅ red
     }
   };
 
@@ -508,20 +518,22 @@ function RoutesPlan() {
     <div className="RoutePlan-page">
       <div className="routePlan-header">Route Plans</div>
       {successMsg && (
-        <div
-          style={{
-            background: "#d4edda",
-            color: "#155724",
-            padding: "10px 15px",
-            borderRadius: "5px",
-            margin: "10px 0",
-            border: "1px solid #c3e6cb",
-            fontWeight: "500",
-          }}
-        >
-          {successMsg}
-        </div>
-      )}
+  <div
+    style={{
+      background: messageType === "success" ? "#d4edda" : "#f8d7da",
+      color: messageType === "success" ? "#155724" : "#721c24",
+      padding: "10px 15px",
+      borderRadius: "5px",
+      margin: "10px 0",
+      border: `1px solid ${
+        messageType === "success" ? "#c3e6cb" : "#f5c6cb"
+      }`,
+      fontWeight: "500",
+    }}
+  >
+    {successMsg}
+  </div>
+)}
 
       <div className="routePlan-container">
         <div className="content">
