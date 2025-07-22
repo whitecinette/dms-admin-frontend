@@ -8,6 +8,115 @@ import { AiOutlineLoading } from "react-icons/ai";
 import { FiMap } from "react-icons/fi";
 import LoadingCards from "../../components/LoadingCards";
 import NoCardsFound from "../../components/NoCardsFound";
+import TextToggle from "../../components/toggle";
+import { MdDelete } from "react-icons/md";
+import { FaLocationDot } from "react-icons/fa6";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const GraphComponent = ({ done = 0, pending = 0, total = 0 }) => {
+  // Ensure values are numbers and non-negative
+  const doneValue = Number(done) || 0;
+  const pendingValue = Number(pending) || 0;
+  const totalValue = Number(total) || 0;
+
+  // Calculate max for y-axis dynamically (add padding for better visuals)
+  const maxScale = Math.max(doneValue, pendingValue, totalValue) * 1.2 || 10;
+
+  const data = {
+    labels: ["", ""], // Empty labels to remove default titles
+    datasets: [
+      {
+        data: [doneValue, pendingValue],
+        backgroundColor: ["#90ee90", "#ffcccc"],
+        borderColor: ["#90ee90", "#ffcccc"],
+        borderWidth: 1,
+        barPercentage: 0.6, // Adjust bar width to match image
+        categoryPercentage: 0.8,
+      },
+    ],
+  };
+
+  const options = {
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: "#000",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        borderColor: "#374151",
+        borderWidth: 1,
+        cornerRadius: 6,
+        zIndex: 10000,
+        callbacks: {
+          title: () => null, // Remove the title/header
+          label: function (context) {
+            const label = context.dataIndex === 0 ? "Done" : "Pending";
+            return `${label}: ${context.parsed.y}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        border: {
+          display: false,
+        },
+        ticks: {
+          display: false, // Hide x-axis labels
+        },
+      },
+      y: {
+        beginAtZero: true,
+        max: maxScale,
+        grid: {
+          display: false,
+        },
+        border: {
+          display: false,
+        },
+        ticks: {
+          display: false, // Hide y-axis ticks
+        },
+      },
+    },
+    
+    maintainAspectRatio: false,
+    responsive: true,
+  };
+
+  return (
+    <div style={{ height: "80px", width: "100px", position: "relative"}}>
+      <div style={{ display: "flex", alignItems: "center", marginRight: "20px", width: "100px", height: "60px" }}>
+        <Bar data={data} options={options} />
+      </div>
+      <div style={{ color: "#666", fontSize: "12px" }}>Total: {totalValue}</div>
+    </div>
+  );
+};
 
 const backend_url = config.backend_url;
 
@@ -50,11 +159,11 @@ function RoutesPlan() {
   const dropdownRefs = useRef({});
   const dropdownContainerRef = useRef(null);
   const [dropdownStyles, setDropdownStyles] = useState({ top: 0, left: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRouteLoading, setIsRouteLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-const [routeToDelete, setRouteToDelete] = useState(null);
-
+  const [routeToDelete, setRouteToDelete] = useState(null);
+  const [view, setView] = useState("requestedRoute");
 
   const NAVBAR_WIDTH = document.querySelector(".sidebar")?.offsetWidth || 0;
 
@@ -129,6 +238,8 @@ const [routeToDelete, setRouteToDelete] = useState(null);
   };
   const getRequestedRoutes = async () => {
     try {
+      console.log("req route");
+      setIsRouteLoading(true);
       const res = await axios.get(
         `${backend_url}/get-requested-route-for-admin`,
         {
@@ -136,16 +247,21 @@ const [routeToDelete, setRouteToDelete] = useState(null);
             Authorization: localStorage.getItem("authToken"),
           },
           params: {
+            search,
             startDate,
             endDate,
             status, // can be "requested", "approved", "rejected"
+            approved,
+            itinerary: JSON.stringify(dropdownValue),
           },
         }
       );
-      return res.data.data || [];
+      console.log(res);
+      setRoutePlan(res.data.data);
     } catch (err) {
       console.log("Error fetching requested routes", err);
-      return [];
+    } finally {
+      setIsRouteLoading(false);
     }
   };
   // const getRoutePlan = async () => {
@@ -181,8 +297,9 @@ const [routeToDelete, setRouteToDelete] = useState(null);
     setIsRouteLoading(true);
 
     try {
-      const [routePlanRes, requestedRoutes] = await Promise.all([
-        axios.get(`${backend_url}/admin/route-plan/get`, {
+      const routePlanRes = await axios.get(
+        `${backend_url}/admin/route-plan/get`,
+        {
           headers: {
             Authorization: localStorage.getItem("authToken"),
           },
@@ -190,26 +307,23 @@ const [routeToDelete, setRouteToDelete] = useState(null);
             search,
             startDate,
             endDate,
-            status,
             approved,
             itinerary: JSON.stringify(dropdownValue),
           },
-        }),
-        getRequestedRoutes(),
-      ]);
+        }
+      );
+      setRoutePlan(routePlanRes.data.data);
 
-      const approvedRoutePlans = routePlanRes.data.data || [];
+      // getRequestedRoutes(),
 
-      const formattedRequestedRoutes = (requestedRoutes || []).map((item) => ({
-        ...item,
-        approved: false,
-        source: "requested", // 👈 add this to identify it's a requested route
-        status: item.status,
-        // approved: false,
-        // status: "requested", // Custom status to differentiate
-      }));
-
-      setRoutePlan([...approvedRoutePlans, ...formattedRequestedRoutes]);
+      // const formattedRequestedRoutes = (requestedRoutes || []).map((item) => ({
+      //   ...item,
+      //   approved: false,
+      //   source: "requested", // 👈 add this to identify it's a requested route
+      //   status: item.status,
+      //   // approved: false,
+      //   // status: "requested", // Custom status to differentiate
+      // }));
     } catch (err) {
       console.log("Error in getRoutePlan", err);
       setRoutePlan([]);
@@ -220,6 +334,7 @@ const [routeToDelete, setRouteToDelete] = useState(null);
 
   const getItinerary = async () => {
     try {
+      // setIsLoading(true);
       const res = await axios.get(
         `${backend_url}/user/market-coverage/dropdown`,
         {
@@ -238,8 +353,12 @@ const [routeToDelete, setRouteToDelete] = useState(null);
   };
 
   useEffect(() => {
-    getRoutePlan();
-  }, [startDate, endDate, status, approved, search]);
+    if (view === "requestedRoute") {
+      getRequestedRoutes();
+    } else {
+      getRoutePlan();
+    }
+  }, [view, startDate, endDate, status, approved, search]);
 
   useEffect(() => {
     getItinerary();
@@ -301,7 +420,7 @@ const [routeToDelete, setRouteToDelete] = useState(null);
         }
       );
       setSuccessMsg("Route Rejected Successfully");
-       setMessageType("success"); 
+      setMessageType("success");
       getRoutePlan(); // Refresh the list
     } catch (err) {
       console.error("Error rejecting requested route:", err);
@@ -322,7 +441,7 @@ const [routeToDelete, setRouteToDelete] = useState(null);
         }
       );
       setSuccessMsg("Route Approved Successfully");
-      setMessageType("success"); 
+      setMessageType("success");
       getRoutePlan(); // refresh list
     } catch (err) {
       console.error("Error approving requested route:", err);
@@ -339,7 +458,17 @@ const [routeToDelete, setRouteToDelete] = useState(null);
   if (isLoading) {
     return (
       <div className="RoutePlan-page">
-        <div className="routePlan-header">Route Plans</div>
+        <div className="routePlan-header">
+          <div className="toggle">
+            <TextToggle
+              textFirst="requestedRoute"
+              textSecond="routePlan"
+              setText={setView}
+              selectedText={view}
+              classStyle={{ minWidth: "300px" }}
+            />
+          </div>
+        </div>
         <div className="routePlan-container">
           <div className="spinner-container">
             <AiOutlineLoading className="spinner" size={40} />
@@ -356,203 +485,283 @@ const [routeToDelete, setRouteToDelete] = useState(null);
       }&endDate=${route.endDate}&route=${route.id}`
     );
   };
- 
-  const renderRouteCard = (route) => (
-    <div key={route.id} className="route-card">
-      <div
-        className="route-card-clickable"
-        onClick={() => handleRouteClick(route)}
-      >
+
+  const renderRouteCard = (route) => {
+    return (
+      <div key={route.id} className="route-card">
         <div className="route-card-header">
-          <div className="header-left">
-            <h3>
-              {route.EmpName} ({route.position})
-            </h3>
-            <div className="header-code-status">
-              <span className="route-code">{route.code}</span>
-              {/* {route.approved && (
-                <span className="approved-header">Approved</span>
-              )} */}
+          <div className="route-card-emp">
+            <div className="route-card-emp-name">{route.EmpName}</div>
+            <div className="route-card-emp-post gray">
+              {route.code} | {route.position.toUpperCase()}
             </div>
           </div>
-          <span className={`status ${route.status}`}>{route.status}</span>
+
+          {view === "requestedRoute" ? (
+            <div className={`badge ${route.status}`}>
+              <span>{route.status.toUpperCase()}</span>
+            </div>
+          ) : (
+            <button
+              className="badge delete"
+              onClick={() => {
+                setRouteToDelete(route.id);
+                setShowDeleteModal(true);
+              }}
+            >
+              {" "}
+              <MdDelete style={{ color: "white" }} />{" "}
+            </button>
+          )}
         </div>
         <div className="route-card-content">
-          <div className="route-info">
-            <p>
-              <strong>Route Name:</strong> {route.name}
-            </p>
-            <p>
-              <strong>Date:</strong> {formatDate(route.startDate)} -{" "}
+          <div className="route-card-content-icon">
+            <FaLocationDot />
+          </div>
+          <div className="route-card-content-detail">
+            <div className="route-card-content-date gray">
               {formatDate(route.endDate)}
-            </p>
+            </div>
+            <div className="route-card-content-name">{route.name}</div>
+            <div className="route-card-content-town gray">
+              {route.itinerary?.town?.length > 0 &&
+                route.itinerary.town.join(", ")}
+            </div>
           </div>
-          <div className="route-itinerary">
-            <h4 className="route-itinerary-header">Itinerary</h4>
-            {route.itinerary?.district?.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>District:</strong> {route.itinerary.district.join(", ")}
-              </div>
-            )}
-            {route.itinerary?.zone?.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
-              </div>
-            )}
-            {route.itinerary?.taluka?.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
-              </div>
-            )}
-            {route.itinerary?.town?.length > 0 && (
-              <div className="route-itinerary-content">
-                <strong>Town:</strong> {route.itinerary.town.join(", ")}
-              </div>
-            )}
-          </div>
-          {route.source !== "requested" && (
-            <div className="status-count">
-              <div className="status-item">
-                <strong>Total:</strong>
-                <span className="badge total">{route.total}</span>
-              </div>
-              <div className="status-item">
-                <strong>Done:</strong>
-                <span className="badge done">{route.done}</span>
-              </div>
-              <div className="status-item">
-                <strong>Pending:</strong>
-                <span className="badge pending">{route.pending}</span>
-              </div>
+          {view === "requestedRoute" ? (
+            <div className="route-card-action">
+              <button
+                className="action-btn reject"
+                onClick={() => handleRejectRequestedRoute(route.id)}
+              >
+                Reject
+              </button>
+              <button
+                className="action-btn approve"
+                onClick={() => handleApproveRequestedRoute(route.id)}
+              >
+                Approve
+              </button>
+            </div>
+          ) : (
+            <div className="route-card-content-graph">
+            <GraphComponent
+              done={route.done}
+              pending={route.pending}
+              total={route.total}
+            />
             </div>
           )}
         </div>
       </div>
-      {/* <div className="route-card-actions">
-        {route.approved ? (
-          route.status === "active" ? (
-            <button
-              className="action-btn reject"
-              onClick={() => handleApproval(route.id, true, "inactive")}
-            >
-              Change to Inactive
-            </button>
-          ) : (
-            <button
-              className="action-btn approve"
-              onClick={() => handleApproval(route.id, true)}
-            >
-              Change to Active
-            </button>
-          )
-        ) : (
-          <>
-            <button
-              className="action-btn approve"
-              onClick={() => handleApproval(route.id, true)}
-            >
-              Approve
-            </button>
-            <button
-              className="action-btn reject"
-              onClick={() => handleApproval(route.id, false, "inactive")}
-            >
-              Reject
-            </button>
-          </>
-        )}
-      </div> */}
-      {/* {route.status === "requested" && (
-  <div className="route-card-actions">
-    {route.approved ? (
-      route.status === "active" ? (
-        <button
-          className="action-btn reject"
-          onClick={() => handleApproval(route.id, true, "inactive")}
-        >
-          Change to Inactive
-        </button>
-      ) : (
-        <button
-          className="action-btn approve"
-          onClick={() => handleApproval(route.id, true)}
-        >
-          Change to Active
-        </button>
-      )
-    ) : (
-      <>
-        <button
-          className="action-btn approve"
-          onClick={() => handleApproveRequestedRoute(route.id, true)}
-        >
-          Approve
-        </button>
-        <button
-          className="action-btn reject"
-          onClick={() => handleApproval(route.id, false, "inactive")}
-        >
-          Reject
-        </button>
-      </>
-    )}
-  </div>
-)} */}
-      {route.status === "requested" && (
-        <div className="route-card-actions">
-          <button
-            className="action-btn approve"
-            onClick={() => handleApproveRequestedRoute(route.id)}
-          >
-            Approve
-          </button>
-          <button
-            className="action-btn reject"
-            onClick={() => handleRejectRequestedRoute(route.id)}
-          >
-            Reject
-          </button>
-        </div>
-      )}
-   {route.status?.toLowerCase() === "approved" && (
-  <div className="route-card-actions">
-    <button
-      className="action-btn delete"
-      onClick={() => {
-        console.log("Clicked Delete Button");
-        setRouteToDelete(route.id);
-        setShowDeleteModal(true);
-      }}
-    >
-      Delete Route Plan
-    </button>
-  </div>
-)}
+    );
+  };
 
+  //   const renderRouteCard = (route) => (
+  //     <div key={route.id} className="route-card">
+  //       <div
+  //         className="route-card-clickable"
+  //         onClick={() => handleRouteClick(route)}
+  //       >
+  //         <div className="route-card-header">
+  //           <div className="header-left">
+  //             <h3>
+  //               {route.EmpName} ({route.position})
+  //             </h3>
+  //             <div className="header-code-status">
+  //               <span className="route-code">{route.code}</span>
+  //               {/* {route.approved && (
+  //                 <span className="approved-header">Approved</span>
+  //               )} */}
+  //             </div>
+  //           </div>
+  //           <span className={`status ${route.status}`}>{route.status}</span>
+  //         </div>
+  //         <div className="route-card-content">
+  //           <div className="route-info">
+  //             <p>
+  //               <strong>Route Name:</strong> {route.name}
+  //             </p>
+  //             <p>
+  //               <strong>Date:</strong> {formatDate(route.startDate)} -{" "}
+  //               {formatDate(route.endDate)}
+  //             </p>
+  //           </div>
+  //           <div className="route-itinerary">
+  //             <h4 className="route-itinerary-header">Itinerary</h4>
+  //             {route.itinerary?.district?.length > 0 && (
+  //               <div className="route-itinerary-content">
+  //                 <strong>District:</strong> {route.itinerary.district.join(", ")}
+  //               </div>
+  //             )}
+  //             {route.itinerary?.zone?.length > 0 && (
+  //               <div className="route-itinerary-content">
+  //                 <strong>Zone:</strong> {route.itinerary.zone.join(", ")}
+  //               </div>
+  //             )}
+  //             {route.itinerary?.taluka?.length > 0 && (
+  //               <div className="route-itinerary-content">
+  //                 <strong>Taluka:</strong> {route.itinerary.taluka.join(", ")}
+  //               </div>
+  //             )}
+  //             {route.itinerary?.town?.length > 0 && (
+  //               <div className="route-itinerary-content">
+  //                 <strong>Town:</strong> {route.itinerary.town.join(", ")}
+  //               </div>
+  //             )}
+  //           </div>
+  //           {view === "routePlan" && (
+  //             <div className="status-count">
+  //               <div className="status-item">
+  //                 <strong>Total:</strong>
+  //                 <span className="badge total">{route.total}</span>
+  //               </div>
+  //               <div className="status-item">
+  //                 <strong>Done:</strong>
+  //                 <span className="badge done">{route.done}</span>
+  //               </div>
+  //               <div className="status-item">
+  //                 <strong>Pending:</strong>
+  //                 <span className="badge pending">{route.pending}</span>
+  //               </div>
+  //             </div>
+  //           )}
+  //         </div>
+  //       </div>
+  //       {/* <div className="route-card-actions">
+  //         {route.approved ? (
+  //           route.status === "active" ? (
+  //             <button
+  //               className="action-btn reject"
+  //               onClick={() => handleApproval(route.id, true, "inactive")}
+  //             >
+  //               Change to Inactive
+  //             </button>
+  //           ) : (
+  //             <button
+  //               className="action-btn approve"
+  //               onClick={() => handleApproval(route.id, true)}
+  //             >
+  //               Change to Active
+  //             </button>
+  //           )
+  //         ) : (
+  //           <>
+  //             <button
+  //               className="action-btn approve"
+  //               onClick={() => handleApproval(route.id, true)}
+  //             >
+  //               Approve
+  //             </button>
+  //             <button
+  //               className="action-btn reject"
+  //               onClick={() => handleApproval(route.id, false, "inactive")}
+  //             >
+  //               Reject
+  //             </button>
+  //           </>
+  //         )}
+  //       </div> */}
+  //       {/* {route.status === "requested" && (
+  //   <div className="route-card-actions">
+  //     {route.approved ? (
+  //       route.status === "active" ? (
+  //         <button
+  //           className="action-btn reject"
+  //           onClick={() => handleApproval(route.id, true, "inactive")}
+  //         >
+  //           Change to Inactive
+  //         </button>
+  //       ) : (
+  //         <button
+  //           className="action-btn approve"
+  //           onClick={() => handleApproval(route.id, true)}
+  //         >
+  //           Change to Active
+  //         </button>
+  //       )
+  //     ) : (
+  //       <>
+  //         <button
+  //           className="action-btn approve"
+  //           onClick={() => handleApproveRequestedRoute(route.id, true)}
+  //         >
+  //           Approve
+  //         </button>
+  //         <button
+  //           className="action-btn reject"
+  //           onClick={() => handleApproval(route.id, false, "inactive")}
+  //         >
+  //           Reject
+  //         </button>
+  //       </>
+  //     )}
+  //   </div>
+  // )} */}
+  //       {route.status === "requested" && (
+  //         <div className="route-card-actions">
+  //           <button
+  //             className="action-btn approve"
+  //             onClick={() => handleApproveRequestedRoute(route.id)}
+  //           >
+  //             Approve
+  //           </button>
+  //           <button
+  //             className="action-btn reject"
+  //             onClick={() => handleRejectRequestedRoute(route.id)}
+  //           >
+  //             Reject
+  //           </button>
+  //         </div>
+  //       )}
+  //       {route.status?.toLowerCase() === "approved" && (
+  //         <div className="route-card-actions">
+  //           <button
+  //             className="action-btn delete"
+  //             onClick={() => {
+  //               console.log("Clicked Delete Button");
+  //               setRouteToDelete(route.id);
+  //               setShowDeleteModal(true);
+  //             }}
+  //           >
+  //             Delete Route Plan
+  //           </button>
+  //         </div>
+  //       )}
+  //     </div>
+  //   );
 
-    </div>
-  );
- 
   return (
     <div className="RoutePlan-page">
-      <div className="routePlan-header">Route Plans</div>
+      <div className="routePlan-header">
+        <div className="toggle">
+          <TextToggle
+            textFirst="requestedRoute"
+            textSecond="routePlan"
+            setText={setView}
+            selectedText={view}
+            classStyle={{ minWidth: "300px" }}
+          />
+        </div>
+      </div>
+
       {successMsg && (
-  <div
-    style={{
-      background: messageType === "success" ? "#d4edda" : "#f8d7da",
-      color: messageType === "success" ? "#155724" : "#721c24",
-      padding: "10px 15px",
-      borderRadius: "5px",
-      margin: "10px 0",
-      border: `1px solid ${
-        messageType === "success" ? "#c3e6cb" : "#f5c6cb"
-      }`,
-      fontWeight: "500",
-    }}
-  >
-    {successMsg}
-  </div>
-)}
+        <div
+          style={{
+            background: messageType === "success" ? "#d4edda" : "#f8d7da",
+            color: messageType === "success" ? "#155724" : "#721c24",
+            padding: "10px 15px",
+            borderRadius: "5px",
+            margin: "10px 0",
+            border: `1px solid ${
+              messageType === "success" ? "#c3e6cb" : "#f5c6cb"
+            }`,
+            fontWeight: "500",
+          }}
+        >
+          {successMsg}
+        </div>
+      )}
 
       <div className="routePlan-container">
         <div className="content">
@@ -588,43 +797,47 @@ const [routeToDelete, setRouteToDelete] = useState(null);
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              <div className="routePlan-status-filter">
-                <label htmlFor="status">Status </label>
-                {/* <select
-                  id="status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="">All</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select> */}
-                <select
-                  id="status"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    getRoutePlan(e.target.value); // fetch with selected status
-                  }}
-                >
-                  <option value="">All</option>
-                  <option value="requested">Requested</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              <div className="routePlan-status-filter">
-                <label htmlFor="approved">Approved </label>
-                <select
-                  id="approved"
-                  value={approved}
-                  onChange={(e) => setApproved(e.target.value)}
-                >
-                  <option value="">All</option>
-                  <option value="true">True</option>
-                  <option value="false">False</option>
-                </select>
-              </div>
+              {view === "requestedRoute" && (
+                <>
+                  <div className="routePlan-status-filter">
+                    <label htmlFor="status">Status </label>
+                    {/* <select
+                      id="status"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <option value="">All</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select> */}
+                    <select
+                      id="status"
+                      value={status}
+                      onChange={(e) => {
+                        setStatus(e.target.value);
+                        getRoutePlan(e.target.value); // fetch with selected status
+                      }}
+                    >
+                      <option value="">All</option>
+                      <option value="requested">Requested</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div className="routePlan-status-filter">
+                    <label htmlFor="approved">Approved </label>
+                    <select
+                      id="approved"
+                      value={approved}
+                      onChange={(e) => setApproved(e.target.value)}
+                    >
+                      <option value="">All</option>
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
+                  </div>
+                </>
+              )}
               <div className="routePlan-reset-filter">
                 <button className="reset-btn" onClick={handleReset}>
                   Reset Filters
@@ -759,53 +972,54 @@ const [routeToDelete, setRouteToDelete] = useState(null);
         )}
       </div>
       {showDeleteModal && (
-   <div className="modal-overlay">
-     <div className="modal">
-       <h3>Are you sure?</h3>
-       <p>This will delete the approved route and its beat mapping data.</p>
-       <div className="modal-buttons">
-         <button
-           className="confirm-btn"
-           onClick={async () => {
-             try {
-               const res = await axios.delete(
-                 `${backend_url}/route-plan/delete/${routeToDelete}`,
-                 {
-                   headers: {
-                     Authorization: localStorage.getItem("authToken"),
-                   },
-                 }
-               );
-               setSuccessMsg("✅ Route and beat mapping deleted.");
-               setMessageType("success");
-               getRoutePlan(); // Refresh
-             } catch (err) {
-               console.error("❌ Error:", err);
-               setSuccessMsg(
-                 `❌ Failed: ${err.response?.data?.message || "Server error"}`
-               );
-               setMessageType("error");
-             } finally {
-               setShowDeleteModal(false);
-               setRouteToDelete(null);
-             }
-           }}
-         >
-           Yes, Delete
-         </button>
-         <button
-           className="cancel-btn"
-           onClick={() => {
-             setShowDeleteModal(false);
-             setRouteToDelete(null);
-           }}
-         >
-           Cancel
-         </button>
-       </div>
-     </div>
-   </div>
- )}
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Are you sure?</h3>
+            <p>
+              This will delete the approved route and its beat mapping data.
+            </p>
+            <div className="modal-buttons">
+              <button
+                className="confirm-btn"
+                onClick={async () => {
+                  try {
+                    const res = await axios.delete(
+                      `${backend_url}/route-plan/delete/${routeToDelete}`,
+                      {
+                        headers: {
+                          Authorization: localStorage.getItem("authToken"),
+                        },
+                      }
+                    );
+                    setSuccessMsg("✅ Route and beat mapping deleted.");
+                    setMessageType("success");
+                    getRoutePlan(); // Refresh
+                  } catch (err) {
+                    console.error("❌ Error:", err);
+                    const error = err.response?.data?.message || "Server error";
+                    setSuccessMsg("❌ Failed: ", error);
+                    setMessageType("error");
+                  } finally {
+                    setShowDeleteModal(false);
+                    setRouteToDelete(null);
+                  }
+                }}
+              >
+                Yes, Delete
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setRouteToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

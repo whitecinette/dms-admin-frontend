@@ -1,10 +1,10 @@
 .RoutePlan-page {
 
   .routePlan-header {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 24px;
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: end;
 
   }
 
@@ -284,315 +284,295 @@
         }
       }
     }
+
     .route-cards-container {
       display: grid;
       grid-template-columns: repeat(1, 1fr);
+
       @media (min-width: 768px) {
         grid-template-columns: repeat(2, 1fr);
       }
+
       @media (min-width: 1024px) {
         grid-template-columns: repeat(3, 1fr);
 
       }
+
       gap: 10px;
     }
 
-    .route-card {
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 16px;
-      margin: 16px 0;
-      background-color: #fff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
-      width: 100%;
-      box-sizing: border-box;
-      transition: transform 0.2s;
 
-      &:hover {
-        transform: translateY(-2px);
+  }
+
+  .route-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .route-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .route-card-emp {
+        .route-card-emp-name {
+          font-size: 18px;
+          font-weight: 600;
+        }
+
+        .route-card-emp-post {
+          font-size: 12px;
+          color: #666;
+        }
       }
 
-      &-clickable {
-        cursor: pointer;
+      .badge {
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 500;
+
+        &.requested {
+          background: #ffe7cc;
+          color: #d97706;
+        }
+
+        &.approve {
+          background: #86eed1;
+          color: #047857;
+        }
+
+        &.reject {
+          background: #e68787;
+          color: #dc2626;
+        }
+        &.delete {
+          background: #dc2626;
+          // color: ;
+          border: none;
+        }
+      }
+    }
+
+    .route-card-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 20rem;
+      gap: 10px;
+
+      .route-card-content-icon {
+        color: #ef4444;
+        font-size: 18px;
       }
 
-      &-header {
+      .route-card-content-detail {
+        flex-grow: 1;
+
+        .route-card-content-date {
+          font-size: 12px;
+          color: #666;
+        }
+
+        .route-card-content-name {
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .route-card-content-town {
+          font-size: 12px;
+          color: #666;
+        }
+      }
+      .route-card-content-graph{
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e0e0e0;
-
-        .header-left {
-          display: flex;
-          flex-direction: column;
-
-          h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-          }
-
-          .header-code-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 4px;
-
-            .route-code {
-              font-size: 14px;
-              color: #757575;
-            }
-
-            .approved-header {
-              font-size: 12px;
-              color: #388e3c;
-              background-color: #e8f5e9;
-              padding: 2px 8px;
-              border-radius: 9999px;
-              font-weight: 500;
-            }
-          }
-        }
-
-        // .status {
-        //   font-size: 12px;
-        //   padding: 4px 10px;
-        //   border-radius: 9999px;
-        //   text-transform: capitalize;
-        //   font-weight: 500;
-
-        //   &.active {
-        //     background-color: #e3f2fd;
-        //     color: #1e88e5;
-        //   }
-
-        //   &.inactive {
-        //     background-color: #ffebee;
-        //     color: #e53935;
-        //   }
-        // }
-        .status {
-         font-size: 12px;
-         padding: 4px 10px;
-         border-radius: 9999px;
-         text-transform: capitalize;
-         font-weight: 500;
-       
-         &.active {
-           background-color: #e3f2fd;
-           color: #1e88e5;
-         }
-       
-         &.inactive {
-           background-color: #ffebee;
-           color: #e53935;
-         }
-       
-         &.approved {
-           background-color: #e6f4ea;
-           color: #2e7d32; // green
-         }
-       
-         &.rejected {
-           background-color: #b2afaf;
-           color: #616161; // grey
-         }
-       
-         &.requested {
-           background-color: #fff8e1;
-           color: #ee9d1a; // yellow
-         }
-       }
-       
+        justify-content: end;
       }
 
-      &-content {
-       min-height: 160px; // added 
-        margin-bottom: 16px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e0e0e0;
-
-
-        .route-info {
-          p {
-            margin: 4px 0;
-            font-size: 14px;
-          }
-        }
-
-        .route-itinerary {
-          margin-top: 12px;
-
-          &-header {
-            font-size: 16px;
-            margin-bottom: 8px;
-            font-weight: 600;
-          }
-
-          &-content {
-            font-size: 14px;
-            margin-bottom: 4px;
-          }
-        }
-
-        .status-count {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          margin-top: 12px;
-
-          .status-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-
-            .badge {
-              padding: 4px 10px;
-              border-radius: 9999px;
-              font-size: 12px;
-              font-weight: 500;
-              color: #fff;
-
-              &.total {
-                background-color: #1976d2;
-              }
-
-              &.done {
-                background-color: #4caf50;
-              }
-
-              &.pending {
-                background-color: #ff9800;
-              }
-            }
-          }
-        }
-      }
-
-      &-actions {
-       margin-top: auto; // added;
+      .route-card-action {
         display: flex;
         gap: 10px;
 
         .action-btn {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
+          padding: 5px 15px;
+          border-radius: 5px;
+          font-size: 12px;
           font-weight: 500;
-          transition: background-color 0.3s ease, transform 0.2s ease;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+          cursor: pointer;
 
-          &:hover {
-            transform: translateY(-1px);
+          &.reject {
+            background: #fecaca;
+            color: #dc2626;
+            border: none;
           }
 
           &.approve {
-            width: 100%;
-            background-color: #4caf50;
-            color: #fff;
-
-            &:hover {
-              background-color: #388e3c;
-            }
+            background: #d1fae5;
+            color: #047857;
+            border: none;
           }
-
-          &.reject {
-            width: 100%;
-            background-color: #f44336;
-            color: #fff;
-
-            &:hover {
-              background-color: #d32f2f;
-            }
-          }
-          &.delete {
-           background-color: #ffcc80; /* light orange */
-           color: #5d4037; /* dark brown */
-          width: 100%;
-         }
-         
-        &.hover {
-           background-color: #ffb74d; /* slightly darker orange */
-         }
-         
         }
       }
     }
 
+
+    &.activeRoute {
+      .route-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .route-card-emp {
+          .route-card-emp-name {
+            font-size: 18px;
+            font-weight: 600;
+          }
+
+          .route-card-emp-post {
+            font-size: 12px;
+            color: #666;
+          }
+        }
+
+        .badge {
+          padding: 5px 15px;
+          border-radius: 15px;
+          font-size: 12px;
+          font-weight: 500;
+          background: #e0f2fe;
+          color: #0369a1;
+        }
+      }
+
+      .route-card-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .route-card-content-icon {
+          color: #ef4444;
+          font-size: 18px;
+        }
+
+        .route-card-content-detail {
+          flex-grow: 1;
+
+          .route-card-content-date {
+            font-size: 12px;
+            color: #666;
+          }
+
+          .route-card-content-name {
+            font-size: 14px;
+            font-weight: 500;
+          }
+
+          .route-card-content-town {
+            font-size: 12px;
+            color: #666;
+          }
+        }
+
+        .graph-container {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+
+          .graph-bar {
+            &.done {
+              background: #d1fae5;
+              height: 20px;
+              width: 100px;
+            }
+
+            &.pending {
+              background: #fee2e2;
+              height: 20px;
+              width: 50px;
+            }
+
+            &.total {
+              font-size: 12px;
+              color: #666;
+            }
+          }
+        }
+      }
+    }
   }
+
   .modal-overlay {
-   position: fixed;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-   background: rgba(0, 0, 0, 0.6);
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   z-index: 999;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
 
-   .modal {
-     background: #fff;
-     padding: 20px 30px;
-     border-radius: 10px;
-     max-width: 400px;
-     width: 90%;
-     text-align: center;
-     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    .modal {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 
-     h3 {
-       font-size: 20px;
-       font-weight: 600;
-       margin-bottom: 10px;
-       color: #2c3e50;
-     }
+      h3 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #2c3e50;
+      }
 
-     p {
-       font-size: 14px;
-       color: #555;
-       margin-bottom: 20px;
-     }
+      p {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 20px;
+      }
 
-     .modal-buttons {
-       display: flex;
-       justify-content: space-around;
-       gap: 10px;
+      .modal-buttons {
+        display: flex;
+        justify-content: space-around;
+        gap: 10px;
 
-       .confirm-btn {
-         background-color: #e53935;
-         color: white;
-         padding: 8px 16px;
-         border: none;
-         border-radius: 6px;
-         cursor: pointer;
-         transition: background-color 0.3s ease;
+        .confirm-btn {
+          background-color: #e53935;
+          color: white;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
 
-         &:hover {
-           background-color: #c62828;
-         }
-       }
+          &:hover {
+            background-color: #c62828;
+          }
+        }
 
-       .cancel-btn {
-         background-color: #9e9e9e;
-         color: white;
-         padding: 8px 16px;
-         border: none;
-         border-radius: 6px;
-         cursor: pointer;
-         transition: background-color 0.3s ease;
+        .cancel-btn {
+          background-color: #9e9e9e;
+          color: white;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
 
-         &:hover {
-           background-color: #757575;
-         }
-       }
-     }
-   }
- }
+          &:hover {
+            background-color: #757575;
+          }
+        }
+      }
+    }
+  }
 
 }
