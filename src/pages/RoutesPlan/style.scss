@@ -341,17 +341,17 @@
           color: #d97706;
         }
 
-        &.approve {
+        &.approved {
           background: #86eed1;
           color: #047857;
         }
 
-        &.reject {
+        &.rejected {
           background: #e68787;
           color: #dc2626;
         }
         &.delete {
-          background: #dc2626;
+          color: #dc2626;
           // color: ;
           border: none;
         }
