@@ -510,7 +510,7 @@ function RoutesPlan() {
               }}
             >
               {" "}
-              <MdDelete style={{ color: "white" }} />{" "}
+              <MdDelete/>{" "}
             </button>
           )}
         </div>

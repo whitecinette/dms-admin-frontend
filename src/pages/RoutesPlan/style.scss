@@ -352,8 +352,9 @@
         }
         &.delete {
           color: #dc2626;
-          // color: ;
+          background: transparent;
           border: none;
+          font-size: x-large;
         }
       }
     }
