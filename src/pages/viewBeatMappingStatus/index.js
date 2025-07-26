@@ -19,6 +19,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import EmployeeSchedule from "./employeeSchedule";
 import * as XLSX from "xlsx";
 import TableLoading from "../../components/tableLoading";
+import ReactECharts from "echarts-for-react";
 
 const backendUrl = config.backend_url;
 
@@ -255,7 +256,7 @@ const ViewBeatMappingStatus = () => {
                 />
             )}
             <div className="viewBeatMappingStatus-page-header">
-                View Beat Mapping Status
+                Market Coverage
             </div>
 
             {data.length > 0 && (
@@ -267,7 +268,7 @@ const ViewBeatMappingStatus = () => {
                                 : "Select date range"}
                         </h2>
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
+                    {/* <ResponsiveContainer width="100%" height={300}>
                         <BarChart width={600} height={300} data={stackedData}>
                             <CartesianGrid strokeDasharray="3 3"/>
                             <XAxis
@@ -288,7 +289,78 @@ const ViewBeatMappingStatus = () => {
                                 name={"Pending"}
                             />
                         </BarChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer> */}
+
+                    <ReactECharts
+                        style={{ height: "400px", width: "100%" }}
+                        option={{
+                            tooltip: {
+                            trigger: "axis",
+                            axisPointer: { type: "shadow" }
+                            },
+                            legend: {
+                            data: ["Done", "Pending"]
+                            },
+                            xAxis: {
+                            type: "category",
+                            data: stackedData.map(d => d.name.split(" ")[0]),
+                            axisLabel: {
+                                rotate: 45,
+                                fontSize: 12
+                            }
+                            },
+                            yAxis: {
+                            type: "value",
+                            max: 100,
+                            axisLabel: {
+                                formatter: "{value}%"
+                            }
+                            },
+                            series: [
+                            {
+                                name: "Done",
+                                type: "bar",
+                                stack: "total",
+                                emphasis: { focus: "series" },
+                                itemStyle: { color: {
+                                        type: 'linear',
+                                        x: 0,
+                                        y: 0,
+                                        x2: 0,
+                                        y2: 1,
+                                        colorStops: [
+                                            { offset: 0, color: '#0fefa4ff' }, // top
+                                            { offset: 1, color: '#26b07c' }  // bottom
+                                        ]
+                                        }
+                                 },
+                                data: stackedData.map(d => parseFloat(d.done))
+                            },
+                            {
+                                name: "Pending",
+                                type: "bar",
+                                stack: "total",
+                                emphasis: { focus: "series" },
+                                itemStyle: { 
+                                    color: {
+                                        type: 'linear',
+                                        x: 0,
+                                        y: 0,
+                                        x2: 0,
+                                        y2: 1,
+                                        colorStops: [
+                                            { offset: 0, color: '#ffd67e' }, // top
+                                            { offset: 1, color: '#fb8c52' }  // bottom
+                                        ]
+                                        }
+
+                                 },
+                                data: stackedData.map(d => parseFloat(d.pending))
+                            }
+                            ]
+                        }}
+                        />
+
                 </div>
             )}
 
