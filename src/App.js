@@ -37,6 +37,7 @@ import LeaveApplication from "./pages/LeaveApplication";
 import TravelExpenses from "./pages/TravelExpenses";
 import Earth from "./pages/earth/main-page";
 import Payroll from "./pages/payroll";
+import AttendanceMatrix from "./pages/payrollCombined/attendanceMatrix";
 
 
 function App() {
@@ -101,6 +102,7 @@ function App() {
             <Route path="/travelExpenses" element={<TravelExpenses />} />
             <Route path="/earth" element={<Earth />} />
             <Route path="/payroll" element={<Payroll />} />
+            <Route path="/attendance-matrix" element={<AttendanceMatrix />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}
