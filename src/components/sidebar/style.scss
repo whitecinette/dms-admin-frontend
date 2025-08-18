@@ -1,7 +1,7 @@
 .sidebar {
   width: 18rem;
   background-color: #fff;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08);
   transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -9,8 +9,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  overflow-x: auto;
-  height: 100vh;
+  overflow-x: hidden;
   z-index: 1000;
 
   &::-webkit-scrollbar {
@@ -20,7 +19,10 @@
   &.collapsed {
     width: 4rem;
 
-    .sidebar-title {
+    .sidebar-title,
+    .nav-label,
+    .child-label,
+    .dropdown-arrow {
       display: none;
     }
 
@@ -29,11 +31,12 @@
     }
   }
 
+  /* ----- Header ----- */
   .sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px;
+    padding: 16px;
 
     .sidebar-brand {
       display: flex;
@@ -44,7 +47,7 @@
     }
 
     .sidebar-logo {
-      width: 12rem;
+      width: 10rem;
       margin-right: 10px;
     }
 
@@ -61,28 +64,37 @@
       font-size: 1.5rem;
       color: rgba(249, 64, 8, 0.62);
       display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      padding: 6px;
+
+      &:hover {
+        background: rgba(249, 64, 8, 0.08);
+      }
     }
   }
 
+  /* ----- Navigation ----- */
   .sidebar-nav {
     display: flex;
     flex-direction: column;
-    padding: 10px;
-    //   gap: 20px;
-    // position: relative;
-
+    padding: 8px;
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 5px;
-      // color: rgba(249, 64, 8, 0.62);
+      gap: 12px;
+      padding: 10px 12px;
       text-decoration: none;
       border-radius: 10px;
-      transition: background .3s;
-      width: 100%;
+      transition: background 0.25s ease, color 0.25s ease;
+      color: #444;
+      font-size: 14px;
 
+      svg {
+        flex-shrink: 0;
+      }
 
       &:hover {
         background-color: #f5f5f5;
@@ -90,56 +102,71 @@
 
       &.active {
         background-color: #e3eefa;
+        color: #1d4ed8; // professional blue tint
+        font-weight: 500;
       }
     }
 
     .dropdown-toggle {
       display: flex;
-      padding: 0 !important;
-      justify-content: space-between;
-    }
-
-    .dropdown-menu {
-      padding: 0px 5px;
-      // padding-left: 20px;
-      // background: #2a2a40;
-    }
-
-    .child-item {
-      border-radius: 0px;
-      margin-left: .5rem;
-      border-left: 2px solid rgba(249, 64, 8, 0.62);
-      ;
-      display: flex;
       align-items: center;
-      // padding: 8px;
-      // color: white;
-      text-decoration: none;
+      padding: 0 !important;
 
-      &::before {
-        content: '';
-        display: block;
-        width: 2px;
-        height: 0;
-        border-top: 5px solid transparent;
-        border-bottom: 5px solid transparent;
-        border-left: 5px solid rgba(249, 64, 8, 0.62);
-        // margin-left: -.6rem;
+      .dropdown-arrow {
+        margin-left: auto;
+        transition: transform 0.3s ease;
       }
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.1);
+      &.open {
+        .dropdown-arrow {
+          transform: rotate(180deg);
+        }
       }
     }
 
-    .dropdown-arrow {
-      margin-left: auto;
-      transition: transform .5s;
+    /* ----- Sub Menu ----- */
+    .dropdown-menu {
+      margin: 6px 0 6px 1rem;
+      padding-left: 12px;
+      border-left: 2px dashed rgba(249, 64, 8, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .child-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 13px;
+        color: #555;
+        transition: background 0.2s ease;
+
+        .subitem-icon {
+          width: 18px;
+          display: inline-flex;
+          justify-content: center;
+          align-items: center;
+          opacity: 0.9;
+        }
+
+        &:hover {
+          background: #f9f9f9;
+        }
+
+        &.active {
+          background: rgba(249, 64, 8, 0.08);
+          color: rgba(249, 64, 8, 1);
+          font-weight: 500;
+        }
+      }
     }
   }
 }
 
-// Responsive styles
+/* Responsive styles */
 @media (max-width: 1024px) {
   .sidebar {
     &.collapsed {
@@ -155,7 +182,6 @@
 
       .sidebar-nav {
         display: none;
-        width: 0;
       }
     }
   }
