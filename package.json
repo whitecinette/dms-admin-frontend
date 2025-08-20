@@ -34,7 +34,7 @@
     "react-scripts": "5.0.1",
     "react-select": "^5.10.0",
     "react-slick": "^0.30.3",
-    "recharts": "^2.15.1",
+    "recharts": "^2.15.4",
     "sass": "^1.85.1",
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.8.1",
@@ -65,5 +65,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12"
   }
 }

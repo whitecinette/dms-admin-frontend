@@ -38,6 +38,7 @@ import TravelExpenses from "./pages/TravelExpenses";
 import Earth from "./pages/earth/main-page";
 import Payroll from "./pages/payroll";
 import AttendanceMatrix from "./pages/payrollCombined/attendanceMatrix";
+import AttendanceGeoDashboard from "./pages/attendanceGeoDashboard";
 
 
 function App() {
@@ -103,6 +104,7 @@ function App() {
             <Route path="/earth" element={<Earth />} />
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/attendance-matrix" element={<AttendanceMatrix />} />
+            <Route path="/attendance-geo-dashboard" element={<AttendanceGeoDashboard />} />
           </Route>
 
           {/* 404 Route for unrecognized paths */}

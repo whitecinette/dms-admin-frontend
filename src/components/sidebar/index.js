@@ -110,7 +110,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       onClick: () => open(),
       children: [
         { name: "Attendance", to: "/attendance" },
-        { name: "Attendance Matrixx", to: "/attendance-matrix" },
+        { name: "Attendance Matrix", to: "/attendance-matrix" },
         { name: "Leave Application", to: "/leaveApplication" },
         { name: "Travel Expenses", to: "/travelExpenses" },
         { name: "Payroll", to: "/payroll" },
@@ -118,6 +118,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Market Coverage", to: "/marketCoverage" },
         { name: "Employee Management", to: "/salesDate" },
         { name: "Voucher", to: "/salesDate" },
+        { name: "Attendance Geo Dashboard", to: "/attendance-geo-dashboard" },
       ],
     },
     {
