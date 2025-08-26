@@ -1,0 +1,171 @@
+.usm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1100;
+}
+
+.usm-modal {
+  width: min(1100px, 96vw);
+  height: min(92vh, 920px);
+  background: #fff;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.usm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef0f3;
+
+  h3 { margin: 0; font-size: 18px; }
+
+  .usm-close {
+    border: none; background: transparent; font-size: 24px;
+    line-height: 1; cursor: pointer; padding: 2px 6px;
+  }
+}
+
+.usm-toolbar {
+  padding: 10px 16px;
+  border-bottom: 1px solid #eef0f3;
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+
+  input {
+    height: 40px; padding: 8px 12px;
+    border: 1px solid #e5e7eb; border-radius: 8px; outline: none;
+    &:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+  }
+
+  .usm-actions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    button {
+      height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #f8fafc;
+      cursor: pointer; font-weight: 600;
+      &:hover { background: #eef2ff; border-color: #c7d2fe; }
+    }
+  }
+}
+
+.usm-error { color: #b00020; padding: 8px 16px; }
+
+.usm-list {
+  flex: 1 1 auto; min-height: 0;
+  overflow: auto;
+  padding: 12px 16px;
+  display: grid; gap: 10px;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 1100px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 8px; }
+  &::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+}
+
+.usm-card {
+  border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 12px; background: #fff; cursor: pointer;
+
+  &.selected { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); background: #eef2ff; }
+}
+
+.usm-card-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+
+  .usm-title { font-size: 14px;
+    .code { color: #6b7280; margin-left: 4px; }
+  }
+
+  .pill {
+    font-size: 12px; background: #f2f4ff; color: #3a45a3;
+    padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+  }
+}
+
+.usm-fields {
+  display: grid; gap: 6px; font-size: 13px;
+  .row { display: grid; grid-template-columns: 160px 1fr; gap: 10px; }
+  .k { color: #6b7280; font-weight: 600; text-transform: lowercase; }
+  .v { color: #111827; word-break: break-word; }
+}
+
+.usm-empty { opacity: 0.7; padding: 10px 0; text-align: center; }
+
+.usm-footer {
+  border-top: 1px solid #eef0f3;
+  padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+
+  .count { font-weight: 600; }
+
+  .buttons {
+    display: flex; gap: 10px;
+
+    .ghost {
+      background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb;
+      padding: 10px 16px; border-radius: 8px; cursor: pointer;
+      &:hover { background: #eef2f7; }
+    }
+
+    .primary {
+      background: #10b981; color: #fff; border: none;
+      padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 700;
+      &:hover { opacity: .95; }
+    }
+  }
+}
+
+/* Shimmer */
+.shimmer { position: relative; overflow: hidden; background: #f6f7f8; }
+.shimmer::after {
+  content: ""; position: absolute; top: 0; left: -150px; bottom: 0; width: 150px;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+  animation: shimmer 1.15s infinite;
+}
+.shimmer-line { height: 12px; border-radius: 6px; background: #eee; margin: 8px 0; }
+.shimmer-line.title { width: 42%; height: 16px; }
+.shimmer-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+
+@keyframes shimmer { 0%{transform:translateX(0)} 100%{transform:translateX(300%)} }
+
+
+/* head-right cluster: position + role + expand button */
+.usm-card-head .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill.subtle {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.expander {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-weight: 600;
+  &:hover { background: #eef2ff; border-color: #c7d2fe; }
+}
+
+/* small line for email */
+.usm-meta {
+  margin: 2px 0 6px;
+  font-size: 13px;
+  color: #374151;
+  span { color: #111827; word-break: break-word; }
+}
+
+/* collapsible details */
+.usm-extra { display: none; margin-top: 8px; }
+.usm-extra.open { display: block; }
+

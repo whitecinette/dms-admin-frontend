@@ -1,0 +1,208 @@
+.type-group-config-page {
+    padding: 2rem;
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .type-group-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .type-group-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        width: 300px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        position: relative;
+
+        .type-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .firm, .flow, .users {
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .other {
+            margin-top: 1rem;
+            background: #f9f9f9;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .edit-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #777;
+        }
+    }
+
+    .primary-btn {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .modal-content {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            min-width: 400px;
+        }
+    }
+
+    .modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 960px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+input, select {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.search-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  input {
+    flex-grow: 1;
+  }
+
+  button {
+    padding: 8px 12px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: #4f46e5;
+    }
+  }
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  background: #f9f9f9;
+
+  &.selected {
+    background: #eef2ff;
+    border: 2px solid #6366f1;
+  }
+
+  .user-fields {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #555;
+
+    div {
+      margin-bottom: 0.25rem;
+    }
+  }
+}
+
+.config-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+
+  input {
+    flex: 1;
+  }
+
+  button {
+    background: #ef4444;
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: #dc2626;
+    }
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  .primary-button {
+    background: #10b981;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+
+    &:hover {
+      background: #059669;
+    }
+  }
+
+  .secondary-button {
+    background: transparent;
+    border: 1px solid #ccc;
+    color: #333;
+    padding: 10px 16px;
+    border-radius: 6px;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+}
+
+}

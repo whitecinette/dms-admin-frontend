@@ -114,6 +114,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Leave Application", to: "/leaveApplication" },
         { name: "Travel Expenses", to: "/travelExpenses" },
         { name: "Payroll", to: "/payroll" },
+        { name: "Groups", to: "/groups" },
         { name: "Route Plans", to: "/routePlan" },
         { name: "Market Coverage", to: "/marketCoverage" },
         { name: "Employee Management", to: "/salesDate" },

@@ -39,6 +39,7 @@ import Earth from "./pages/earth/main-page";
 import Payroll from "./pages/payroll";
 import AttendanceMatrix from "./pages/payrollCombined/attendanceMatrix";
 import AttendanceGeoDashboard from "./pages/attendanceGeoDashboard";
+import TypeGroupConfig from "./pages/groups";
 
 
 function App() {
@@ -105,6 +106,9 @@ function App() {
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/attendance-matrix" element={<AttendanceMatrix />} />
             <Route path="/attendance-geo-dashboard" element={<AttendanceGeoDashboard />} />
+            
+            <Route path="/groups" element={<TypeGroupConfig />} />
+            
           </Route>
 
           {/* 404 Route for unrecognized paths */}

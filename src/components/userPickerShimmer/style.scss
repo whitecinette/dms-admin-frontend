@@ -1,0 +1,133 @@
+.user-picker .search-container {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.user-picker .search-container input {
+  flex: 1;
+  height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #e3e3e7;
+  border-radius: 8px;
+  outline: none;
+}
+
+.user-picker .search-container button {
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: #5b6bff;
+  color: white;
+  cursor: pointer;
+}
+
+.user-picker .fetch-error {
+  margin: 6px 0 10px;
+  color: #b00020;
+  font-size: 0.92rem;
+}
+
+.user-list {
+  max-height: 320px; /* modal-friendly */
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+}
+
+/* Card */
+.user-card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.user-card.selected {
+  outline: 2px solid #5b6bff;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.user-header .pill {
+  font-size: 12px;
+  background: #f2f4ff;
+  color: #3a45a3;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.user-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px;
+}
+
+.field-key {
+  color: #666;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.field-value {
+  color: #222;
+  word-break: break-word;
+}
+
+/* Shimmer */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #f6f7f8;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -150px; bottom: 0;
+  width: 150px;
+  background: linear-gradient(
+    to right,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.6) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  animation: shimmer 1.2s infinite;
+}
+
+.shimmer-line {
+  height: 12px;
+  border-radius: 6px;
+  background: #eee;
+  margin: 8px 0;
+}
+
+.shimmer-line.title {
+  width: 40%;
+  height: 16px;
+}
+
+.shimmer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(300%); }
+}
