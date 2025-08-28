@@ -1,0 +1,159 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 6px;
+    font-size: 0.9rem;
+  }
+
+  .search-icon {
+    margin-right: 6px;
+    color: #666;
+  }
+
+  button {
+    border: none;
+    background: #1976d2;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-left: 8px;
+
+    &:hover {
+      background: #1565c0;
+    }
+  }
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444;
+    padding: 10px;
+    border-bottom: 2px solid #eee;
+  }
+
+  td {
+    padding: 10px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f3f3f3;
+  }
+
+  tr:hover {
+    background-color: #fafafa;
+  }
+
+  .emp-name {
+    font-weight: 500;
+    color: #222;
+  }
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &.status-active {
+    background: #e6f7e6;
+    color: #0f9d58;
+  }
+  &.status-inactive {
+    background: #ffeaea;
+    color: #d93025;
+  }
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #555;
+
+  &:hover {
+    color: #1976d2;
+  }
+}
+
+.loading-text {
+  color: #888;
+}
+
+.error-text {
+  color: #d93025;
+  font-weight: 500;
+}
+
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  gap: 10px;
+
+  button {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #eee;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  span {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+

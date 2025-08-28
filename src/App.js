@@ -41,6 +41,7 @@ import AttendanceMatrix from "./pages/payrollCombined/attendanceMatrix";
 import AttendanceGeoDashboard from "./pages/attendanceGeoDashboard";
 import TypeGroupConfig from "./pages/groups";
 import FirmsPage from "./pages/firms";
+import MetadataPage from "./pages/metadata";
 
 
 function App() {
@@ -110,6 +111,7 @@ function App() {
             
             <Route path="/groups" element={<TypeGroupConfig />} />
             <Route path="/firms" element={<FirmsPage />} />
+            <Route path="/metadata" element={<MetadataPage />} />
 
             
           </Route>
