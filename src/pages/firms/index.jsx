@@ -4,12 +4,14 @@ import config from "../../config";
 import AddFirmModal from "../../components/firmComponents/addFirmModal";
 import { TbBuildingSkyscraper, TbPlus } from "react-icons/tb";
 import './style.scss';
+import FirmMetadataModal from "../../components/firms/firmMetadataModal";
 
 const FirmsPage = () => {
   const [firms, setFirms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [metadataModal, setMetadataModal] = useState({ open: false, firmCode: null });
 
   const fetchFirms = async () => {
     const backendUrl = config?.backend_url;
@@ -61,6 +63,7 @@ const FirmsPage = () => {
               <th>Organization</th>
               <th>Status</th>
               <th>Created</th>
+              <th>Metadata</th>
             </tr>
           </thead>
           <tbody>
@@ -81,12 +84,22 @@ const FirmsPage = () => {
                   </span>
                 </td>
                 <td>{new Date(firm.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      className="metadata-button"
+                      onClick={() => setMetadataModal({ open: true, firmCode: firm.code })}
+                    >
+                      View Metadata
+                    </button>
+                  </td>
+
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {/* Add Firm Modal */}
       {modalOpen && (
         <AddFirmModal
           closeModal={() => setModalOpen(false)}
@@ -94,6 +107,14 @@ const FirmsPage = () => {
             setModalOpen(false);
             fetchFirms();
           }}
+        />
+      )}
+
+      {/* Firm Metadata Modal */}
+      {metadataModal.open && (
+        <FirmMetadataModal
+          firmCode={metadataModal.firmCode}
+          closeModal={() => setMetadataModal({ open: false, firmCode: null })}
         />
       )}
     </div>
