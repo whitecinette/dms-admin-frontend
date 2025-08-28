@@ -3,6 +3,7 @@ import axios from "axios";
 import config from "../../../config";
 import "./style.scss";
 import UserSelectModal from "../userSelectModal";
+import BulkUploadModal from "../bulkUploadModal";
 
 const AddTypeGroupModal = ({ closeModal, onSave }) => {
   const [typeName, setTypeName] = useState("");
@@ -12,6 +13,7 @@ const AddTypeGroupModal = ({ closeModal, onSave }) => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [otherConfig, setOtherConfig] = useState([{ key: "", value: "" }]);
   const [userModalOpen, setUserModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   // ✅ Dummy data (fallback)
   const firms = [
@@ -50,6 +52,18 @@ const AddTypeGroupModal = ({ closeModal, onSave }) => {
 
   // debounce search
   const debounceRef = useRef(null);
+
+  const downloadTemplate = () => {
+  const header = "type_name,firm_code,flow_name,user_code,extra_field_1\n";
+  const blob = new Blob([header], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "type_group_template.csv");
+  link.click();
+};
+
 
   const fetchUsers = async (q) => {
     const backendUrl = config?.backend_url;
@@ -230,7 +244,6 @@ const AddTypeGroupModal = ({ closeModal, onSave }) => {
             {fetchError}
           </div>
         )}
-            // inside your JSX, replace the old inline user list with:
         <div>
             <label>Users</label>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -277,6 +290,20 @@ const AddTypeGroupModal = ({ closeModal, onSave }) => {
             Save
           </button>
         </div>
+
+         <div style={{ display: "flex", gap: 10 }}>
+        <button className="secondary-button" onClick={downloadTemplate}>
+          Download CSV Template
+        </button>
+        <button className="primary-button" onClick={() => setBulkModalOpen(true)}>
+          Bulk Upload CSV
+        </button>
+      </div>
+
+      <BulkUploadModal
+        isOpen={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+      />
 
           <UserSelectModal
                 isOpen={userModalOpen}

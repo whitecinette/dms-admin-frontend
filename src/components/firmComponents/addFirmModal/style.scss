@@ -1,0 +1,132 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.25s ease;
+  display: flex;
+  flex-direction: column;
+
+  h2 {
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #222;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 12px 0 6px;
+    display: block;
+    color: #444;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+
+    &:focus {
+      border-color: #0077ff;
+    }
+
+    &::placeholder {
+      color: #999;
+    }
+  }
+
+  h3 {
+    margin-top: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+  }
+
+  .nested-row {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+
+    input {
+      flex: 1;
+    }
+  }
+
+  button {
+    margin-top: 10px;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+
+  .primary-button {
+    background: #0077ff;
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #005fcc;
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .secondary-button {
+    background: #f3f3f3;
+    color: #333;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #e5e5e5;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

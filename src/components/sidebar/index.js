@@ -22,6 +22,11 @@ import { RiTimeLine, RiPinDistanceFill } from "react-icons/ri";
 import logo from "../../assets/images/company-logo.png";
 import "./style.scss";
 import { FcGlobe } from "react-icons/fc";
+import { FaUserCheck, FaCalendarAlt, FaPlane, FaMoneyCheckAlt } from "react-icons/fa";
+import { MdGroups, MdOutlineRoute, MdManageAccounts } from "react-icons/md";
+import { TbMapPinCheck } from "react-icons/tb";
+import { RiFilePaper2Line } from "react-icons/ri";
+import { TbBuildingSkyscraper } from "react-icons/tb";
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -109,17 +114,19 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       ),
       onClick: () => open(),
       children: [
-        { name: "Attendance", to: "/attendance" },
-        { name: "Attendance Matrix", to: "/attendance-matrix" },
-        { name: "Leave Application", to: "/leaveApplication" },
-        { name: "Travel Expenses", to: "/travelExpenses" },
-        { name: "Payroll", to: "/payroll" },
-        { name: "Groups", to: "/groups" },
-        { name: "Route Plans", to: "/routePlan" },
-        { name: "Market Coverage", to: "/marketCoverage" },
-        { name: "Employee Management", to: "/salesDate" },
-        { name: "Voucher", to: "/salesDate" },
-        { name: "Attendance Geo Dashboard", to: "/attendance-geo-dashboard" },
+    { name: "Attendance", to: "/attendance", icon: <FaUserCheck /> },
+    { name: "Attendance Matrix", to: "/attendance-matrix", icon: <FaCalendarAlt /> },
+    { name: "Leave Application", to: "/leaveApplication", icon: <RiFilePaper2Line /> },
+    { name: "Travel Expenses", to: "/travelExpenses", icon: <FaPlane /> },
+    { name: "Payroll", to: "/payroll", icon: <FaMoneyCheckAlt /> },
+    { name: "Route Plans", to: "/routePlan", icon: <MdOutlineRoute /> },
+    { name: "Market Coverage", to: "/marketCoverage", icon: <TbTargetArrow /> },
+    { name: "Employee Management", to: "/salesDate", icon: <MdManageAccounts /> },
+    { name: "Voucher", to: "/salesDate", icon: <FaFileAlt /> },
+    { name: "Attendance Geo Dashboard", to: "/attendance-geo-dashboard", icon: <TbMapPinCheck /> },
+    { name: "Groups", to: "/groups", icon: <MdGroups /> },
+    { name: "Firms", to: "/firms", icon: <TbBuildingSkyscraper /> },
+
       ],
     },
     {

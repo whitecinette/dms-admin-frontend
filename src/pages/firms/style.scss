@@ -1,0 +1,75 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #444;
+    padding: 10px;
+    border-bottom: 2px solid #eee;
+  }
+
+  td {
+    padding: 10px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f3f3f3;
+  }
+
+  tr:hover {
+    background-color: #fafafa;
+  }
+
+  .firm-name {
+    font-weight: 500;
+    color: #222;
+  }
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &.status-active {
+    background: #e6f7e6;
+    color: #0f9d58;
+  }
+  &.status-inactive {
+    background: #ffeaea;
+    color: #d93025;
+  }
+}
+
+.loading-text {
+  color: #888;
+}
+
+.error-text {
+  color: #d93025;
+  font-weight: 500;
+}
