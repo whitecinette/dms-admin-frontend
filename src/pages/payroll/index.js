@@ -11,6 +11,8 @@ import "./style.scss";
 import TextToggle from "../../components/toggle";
 import PayRollProcess from "./process/index";
 import GeneratePayrollModal from "../../components/payrollComponents/generatePayrollModal/index.jsx";
+import DownloadPayrollModal from "../../components/payrollComponents/downloadPayrollModal/index.jsx";
+import UploadPayrollModal from "../../components/payrollComponents/uploadPayrollModal/index.jsx";
 
 const backendUrl = config.backend_url;
 
@@ -20,6 +22,8 @@ const Payroll = () => {
   const [overview, setOverview] = useState([]);
   const [selectedFirm, setSelectedFirm] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [downloadModal, setDownloadModal] = useState(false);
+    const [uploadModal, setUploadModal] = useState(false);
   const [monthYear, setMonthYear] = useState(() => {
     const now = new Date();
     return `${now.getMonth() + 1}-${now.getFullYear()}`;
@@ -77,10 +81,19 @@ const Payroll = () => {
         </div>
 
         <div className="payroll-actions">
-          <button className="primary-button" onClick={() => setModalOpen(true)}>
+        <button className="primary-button" onClick={() => setModalOpen(true)}>
             + Generate Payroll
-          </button>
+        </button>
+
+        <button className="secondary-button" onClick={() => setDownloadModal(true)}>
+            ⬇ Download Payroll
+        </button>
+
+        <button className="secondary-button" onClick={() => setUploadModal(true)}>
+            ⬆ Upload Bulk
+        </button>
         </div>
+
 
         <TextToggle
           textFirst="overview"
@@ -224,6 +237,17 @@ const Payroll = () => {
               </div>
             </div>
           </div>
+
+        {downloadModal && (
+            <DownloadPayrollModal closeModal={() => setDownloadModal(false)} />
+            )}
+
+            {uploadModal && (
+            <UploadPayrollModal
+                closeModal={() => setUploadModal(false)}
+                refresh={getOverviewData}
+            />
+            )}
 
           <PayrollTable
             selectedFirm={selectedFirm}
