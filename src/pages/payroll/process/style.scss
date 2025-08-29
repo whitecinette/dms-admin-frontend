@@ -1,4 +1,4 @@
-// Color variables
+// 🎨 Color variables
 $gray-50: #f9fafb;
 $gray-100: #f3f4f6;
 $gray-200: #e5e7eb;
@@ -22,36 +22,19 @@ $purple-600: #7c3aed;
 $purple-800: #4c1d95;
 $red-600: #dc2626;
 
-.payroll-process-filter-container {
-  margin-top: 1rem;
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-
-
-
-  @media (max-width: 768px) {
-    padding: 16px;
-    margin: 16px -10px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-}
+// =====================
+// CARDS
+// =====================
 .payroll-process-cards {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+
   @media (min-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
   }
-  .payroll-process-card{
+
+  .payroll-process-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -66,27 +49,28 @@ $red-600: #dc2626;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    .payroll-process-card-right{
-      &-top{
+
+    .payroll-process-card-right {
+      &-top {
         font-size: 14px;
         font-weight: 500;
         color: #64748b;
       }
-      &-center{
+      &-center {
         font-size: 24px;
         font-weight: 600;
         color: #1e293b;
       }
-      &-bottom{
+      &-bottom {
         font-size: 12px;
       }
-
     }
-      .blue{
-        color: #2563eb;
-      }
 
-    .payroll-process-card-left-blue{
+    .blue {
+      color: #2563eb;
+    }
+
+    .payroll-process-card-left-blue {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -95,10 +79,10 @@ $red-600: #dc2626;
       border-radius: 4px;
       color: #fff;
     }
-    .green{
+    .green {
       color: #16a34a;
     }
-    .payroll-process-card-left-green{
+    .payroll-process-card-left-green {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -110,46 +94,44 @@ $red-600: #dc2626;
   }
 }
 
-.payroll-process-filter {
+// =====================
+// FILTER ROW
+// =====================
+.payroll-process-filter-container {
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-end;
+  gap: 16px;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
+    gap: 12px;
   }
+}
 
-  .payroll-process-search-filter {
-    max-width: 300px;
+.payroll-process-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 
-    input[type="text"] {
-      width: 90% !important;
-    }
-  }
-
-  .payroll-process-search-filter,
-  .payroll-process-month-filter,
-  .payroll-process-status-filter{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-  }
-
-  label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #475569;
-  }
-
-  input[type="text"],
-  select {
-    width: 100%;
-    padding: 10px 12px;
+  input,
+  select,
+  .dropdown-header {
+    height: 38px;
+    min-width: 180px;
+    border-radius: 8px;
+    padding: 0 12px;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
     font-size: 14px;
     color: #1e293b;
     background-color: #fff;
@@ -157,180 +139,178 @@ $red-600: #dc2626;
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: $blue-500;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
     }
 
     &::placeholder {
       color: #94a3b8;
     }
   }
+
+  // hide labels – rely on placeholders
+  label {
+    display: none;
+  }
 }
 
-.custom-dropdown {
+.payroll-process-firm-filter {
   position: relative;
 
   .dropdown-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    background-color: #fff;
     cursor: pointer;
     font-size: 14px;
     color: #1e293b;
-    transition: all 0.2s;
 
-    &:hover {
-      border-color: #cbd5e1;
-    }
-
-    svg {
+    .caret {
+      font-size: 12px;
+      margin-left: 6px;
       color: #94a3b8;
-      transition: transform 0.2s;
     }
   }
 
   .dropdown-content {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
     background: white;
     border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    width: 300px;
-    z-index: 1000;
+    border-radius: 8px;
+    width: 240px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 20;
+    padding: 8px;
 
     .dropdown-search {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
+      margin-bottom: 6px;
 
       input {
-        width: 90%;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        outline: none;
+        width: 100%;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        padding: 0 8px;
+        font-size: 13px;
+
+        &:focus {
+          border-color: $blue-500;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
       }
     }
 
-    .selected-firms {
-      border-bottom: 1px solid #eee;
+    .firm-item {
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
 
-      .selected-firms-header {
+      &:hover {
+        background: $gray-100;
+      }
+
+      &.selected {
+        background: $blue-500;
+        color: #fff;
         font-weight: 500;
-        margin-bottom: 8px;
-      }
-
-      .selected-firm-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px;
-        background: #f0f7ff;
-        border-radius: 4px;
-        margin-bottom: 4px;
-        cursor: pointer;
-
-        &:hover {
-          background: #e0f0ff;
-        }
-      }
-    }
-
-    .firms-list {
-      max-height: 200px;
-      overflow-y: auto;
-
-      .firm-item {
-        padding: 5px;
-        cursor: pointer;
-
-        &:hover {
-          background: #f5f5f5;
-        }
       }
     }
 
     .dropdown-actions {
       display: flex;
       justify-content: space-between;
-      gap: 8px;
-      padding: 8px;
-      border-top: 1px solid #eee;
+      margin-top: 8px;
+      gap: 6px;
 
       button {
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 500;
         flex: 1;
-        transition: background-color 0.2s ease;
+        padding: 6px 0;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
 
         &.clear-btn {
-          background-color: #eee;
-          border: 1px solid #ddd;
-          color: #666;
+          background: $gray-100;
+          color: $gray-700;
+          border: 1px solid $gray-200;
         }
 
         &.apply-btn {
-          background-color: rgb(225 26 26);
+          background: $red-600;
+          color: #fff;
           border: none;
-          color: white;
+
+          &:hover {
+            background: darken($red-600, 5%);
+          }
         }
       }
     }
   }
 }
-.payroll-process-page-buttons{
+
+.payroll-process-page-buttons {
   display: flex;
-  justify-content: end;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  .icon{
+
+  .icon {
     width: 1rem;
     height: 1rem;
     margin-right: 0.5rem;
   }
-  .reset-button{
+
+  .reset-button {
+    background: $red-600;
     color: white;
-    background-color: rgb(225 26 26);
     border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 500;
+    cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-right: 10px;
+
     &:hover {
-      background-color: rgb(255 0 0);
+      background: darken($red-600, 5%);
     }
   }
-  .generate-button{
+
+  .generate-button {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: $purple-600;
     color: white;
-    background-color: #7e22ce;
     border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 500;
+    cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-right: 10px;
+
     &:hover {
-      background-color: #8c4acb;
+      background: $purple-800;
     }
   }
 }
 
-// Base styles
+// =====================
+// TABLE
+// =====================
 .table-container {
-  overflow: auto; /* Handles both vertical and horizontal scrolling */
+  overflow: auto;
   max-height: 60vh;
-  width: 100%; /* Ensure full width */
+  width: 100%;
   margin: 1rem 0;
 }
 
@@ -339,7 +319,6 @@ $red-600: #dc2626;
   min-width: 100%;
   border-collapse: collapse;
   table-layout: auto;
-
 
   .table-header {
     background-color: $gray-50;
@@ -352,7 +331,7 @@ $red-600: #dc2626;
   .table-header-cell {
     position: sticky !important;
     top: 0 !important;
-    z-index: 10; /* Increased z-index to ensure headers stay above content */
+    z-index: 10;
     background-color: $gray-50;
     padding: 0.75rem 1.5rem;
     text-align: left;
@@ -441,16 +420,16 @@ $red-600: #dc2626;
           width: 1rem;
           height: 1rem;
         }
-        .green{
+        .green {
           color: $green-800;
         }
-        .orange{
+        .orange {
           color: $orange-800;
         }
-        .purple{
+        .purple {
           color: $purple-800;
         }
-        .gray{
+        .gray {
           color: $gray-800;
         }
 
@@ -466,17 +445,14 @@ $red-600: #dc2626;
             background-color: $green-100;
             color: $green-800;
           }
-
           &.status-pending {
             background-color: $orange-100;
             color: $orange-800;
           }
-
           &.status-generated {
             background-color: $purple-100;
             color: $purple-800;
           }
-
           &.status-default {
             background-color: $gray-100;
             color: $gray-800;
@@ -524,16 +500,16 @@ $red-600: #dc2626;
       background-color: $gray-50;
 
       td.expanded-content {
-        display: table-cell; /* Ensure table-cell display for colSpan */
+        display: table-cell;
         padding: 1.5rem;
-        width: 100%; /* Encourage full width */
+        width: 100%;
       }
 
       .expanded-grid {
         display: grid;
         grid-template-columns: 1fr;
         gap: 1.5rem;
-        width: 100%; /* Ensure content fills the td */
+        width: 100%;
 
         @media (min-width: 1024px) {
           grid-template-columns: repeat(2, 1fr);
@@ -584,7 +560,6 @@ $red-600: #dc2626;
 
               .info-label {
                 color: $gray-600;
-
                 &.font-semibold {
                   font-weight: 600;
                 }
@@ -592,23 +567,18 @@ $red-600: #dc2626;
 
               .info-value {
                 font-weight: 500;
-
                 &.text-green-600 {
                   color: $green-600;
                 }
-
                 &.text-red-600 {
                   color: $red-600;
                 }
-
                 &.text-blue-600 {
                   color: $blue-600;
                 }
-
                 &.text-orange-600 {
                   color: $orange-600;
                 }
-
                 &.font-bold {
                   font-weight: 700;
                 }
@@ -657,19 +627,6 @@ $red-600: #dc2626;
           }
         }
       }
-    }
-  }
-}
-
-// Divider styles
-.payroll-process-table {
-  .table-header {
-    border-bottom: 1px solid $gray-200;
-  }
-
-  .table-body {
-    .table-row {
-      border-bottom: 1px solid $gray-200;
     }
   }
 }
