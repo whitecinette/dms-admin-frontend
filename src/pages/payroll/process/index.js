@@ -58,7 +58,7 @@ const PayRollProcess = () => {
           year,
           firmCodes: selectedFirms.map(f => f.code),
           page: 1,
-          limit: 100,
+          limit: 200,
         },
         headers: { Authorization: localStorage.getItem("authToken") },
       });
@@ -141,34 +141,43 @@ const PayRollProcess = () => {
   return (
     <div className={"payroll-process-process"}>
       {/* Cards */}
-      <div className={"payroll-process-cards"}>
-        <div className={"payroll-process-card"}>
-          <div className={"payroll-process-card-right"}>
-            <div className={"payroll-process-card-right-top"}>Selected Employees</div>
-            <div className={"payroll-process-card-right-center"}>{selectedRows.size}</div>
-            <div className={"payroll-process-card-right-bottom blue"}>of {payrollEmployees.length} total</div>
-          </div>
-          <div className={"payroll-process-card-left-blue"}>
-            <User2 className={"payroll-process-card-icon blue"} />
-          </div>
+    <div className="payroll-process-cards">
+    {/* Selected Employees card */}
+    <div className="payroll-process-card">
+        <div className="payroll-process-card-right">
+        <div className="payroll-process-card-right-top">Selected Employees</div>
+        <div className="payroll-process-card-right-center">
+            {selectedRows.size}
         </div>
-        <div className={"payroll-process-card"}>
-          <div className={"payroll-process-card-right"}>
-            <div className={"payroll-process-card-right-top"}>Total Amount</div>
-            <div className={"payroll-process-card-right-center"}>
-              {formatCurrency(
-                Array.from(selectedRows).reduce(
-                  (total, employee) => total + (employee.calculatedSalary || 0),
-                  0
-                )
-              )}
-            </div>
-          </div>
-          <div className={"payroll-process-card-left-green"}>
-            <LuIndianRupee size={20} className={"payroll-process-card-icon green"} />
-          </div>
+        <div className="payroll-process-card-right-bottom blue">
+            of {payrollEmployees.length} total
         </div>
-      </div>
+        </div>
+        <div className="payroll-process-card-left-blue">
+        <User2 className="payroll-process-card-icon blue" />
+        </div>
+    </div>
+
+    {/* Total Amount card */}
+    <div className="payroll-process-card">
+        <div className="payroll-process-card-right">
+        <div className="payroll-process-card-right-top">Total Amount</div>
+        <div className="payroll-process-card-right-center">
+            {formatCurrency(
+            Array.from(selectedRows).reduce(
+                (total, employee) =>
+                total + (employee?.net_salary || employee?.calculatedSalary || 0),
+                0
+            )
+            )}
+        </div>
+        </div>
+        <div className="payroll-process-card-left-green">
+        <LuIndianRupee size={20} className="payroll-process-card-icon green" />
+        </div>
+    </div>
+    </div>
+
 
       {/* Filters */}
       <div className={"payroll-process-filter-container"}>

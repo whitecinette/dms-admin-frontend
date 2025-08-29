@@ -17,17 +17,37 @@ import UploadPayrollModal from "../../components/payrollComponents/uploadPayroll
 const backendUrl = config.backend_url;
 
 const Payroll = () => {
-  const [view, setView] = useState("overview");
+  const [view, setView] = useState("process");
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState([]);
   const [selectedFirm, setSelectedFirm] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadModal, setDownloadModal] = useState(false);
     const [uploadModal, setUploadModal] = useState(false);
+    const [summary, setSummary] = useState({ selectedCount: 0, totalAmount: 0 });
   const [monthYear, setMonthYear] = useState(() => {
     const now = new Date();
     return `${now.getMonth() + 1}-${now.getFullYear()}`;
   });
+
+  const getSummaryData = async (codes = []) => {
+  try {
+    const [month, year] = monthYear.split("-");
+    const response = await axios.post(
+      `${backendUrl}/payroll/summary/two-blocks`,
+      { month, year, codes },
+      { headers: { Authorization: localStorage.getItem("authToken") } }
+    );
+    setSummary({
+      selectedCount: response.data.selectedCount,
+      totalAmount: response.data.totalAmount,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching payroll summary:", err);
+    setSummary({ selectedCount: 0, totalAmount: 0 });
+  }
+};
+
 
   // fetch overview
   const getOverviewData = async () => {
@@ -96,8 +116,8 @@ const Payroll = () => {
 
 
         <TextToggle
-          textFirst="overview"
-          textSecond="process"
+          textFirst="process"
+          textSecond="overview"
           setText={setView}
           selectedText={view}
           classStyle={{ width: "200px" }}
@@ -253,6 +273,7 @@ const Payroll = () => {
             selectedFirm={selectedFirm}
             selectedMonthYear={monthYear}
             onMonthYearChange={handleMonthYearChange}
+            onSelectionChange={(codes) => getSummaryData(codes)}
           />
         </>
       ) : (
