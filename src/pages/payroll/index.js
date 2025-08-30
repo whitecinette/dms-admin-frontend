@@ -17,7 +17,7 @@ import UploadPayrollModal from "../../components/payrollComponents/uploadPayroll
 const backendUrl = config.backend_url;
 
 const Payroll = () => {
-  const [view, setView] = useState("process");
+  const [view, setView] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState([]);
   const [selectedFirm, setSelectedFirm] = useState([]);
@@ -116,8 +116,8 @@ const Payroll = () => {
 
 
         <TextToggle
-          textFirst="process"
-          textSecond="overview"
+          textFirst="overview"
+          textSecond="process"
           setText={setView}
           selectedText={view}
           classStyle={{ width: "200px" }}
