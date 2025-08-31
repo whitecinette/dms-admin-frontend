@@ -174,17 +174,21 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
                     <td>{user.code}</td>
                     <td>{user.firm}</td>
                     <td>{user.position || "N/A"}</td> {/* NEW */}
-                    <td>
-                      <span style={{ backgroundColor: "#d4edda", color: "#155724", padding: "2px 6px", borderRadius: "4px", marginRight: "4px", fontWeight: 600 }}>
-                        P: {counts.P}
-                      </span>
-                      <span style={{ backgroundColor: "#fff3cd", color: "#856404", padding: "2px 6px", borderRadius: "4px", marginRight: "4px", fontWeight: 600 }}>
-                        L: {counts.L}
-                      </span>
-                      <span style={{ backgroundColor: "#f8d7da", color: "#721c24", padding: "2px 6px", borderRadius: "4px", fontWeight: 600 }}>
-                        A: {counts.A}
-                      </span>
+                    <td className="stats-cell">
+                      {/* First row: P + TL */}
+                      <div className="badge-row">
+                        <span className="badge badge-p">P: {counts.P}</span>
+                        <span className="badge badge-tl">TL: {counts.L + counts.A}</span>
+                      </div>
+
+                      {/* Second row: L + A */}
+                      <div className="badge-row">
+                        <span className="badge badge-l">L: {counts.L}</span>
+                        <span className="badge badge-a">A: {counts.A}</span>
+                      </div>
                     </td>
+
+
 
                     {[...Array(daysInMonth)].map((_, i) => (
                       <td key={i} style={getStatusStyle(user.days[i + 1])}>
