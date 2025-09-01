@@ -194,3 +194,43 @@
   }
 }
 
+.adjustment-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  button.edit-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #3b82f6;
+  }
+}
+
+.adjustment-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  input {
+    width: 60px;
+    padding: 4px;
+    font-size: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .save-btn {
+    background-color: #10b981;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #059669;
+    }
+  }
+}

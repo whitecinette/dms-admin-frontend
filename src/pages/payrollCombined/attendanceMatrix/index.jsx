@@ -3,12 +3,15 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import config from "../../../config";
 import "./style.scss";
+import { FaPencilAlt, FaSave } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
 const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChange, selectedPosition, }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+    const [editing, setEditing] = useState(null); // track which row is being edited
+  const [adjustmentValue, setAdjustmentValue] = useState({});
 
   const now = new Date();
   const defaultMonth = now.getMonth() + 1;
@@ -36,21 +39,58 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
 
-  const getMatrixData = async () => {
+  // const getMatrixData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await axios.get(`${backendUrl}/admin/attendance-matrix`, {
+  //       params: {
+  //         month: monthStr,
+  //         year: yearStr,
+  //         firm_code:
+  //           Array.isArray(selectedFirm) && selectedFirm.length === 1
+  //             ? selectedFirm[0]
+  //             : undefined,
+  //         position: selectedPosition,
+  //       },
+  //     });
+  //     setData(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching matrix:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+   const getMatrixData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${backendUrl}/admin/attendance-matrix`, {
-        params: {
-          month: monthStr,
-          year: yearStr,
-          firm_code:
-            Array.isArray(selectedFirm) && selectedFirm.length === 1
-              ? selectedFirm[0]
-              : undefined,
-          position: selectedPosition,
-        },
-      });
-      setData(response.data.data);
+      const [matrixRes, leavesRes] = await Promise.all([
+        axios.get(`${backendUrl}/admin/attendance-matrix`, {
+          params: {
+            month: monthStr,
+            year: yearStr,
+            firm_code:
+              Array.isArray(selectedFirm) && selectedFirm.length === 1
+                ? selectedFirm[0]
+                : undefined,
+            position: selectedPosition,
+          },
+        }),
+        axios.get(`${backendUrl}/leaves-info`, {
+          params: { month: monthStr, year: yearStr }
+        })
+      ]);
+
+      // merge leave info into matrix data by `code`
+      const leavesMap = new Map(leavesRes.data.data.map(l => [l.code, l]));
+      const merged = matrixRes.data.data.map(u => ({
+        ...u,
+        allowed_leaves: leavesMap.get(u.code)?.allowed_leaves || 0,
+        leaves_balance: leavesMap.get(u.code)?.leaves_balance || 0,
+        leaves_adjustment: leavesMap.get(u.code)?.leaves_adjustment || 0,
+      }));
+
+      setData(merged);
     } catch (error) {
       console.error("Error fetching matrix:", error);
     } finally {
@@ -58,6 +98,21 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
     }
   };
 
+  // Save leave adjustment
+  const saveAdjustment = async (code) => {
+    try {
+      await axios.put(`${backendUrl}/leave-adjustment`, {
+        code,
+        month: Number(monthStr),
+        year: Number(yearStr),
+        adjustment: Number(adjustmentValue[code] ?? 0),
+      });
+      setEditing(null);
+      getMatrixData(); // refresh
+    } catch (err) {
+      console.error("Error saving adjustment:", err);
+    }
+  };
 
   useEffect(() => {
     if (monthStr && yearStr) {
@@ -159,6 +214,9 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
                 <th>Firm</th>
                  <th>Position</th>
                 <th>Stats</th>
+                <th>Allowed Leaves</th>
+                <th>Leaves Balance</th>
+                <th>Leave Adjustment</th>
                 {[...Array(daysInMonth)].map((_, i) => (
                   <th key={i}>{i + 1}</th>
                 ))}
@@ -188,7 +246,47 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
                       </div>
                     </td>
 
-
+                  {/* New Columns */}
+                    <td>{user.allowed_leaves}</td>
+                    <td>{user.leaves_balance}</td>
+                    <td>
+                      {editing === user.code ? (
+                        <div className="adjustment-edit">
+                          <input
+                            type="number"
+                            value={adjustmentValue[user.code] ?? user.leaves_adjustment}
+                            onChange={(e) =>
+                              setAdjustmentValue({
+                                ...adjustmentValue,
+                                [user.code]: e.target.value,
+                              })
+                            }
+                          />
+                          <button
+                            className="save-btn"
+                            onClick={() => saveAdjustment(user.code)}
+                          >
+                            <FaSave />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="adjustment-display">
+                          <span>{user.leaves_adjustment}</span>
+                          <button
+                            className="edit-btn"
+                            onClick={() => {
+                              setEditing(user.code);
+                              setAdjustmentValue({
+                                ...adjustmentValue,
+                                [user.code]: user.leaves_adjustment,
+                              });
+                            }}
+                          >
+                            <FaPencilAlt />
+                          </button>
+                        </div>
+                      )}
+                    </td>
 
                     {[...Array(daysInMonth)].map((_, i) => (
                       <td key={i} style={getStatusStyle(user.days[i + 1])}>
