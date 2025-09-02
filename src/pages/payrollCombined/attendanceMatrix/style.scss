@@ -302,3 +302,15 @@
     border: 1px dashed #f59e0b;
   }
 }
+
+.day-header-row {
+  th {
+    font-size: 9px !important;
+    font-weight: 500;
+    color: #94a3b8 !important;  // light gray-blue
+    padding: 0px 2px !important;
+    background-color: #ffffff !important;
+    border-bottom: none !important;
+  }
+}
+

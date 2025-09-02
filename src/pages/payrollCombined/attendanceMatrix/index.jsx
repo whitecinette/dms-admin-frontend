@@ -191,6 +191,29 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
                   <th key={i}>{i + 1}</th>
                 ))}
               </tr>
+
+                {/* Second header row (weekdays) */}
+                <tr className="day-header-row">
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  {[...Array(daysInMonth)].map((_, i) => {
+                    const date = new Date(Number(yearStr), Number(monthStr) - 1, i + 1);
+                    const day = date.toLocaleDateString("en-US", { weekday: "short" }); // Mon, Tue...
+                    return (
+                      <th key={i} className="weekday">
+                        {day}
+                      </th>
+                    );
+                  })}
+                </tr>
             </thead>
             <tbody>
               {data.map((user, idx) => {
