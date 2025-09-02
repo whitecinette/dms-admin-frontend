@@ -4,6 +4,9 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import config from "../../../config";
 import "./style.scss";
 import CustomTooltip from "../../../components/expensesComponents/pieCustomTooltips";
+import DownloadPayrollModal from "../../../components/payrollComponents/downloadPayrollModal";
+import UploadPayrollModal from "../../../components/payrollComponents/uploadPayrollModal";
+
 
 
 const backendUrl = config.backend_url;
@@ -27,6 +30,10 @@ const ExpenseMatrix = () => {
   const [firmDropdownOpen, setFirmDropdownOpen] = useState(false);
   const [selectedFirms, setSelectedFirms] = useState([]);
   const [tempSelectedFirms, setTempSelectedFirms] = useState([]);
+
+  const [downloadModal, setDownloadModal] = useState(false);
+  const [uploadModal, setUploadModal] = useState(false);
+
 
   useEffect(() => {
     const fetchFirms = async () => {
@@ -212,8 +219,13 @@ const ExpenseMatrix = () => {
             ))}
           </select>
 
-          <button className="download-btn">⬇ Download All</button>
-          <button className="upload-btn">⬆ Upload Bulk</button>
+        <button className="download-btn" onClick={() => setDownloadModal(true)}>
+        ⬇ Download All
+        </button>
+        <button className="upload-btn" onClick={() => setUploadModal(true)}>
+        ⬆ Upload Bulk
+        </button>
+
         </div>
       </div>
 
@@ -286,6 +298,18 @@ const ExpenseMatrix = () => {
           </table>
         </div>
       )}
+
+      {downloadModal && (
+        <DownloadPayrollModal closeModal={() => setDownloadModal(false)} />
+        )}
+
+        {uploadModal && (
+        <UploadPayrollModal
+            closeModal={() => setUploadModal(false)}
+            refresh={getExpensesData}   // so table refreshes after upload
+        />
+        )}
+
     </div>
   );
 };
