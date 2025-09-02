@@ -28,6 +28,7 @@ import { TbMapPinCheck } from "react-icons/tb";
 import { RiFilePaper2Line } from "react-icons/ri";
 import { TbBuildingSkyscraper } from "react-icons/tb";
 import { TbIdBadge } from "react-icons/tb";
+import { TbReportMoney } from "react-icons/tb";
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -128,6 +129,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     { name: "Groups", to: "/groups", icon: <MdGroups /> },
     { name: "Firms", to: "/firms", icon: <TbBuildingSkyscraper /> },
     { name: "Metadata", to: "/metadata", icon: <TbIdBadge /> },
+    { name: "Expense Matrix", to: "/expense", icon: <TbReportMoney  /> },
 
       ],
     },

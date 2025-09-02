@@ -1,0 +1,123 @@
+.expense-matrix-wrapper {
+  padding: 20px;
+
+  .matrix-top-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+
+    .left h3 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+
+      select, button {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .download-btn {
+        background: #2196f3;
+        color: #fff;
+      }
+
+      .upload-btn {
+        background: #4caf50;
+        color: #fff;
+      }
+    }
+  }
+
+  .expense-matrix-table-container {
+    overflow-x: auto;
+  }
+
+  .expense-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      border: 1px solid #eee;
+      padding: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f7f7f7;
+      font-weight: 600;
+    }
+
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+  }
+
+  .firm-dropdown {
+    position: relative;
+
+    .firm-select-btn {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .firm-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      z-index: 100;
+      width: 200px;
+
+      .firm-option {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+
+      .firm-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+
+        button {
+          flex: 1;
+          margin: 0 5px;
+          padding: 5px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+        }
+
+        .apply-btn {
+          background: #2196f3;
+          color: #fff;
+        }
+
+        .cancel-btn {
+          background: #e0e0e0;
+        }
+      }
+    }
+  }
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 9999 !important;  // always on top
+  pointer-events: none;      // so it won’t block clicks
+}
+

@@ -232,7 +232,7 @@ const TravelExpenses = () => {
         />
       )}
 
-      <div className="travelExpanses-header">Travel Expanses</div>
+      <div className="travelExpenses-header">Travel Expanses</div>
       <div className="travelExpanse-filter-container">
         <div className="travelExpanse-filter">
           <div className="search-filter">
