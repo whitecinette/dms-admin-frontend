@@ -6,6 +6,7 @@
   padding: 20px;
   overflow-x: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 60vh;
 
   h3 {
     font-size: 18px;
@@ -311,6 +312,80 @@
     padding: 0px 2px !important;
     background-color: #ffffff !important;
     border-bottom: none !important;
+  }
+}
+
+.firm-dropdown {
+  position: relative;
+
+  .firm-select-btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .arrow {
+      font-size: 10px;
+      color: #64748b;
+    }
+  }
+
+  .firm-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 4px;
+    padding: 10px;
+    z-index: 50;
+    min-width: 200px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    .firm-options {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+
+      .firm-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+    }
+
+    .firm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+
+      .apply-btn {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+
+      .cancel-btn {
+        background-color: #e2e8f0;
+        color: #334155;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+    }
   }
 }
 

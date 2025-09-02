@@ -20,6 +20,23 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
   const [monthStr, setMonthStr] = useState(defaultMonth.toString());
   const [yearStr, setYearStr] = useState(defaultYear.toString());
 
+  const [firms, setFirms] = useState([]);
+  const [firmDropdownOpen, setFirmDropdownOpen] = useState(false);
+  const [selectedFirms, setSelectedFirms] = useState([]);   // applied firms
+  const [tempSelectedFirms, setTempSelectedFirms] = useState([]); // staging before apply
+
+  useEffect(() => {
+    const fetchFirms = async () => {
+      try {
+        const res = await axios.get(`${backendUrl}/get-firms-for-dropdown`);
+        setFirms(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching firms:", err);
+      }
+    };
+    fetchFirms();
+  }, []);
+
   // Sync when props change
   useEffect(() => {
     const [month, year] = (selectedMonthYear || `${defaultMonth}-${defaultYear}`).split("-");
@@ -54,12 +71,17 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
       ]);
 
       const leavesMap = new Map(leavesRes.data.data.map((l) => [l.code, l]));
-      const merged = matrixRes.data.data.map((u) => ({
+      let merged = matrixRes.data.data.map((u) => ({
         ...u,
+        firm_code: u.firm_code, 
         allowed_leaves: Number(leavesMap.get(u.code)?.allowed_leaves || 0),
         leaves_balance: Number(leavesMap.get(u.code)?.leaves_balance || 0),
         leaves_adjustment: Number(leavesMap.get(u.code)?.leaves_adjustment || 0),
       }));
+
+    if (selectedFirms.length > 0) {
+      merged = merged.filter((u) => selectedFirms.includes(u.firm_code));
+    }
 
       setData(merged);
       setEditedValues({}); // reset edits
@@ -74,7 +96,7 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
     if (monthStr && yearStr) {
       getMatrixData();
     }
-  }, [selectedFirm, selectedMonthYear, monthStr, yearStr]);
+  }, [selectedFirm, selectedMonthYear, monthStr, yearStr, selectedFirms]);
 
   // Handle edit cell
   const handleChange = (code, field, value) => {
@@ -129,6 +151,62 @@ const AttendanceMatrix = ({ selectedFirm, selectedMonthYear, handleMonthYearChan
           <h3>Attendance Matrix</h3>
         </div>
         <div className="right">
+
+          <div className="firm-dropdown">
+            <button
+              className="firm-select-btn"
+              onClick={() => setFirmDropdownOpen(!firmDropdownOpen)}
+            >
+              {selectedFirms.length > 0
+                ? `${selectedFirms.length} Firm(s) Selected`
+                : "Select Firm(s)"}
+              <span className="arrow">{firmDropdownOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {firmDropdownOpen && (
+              <div className="firm-dropdown-menu">
+                <div className="firm-options">
+                  {firms.map((firm) => (
+                    <label key={firm.code} className="firm-option">
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedFirms.includes(firm.code)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setTempSelectedFirms([...tempSelectedFirms, firm.code]);
+                          } else {
+                            setTempSelectedFirms(tempSelectedFirms.filter((c) => c !== firm.code));
+                          }
+                        }}
+                      />
+                      {firm.name}
+                    </label>
+                  ))}
+                </div>
+                <div className="firm-actions">
+                  <button
+                    className="apply-btn"
+                    onClick={() => {
+                      setSelectedFirms(tempSelectedFirms);
+                      setFirmDropdownOpen(false);
+                    }}
+                  >
+                    Apply
+                  </button>
+                  <button
+                    className="cancel-btn"
+                    onClick={() => {
+                      setTempSelectedFirms(selectedFirms);
+                      setFirmDropdownOpen(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <select
             value={monthStr}
             onChange={(e) => {
