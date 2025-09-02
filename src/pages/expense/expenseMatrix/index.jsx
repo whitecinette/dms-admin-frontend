@@ -3,6 +3,8 @@ import axios from "axios";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import config from "../../../config";
 import "./style.scss";
+import CustomTooltip from "../../../components/expensesComponents/pieCustomTooltips";
+
 
 const backendUrl = config.backend_url;
 
@@ -106,32 +108,30 @@ const ExpenseMatrix = () => {
 
   const yearOptions = Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - 1 + i);
 
-  const renderPie = (items) => {
+    const renderPie = (items) => {
     if (!items || items.length === 0) return "-";
 
     const chartData = items.map((x) => ({
-      name: x.name,
-      value: x.amount,
+        name: x.name,
+        value: x.amount,
     }));
 
     return (
-      <ResponsiveContainer width={60} height={60}>
+        <ResponsiveContainer width={60} height={60}>
         <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="name"
-            outerRadius={25}
-          >
+            <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={25}>
             {chartData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
             ))}
-          </Pie>
-          <Tooltip />
+            </Pie>
+            {/* ✅ Pass chartData manually to tooltip */}
+            <Tooltip content={(props) => <CustomTooltip {...props} data={chartData} />} />
         </PieChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
     );
-  };
+    };
+
+
 
   return (
     <div className="expense-matrix-wrapper">
