@@ -205,6 +205,7 @@ const ViewBeatMappingStatus = () => {
                     "Employee Code": item.code,
                     "Employee Name": item.name,
                     Dealer: "N/A",
+                    "Dealer Code": "N/A",
                     Total: (item.done || 0) + (item.pending || 0),
                     Done: item.done || 0,
                     Pending: item.pending || 0,
@@ -222,6 +223,7 @@ const ViewBeatMappingStatus = () => {
                         Pending: item.pending || 0,
                         Date: startDay?.toDateString().split("T")[0] || "N/A",
                         Dealer: dealerObj.name || dealerObj,
+                        "Dealer Code": dealerObj.code || dealerObj,
                         Status: dealerObj.status,
                         "Visited Count": dealerObj?.visited ? dealerObj?.visited : 0,
                     });
