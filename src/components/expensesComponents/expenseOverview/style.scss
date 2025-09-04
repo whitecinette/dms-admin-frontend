@@ -1,0 +1,84 @@
+.expense-overview {
+  margin-bottom: 2rem;
+
+  .kpi-cards {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    .card {
+      flex: 1;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+
+      h4 { margin-bottom: 0.5rem; font-size: 14px; color: #666; }
+      p { font-size: 18px; font-weight: bold; margin: 0; }
+    }
+  }
+
+  .chart-block {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+
+    h3 {
+      margin-bottom: 1rem;
+      font-size: 16px;
+      color: #444;
+    }
+  }
+
+.chart-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .half {
+    flex: 1;
+  }
+
+  .chart-block {
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    h3 {
+      font-size: 14px;
+      margin-bottom: 0.5rem;
+      color: #444;
+    }
+  }
+}
+
+
+}
+
+.kpi-cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .card {
+    flex: 1;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+
+    h4 { margin-bottom: 0.5rem; font-size: 14px; color: #666; }
+    p { font-size: 18px; font-weight: bold; margin: 0; }
+
+    .mini-chart {
+      margin-top: 0.5rem;
+      height: 40px;
+    }
+  }
+}
+

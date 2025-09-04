@@ -38,11 +38,22 @@
 
   .expense-matrix-table-container {
     overflow-x: auto;
+    height: 80vh;
+    overflow-y: auto;
+     position: relative;
   }
 
   .expense-matrix-table {
     width: 100%;
     border-collapse: collapse;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2; /* make sure it floats above body rows */
+      background: #fff; /* match your table background */
+      border-bottom: 2px solid #ddd; /* keep separation */
+    }
 
     th, td {
       border: 1px solid #eee;

@@ -1,0 +1,67 @@
+.kpi-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 200px;
+
+  .kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 0.25rem;
+
+    .kpi-icon {
+      background: #f5f6fa;
+      border-radius: 50%;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-title {
+      font-weight: 500;
+      font-size: 13px;
+      color: #888;
+    }
+  }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.25rem;
+  }
+
+  .kpi-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+
+    .kpi-change {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-mini-chart {
+      width: 70px;   // ✅ fixed width for sparkline
+      height: 30px;
+    }
+  }
+}

@@ -6,6 +6,8 @@ import "./style.scss";
 import CustomTooltip from "../../../components/expensesComponents/pieCustomTooltips";
 import DownloadPayrollModal from "../../../components/payrollComponents/downloadPayrollModal";
 import UploadPayrollModal from "../../../components/payrollComponents/uploadPayrollModal";
+import ExpenseOverview from "../../../components/expensesComponents/expenseOverview";
+import ExpenseTypeOverview from "../../../components/expensesComponents/expensesTypesOverview";
 
 
 
@@ -228,6 +230,10 @@ const ExpenseMatrix = () => {
 
         </div>
       </div>
+
+          {/* NEW OVERVIEW COMPONENT HERE */}
+           <ExpenseOverview month={monthStr} year={yearStr} />
+           <ExpenseTypeOverview month={monthStr} year={yearStr} />
 
       {loading ? (
         <p className="loading-msg">Loading...</p>
