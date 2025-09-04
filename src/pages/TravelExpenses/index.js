@@ -214,7 +214,9 @@ const TravelExpenses = () => {
     }
   };
 
-  const isEditable = (bill) => bill.status !== "paid";
+  // const isEditable = (bill) => bill.status !== "paid";
+  const isEditable = (bill) => !["approved", "paid"].includes(bill.status);
+
 
   return (
     <div className="travelExpenses-page">
