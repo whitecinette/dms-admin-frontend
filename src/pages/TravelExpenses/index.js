@@ -232,7 +232,7 @@ const TravelExpenses = () => {
         />
       )}
 
-      <div className="travelExpenses-header">Travel Expanses</div>
+      <div className="travelExpenses-header">Travel Expenses</div>
       <div className="travelExpanse-filter-container">
         <div className="travelExpanse-filter">
           <div className="search-filter">
@@ -295,6 +295,10 @@ const TravelExpenses = () => {
             <tr>
               <th>Name</th>
               <th>Code</th>
+              <th>System Code</th>
+              <th>Firm Code</th>     {/* new */}
+              <th>Firm Name</th>     {/* new */}
+              <th>Bill Date</th> 
               <th>Remark</th>
               <th>Bill Type</th>
               <th>Amount</th>
@@ -314,6 +318,18 @@ const TravelExpenses = () => {
                 <tr key={bill._id}>
                   <td>{bill.employeeName}</td>
                   <td>{bill.code}</td>
+                  <td>{bill.system_code || "-"}</td>      {/* system_code */}
+                  <td>{bill.firmCode || "-"}</td>        {/* firm_code */}
+                  <td>{bill.firmName || "-"}</td>  
+                  <td>
+                    {bill.billDate
+                      ? new Date(bill.billDate).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </td> 
                   <td>{bill.remarks}</td>
                   <td>{bill.billType}</td>
                   <td>{formatAmount(bill.amount)}</td>
