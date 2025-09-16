@@ -39,6 +39,7 @@
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.8.1",
     "three": "^0.178.0",
+    "ua-parser-js": "^2.0.5",
     "xlsx": "^0.18.5",
     "yocto-queue": "^1.2.0"
   },

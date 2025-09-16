@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import "./style.scss";
 import config from "../../config";
 import axios from "axios";
+import { UAParser } from "ua-parser-js";
+
 const backend_url = config.backend_url;
 
 const LoginAdmin = () => {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -40,26 +43,74 @@ const LoginAdmin = () => {
   };
 
   // Handle Login Submission
+  // const handleLoginSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setError(""); // Clear previous error
+
+  //   try {
+  //     const response = await axios.post(
+  //       `${backend_url}/app/user/login`,
+  //       loginData,
+  //       { headers: { "X-Client-Type": "admin" } }
+  //     );
+
+  //     if (response.status === 200) {
+  //       // Store token and authentication state in localStorage
+  //       localStorage.setItem("authToken", response.data.token);
+  //       localStorage.setItem("role", response.data.user.role);
+  //       localStorage.setItem("userId", response.data.user.id);
+  //       localStorage.setItem("refreshToken", response.data.refreshToken);
+  //       // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
+
+  //       // Redirect to the dashboard
+  //       window.location.href = "/dashboard";
+  //     }
+  //   } catch (error) {
+  //     setError(error.response?.data?.message || "Invalid email or password.");
+  //   }
+  // };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous error
-
+    setError(""); 
+  
     try {
+      const parser = new UAParser();
+      const result = parser.getResult();
+  
+      // Create a pseudo deviceId for web
+      const pseudoId = btoa(
+        navigator.userAgent +
+          navigator.platform +
+          window.screen.width +
+          "x" +
+          window.screen.height
+      );
+      
+  
+      const deviceInfo = {
+        brand: result.device.vendor || "Web",
+        model: result.device.model || result.browser.name || "Browser",
+        os: `${result.os.name} ${result.os.version}`,
+        appVersion: config.appVersion || "web-1.0.0",
+      };
+  
       const response = await axios.post(
         `${backend_url}/app/user/login`,
-        loginData,
+        {
+          ...loginData,
+          androidId: pseudoId,
+          deviceInfo,
+        },
         { headers: { "X-Client-Type": "admin" } }
       );
-
+  
       if (response.status === 200) {
-        // Store token and authentication state in localStorage
         localStorage.setItem("authToken", response.data.token);
         localStorage.setItem("role", response.data.user.role);
         localStorage.setItem("userId", response.data.user.id);
         localStorage.setItem("refreshToken", response.data.refreshToken);
-        // localStorage.setItem('isAuthenticated', 'true');  // Setting the auth status
-
-        // Redirect to the dashboard
+  
         window.location.href = "/dashboard";
       }
     } catch (error) {
