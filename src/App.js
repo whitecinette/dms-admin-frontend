@@ -43,6 +43,7 @@ import TypeGroupConfig from "./pages/groups";
 import FirmsPage from "./pages/firms";
 import MetadataPage from "./pages/metadata";
 import ExpensesMatrix from "./pages/expense/expenseMatrix";
+import MddWiseTargets from "./pages/mddWiseTarget";
 
 
 function App() {
@@ -114,6 +115,7 @@ function App() {
             <Route path="/firms" element={<FirmsPage />} />
             <Route path="/metadata" element={<MetadataPage />} />
             <Route path="/expense" element={<ExpensesMatrix /> } />
+            <Route path="/mdd-wise-targets" element={<MddWiseTargets/> } />
 
             
           </Route>

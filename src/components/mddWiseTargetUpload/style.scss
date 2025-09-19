@@ -1,0 +1,92 @@
+.upload-modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  
+  .upload-modal {
+    background: #fff;
+    border-radius: 10px;
+    width: 500px;
+    max-width: 95%;
+    padding: 1rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+      h3 { font-size: 18px; margin: 0; }
+      button { background: none; border: none; cursor: pointer; }
+    }
+  
+    .modal-body {
+      input[type="file"] {
+        margin-bottom: 1rem;
+      }
+  
+      .preview-box {
+        background: #f9fafb;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        p { margin: 0.25rem 0; font-size: 14px; }
+      }
+  
+      .loader {
+        font-size: 14px;
+        color: #ff6600;
+        margin-bottom: 0.5rem;
+      }
+  
+      .error-box {
+        background: #fff5f5;
+        border: 1px solid #f5c2c2;
+        border-radius: 6px;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        h4 { margin: 0 0 0.5rem; font-size: 14px; color: #c00; }
+        li { font-size: 13px; color: #900; }
+      }
+  
+      .success-msg {
+        color: #0a0;
+        font-weight: 500;
+      }
+  
+      .error-msg {
+        color: #c00;
+        font-weight: 500;
+      }
+    }
+  
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+  
+      .cancel-btn {
+        background: #ddd;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+  
+      .upload-btn {
+        display: flex; align-items: center; gap: 0.4rem;
+        background: #ff6600;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        &:disabled { opacity: 0.6; cursor: not-allowed; }
+      }
+    }
+  }
+  

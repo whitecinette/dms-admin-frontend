@@ -29,6 +29,7 @@ import { RiFilePaper2Line } from "react-icons/ri";
 import { TbBuildingSkyscraper } from "react-icons/tb";
 import { TbIdBadge } from "react-icons/tb";
 import { TbReportMoney } from "react-icons/tb";
+import { MdOutlineTrackChanges } from "react-icons/md";
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -208,6 +209,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Actor Type Hierarchy", to: "/actorTypeHierarchy", icon: <TbHierarchy3 /> },
         { name: "Add User", to: "/addUser", icon: <FaFileAlt /> },
         { name: "Alpha Messages", to: "/alphaMessages", icon: <FaFileAlt /> },
+        { name: "MDD Wise Targets", to: "/mdd-wise-targets", icon: <MdOutlineTrackChanges /> },
       ],
     },
     { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
