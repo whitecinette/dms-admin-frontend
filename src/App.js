@@ -44,6 +44,8 @@ import FirmsPage from "./pages/firms";
 import MetadataPage from "./pages/metadata";
 import ExpensesMatrix from "./pages/expense/expenseMatrix";
 import MddWiseTargets from "./pages/mddWiseTarget";
+import 'rsuite/dist/rsuite.min.css';
+
 
 
 function App() {

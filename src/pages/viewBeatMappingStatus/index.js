@@ -20,6 +20,8 @@ import EmployeeSchedule from "./employeeSchedule";
 import * as XLSX from "xlsx";
 import TableLoading from "../../components/tableLoading";
 import ReactECharts from "echarts-for-react";
+import TimelineView from "./timelineView/index.jsx";
+import moment from "moment";
 
 const backendUrl = config.backend_url;
 
@@ -54,6 +56,7 @@ const ViewBeatMappingStatus = () => {
     const [expandedRowData, setExpandedRowData] = useState([]);
     const [isDownload, setIsDownload] = useState(false);
     const [isLoading, setLoading] = useState(false);
+    const [viewMode, setViewMode] = useState("overview");
 
     const getBeatMapping = async () => {
         setLoading(true);
@@ -261,6 +264,24 @@ const ViewBeatMappingStatus = () => {
                 Market Coverage
             </div>
 
+            <div className="view-toggle-container">
+            <button 
+                className={`view-toggle-btn ${viewMode === 'overview' ? 'active' : ''}`}
+                onClick={() => setViewMode('overview')}
+            >
+                Overview
+            </button>
+            <button 
+                className={`view-toggle-btn ${viewMode === 'timeline' ? 'active' : ''}`}
+                onClick={() => setViewMode('timeline')}
+            >
+                Timeline
+            </button>
+            </div>
+
+            {viewMode === "overview" ? (
+            <>
+            {/* first part  */}
             {data.length > 0 && (
                 <div className="viewBeatMapping-page-graph">
                     <div className="viewBeatMappingStatus-calendar-header">
@@ -599,6 +620,27 @@ const ViewBeatMappingStatus = () => {
                     />
                 )
             }
+            {/* first part  */}
+
+              </>
+            ) : (
+
+                <TimelineView
+                    data={data}
+                    startDay={startDay}
+                    endDay={endDay}
+                    onDateChange={(newStart, newEnd) => {
+                        if (newStart && newEnd) {
+                        setStartDay(newStart);
+                        setEndDay(newEnd);
+                        getBeatMapping();
+                        }
+                    }}
+                    />
+
+
+            )}
+
         </div>
     )
         ;

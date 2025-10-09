@@ -1,0 +1,199 @@
+.timeline-view {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: visible;
+  position: relative;
+  transition: all 0.3s ease;
+
+  // ── Header
+  .timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    p {
+      color: #7b8b9a;
+      font-size: 0.9rem;
+    }
+
+    // ── Date range container (native inputs)
+    .date-range {
+      display: flex;
+      gap: 12px;
+
+      .date {
+        display: flex;
+        flex-direction: column;
+        label {
+          font-size: 0.8rem;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        input[type="date"] {
+          padding: 6px 10px;
+          font-size: 0.9rem;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          background: #fafafa;
+          color: #2c3e50;
+          transition: all 0.2s ease;
+
+          &:hover {
+            border-color: #6399f9;
+            background: #fff;
+          }
+
+          &:focus {
+            outline: none;
+            border-color: #6399f9;
+            box-shadow: 0 0 0 3px rgba(99, 153, 249, 0.15);
+            background: #fff;
+          }
+        }
+      }
+    }
+
+    // For optional “Select date range” button
+    .date-btn {
+      background: none;
+      border: none;
+      color: #6399f9;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  // ── Empty state
+  .no-data {
+    text-align: center;
+    color: #888;
+    font-size: 1rem;
+    padding: 2rem 0;
+  }
+}
+
+/* ─────────────────────────────
+   VIS-TIMELINE STYLING
+────────────────────────────── */
+.vis-timeline {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+}
+
+.vis-item {
+  border: none !important;
+  border-radius: 6px !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.vis-item-content {
+  padding: 0 !important;
+}
+
+.vis-labelset .vis-label {
+  font-size: 12px !important;
+  color: #333 !important;
+  font-weight: 600 !important;
+}
+
+.vis-time-axis .vis-text {
+  font-size: 11px !important;
+  color: #777 !important;
+}
+
+/* ─────────────────────────────
+   VIEW TOGGLE BUTTONS (shared)
+────────────────────────────── */
+.view-toggle-container {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0;
+
+  .view-toggle-btn {
+    background: #f0f2f6;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.active {
+      background: #6399f9;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(99, 153, 249, 0.3);
+    }
+  }
+}
+
+/* ─────────────────────────────
+   LEGACY STYLES (MUI / RSUITE if ever re-added)
+────────────────────────────── */
+.rs-picker {
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  transition: 0.2s all;
+
+  &:hover {
+    border-color: #6399f9;
+  }
+
+  .rs-picker-toggle-value {
+    color: #2c3e50;
+  }
+}
+
+.MuiTextField-root {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.MuiDateRangePickerDay-rangeIntervalPreview {
+  background-color: #e6f3ff !important;
+}
+.download-btn {
+  background: linear-gradient(90deg, #6399f9, #4074d4);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(90deg, #4074d4, #6399f9);
+    box-shadow: 0 2px 6px rgba(99, 153, 249, 0.3);
+  }
+}
+
+.timeline-header .right-tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
