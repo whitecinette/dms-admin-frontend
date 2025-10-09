@@ -1,14 +1,40 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import moment from "moment";
 import { DataSet, Timeline } from "vis-timeline/standalone";
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import "./style.scss";
 
-const TimelineView = ({ data = [], startDay, endDay, onDateChange }) => {
+const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onDateChange }) => {
   const containerRef = useRef(null);
   const timelineRef = useRef(null);
 
-  // 🔹 Prepare groups & items for visual timeline
+  // ✅ local state to keep the inputs reactive
+  const [startDay, setStartDay] = useState(parentStart || moment().startOf("month").toDate());
+  const [endDay, setEndDay] = useState(parentEnd || moment().endOf("month").toDate());
+
+  // if parent updates (like resetting), sync local state
+  useEffect(() => {
+    if (parentStart) setStartDay(parentStart);
+    if (parentEnd) setEndDay(parentEnd);
+  }, [parentStart, parentEnd]);
+
+  const handleDateChange = (newStart, newEnd) => {
+    // auto-fix invalid ranges
+    let fixedStart = newStart;
+    let fixedEnd = newEnd;
+    if (fixedStart && fixedEnd && fixedStart > fixedEnd) {
+      fixedEnd = fixedStart;
+    }
+
+    setStartDay(fixedStart);
+    setEndDay(fixedEnd);
+
+    if (typeof onDateChange === "function") {
+      onDateChange(fixedStart, fixedEnd);
+    }
+  };
+
+  // 🔹 Prepare timeline data
   const { groups, items } = useMemo(() => {
     const groupsArr = [];
     const itemsArr = [];
@@ -72,7 +98,6 @@ const TimelineView = ({ data = [], startDay, endDay, onDateChange }) => {
     return { groups: groupsArr, items: itemsArr };
   }, [data, startDay, endDay]);
 
-  // 🔹 Timeline options
   const options = useMemo(
     () => ({
       stack: true,
@@ -100,9 +125,7 @@ const TimelineView = ({ data = [], startDay, endDay, onDateChange }) => {
     if (timelineRef.current) {
       try {
         timelineRef.current.destroy();
-      } catch (e) {
-        console.warn("Timeline destroy skipped:", e);
-      }
+      } catch {}
       timelineRef.current = null;
     }
 
@@ -124,79 +147,37 @@ const TimelineView = ({ data = [], startDay, endDay, onDateChange }) => {
       if (timelineRef.current) {
         try {
           timelineRef.current.destroy();
-        } catch (e) {
-          console.warn("Timeline cleanup skipped:", e);
-        }
+        } catch {}
         timelineRef.current = null;
       }
     };
   }, [items, groups, options]);
 
-  // 🔹 CSV Download Logic
+  // 🔹 CSV Download
   const handleDownloadCSV = () => {
     if (!data || data.length === 0) {
       alert("No data available to download!");
       return;
     }
-
-    let csvRows = [];
-
-    // Header
-    csvRows.push([
-      "ASM Code",
-      "ASM Name",
-      "Total",
-      "Done",
-      "Pending",
-      "Dealer 1",
-      "Dealer 2",
-      "Dealer 3",
-      "Dealer 4",
-      "Dealer 5",
-      "...",
-    ].join(","));
-
+    const csvRows = [];
+    csvRows.push(["ASM Code", "ASM Name", "Total", "Done", "Pending"].join(","));
     data.forEach((asm) => {
-      const asmCode = asm.code || "N/A";
-      const asmName = asm.name || "N/A";
-      const total = asm.total ?? "";
-      const done = asm.done ?? "";
-      const pending = asm.pending ?? "";
-
-      // Filter only 'done' dealers and sort by visit time
-      const doneDealers = (asm.schedule || [])
-        .filter((d) => d.status === "done")
-        .sort((a, b) => {
-          const timeA = a.markedDoneAt ? new Date(a.markedDoneAt).getTime() : 0;
-          const timeB = b.markedDoneAt ? new Date(b.markedDoneAt).getTime() : 0;
-          return timeA - timeB;
-        });
-
-      if (doneDealers.length === 0) return;
-
-      // Each dealer detail formatted as "dealer name | dealer code | taluka | date time | visited"
-      const dealerColumns = doneDealers.map((dealer) => {
-        const doneTime = dealer.markedDoneAt
-          ? moment(dealer.markedDoneAt).format("YYYY-MM-DD HH:mm:ss")
-          : "";
-        return `"${dealer.name || ""} | ${dealer.code || ""} | ${
-          dealer.taluka || ""
-        } | ${doneTime} | ${dealer.visited || 0}"`;
-      });
-
-      const row = [asmCode, asmName, total, done, pending, ...dealerColumns];
-      csvRows.push(row.join(","));
+      const row = [
+        asm.code || "N/A",
+        asm.name || "N/A",
+        asm.total ?? "",
+        asm.done ?? "",
+        asm.pending ?? "",
+      ].join(",");
+      csvRows.push(row);
     });
-
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `ASM_Timeline_${moment().format("YYYYMMDD_HHmmss")}.csv`;
     link.click();
   };
 
-  // 🔹 JSX
   return (
     <div className="timeline-view">
       <div className="timeline-header">
@@ -208,22 +189,18 @@ const TimelineView = ({ data = [], startDay, endDay, onDateChange }) => {
               <label>From:</label>
               <input
                 type="date"
-                value={startDay ? startDay.toISOString().split("T")[0] : ""}
-                onChange={(e) => {
-                  const newStart = e.target.value ? new Date(e.target.value) : null;
-                  onDateChange(newStart, endDay);
-                }}
+                value={moment(startDay).format("YYYY-MM-DD")}
+                max={moment(endDay).format("YYYY-MM-DD")}
+                onChange={(e) => handleDateChange(new Date(e.target.value), endDay)}
               />
             </div>
             <div className="date">
               <label>To:</label>
               <input
                 type="date"
-                value={endDay ? endDay.toISOString().split("T")[0] : ""}
-                onChange={(e) => {
-                  const newEnd = e.target.value ? new Date(e.target.value) : null;
-                  onDateChange(startDay, newEnd);
-                }}
+                value={moment(endDay).format("YYYY-MM-DD")}
+                min={moment(startDay).format("YYYY-MM-DD")}
+                onChange={(e) => handleDateChange(startDay, new Date(e.target.value))}
               />
             </div>
           </div>
