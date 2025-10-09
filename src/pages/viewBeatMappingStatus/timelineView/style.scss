@@ -375,3 +375,179 @@
   text-align: right;
   margin-top: 2px;
 }
+.timeline-scroll-wrapper {
+  height: 600px;
+  border-radius: 16px;
+  overflow: auto; /* ✅ enables both X and Y scrollbars */
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5f2 #f3f5fa;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #b8c5f2;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #8ea2f3;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f3f5fa;
+    border-radius: 10px;
+  }
+}
+
+.timeline-wrapper {
+  height: 600px;
+  width: 100%;
+  border-radius: 16px;
+  overflow: auto; /* ✅ scrollbars appear */
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5f2 #f3f5fa;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #b8c5f2;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #8ea2f3;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f3f5fa;
+    border-radius: 10px;
+  }
+}
+
+.timeline-container {
+  min-width: 1800px; /* ✅ forces horizontal scroll when needed */
+  min-height: 100%;
+}
+/* ✅ Scrollable timeline container */
+/* === Scrollable Wrapper === */
+/* Outer scrollable area */
+.timeline-scroll-wrapper {
+  width: 100%;
+  height: 600px; /* viewport height */
+  overflow: auto; /* ✅ shows both scrollbars */
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5f2 #f3f5fa;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #b8c5f2;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #8ea2f3;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f3f5fa;
+  }
+}
+
+.timeline-container {
+  width: 100%;
+  height: 600px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: auto; /* ✅ allows native scrollbars */
+  position: relative;
+
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5f2 #f3f5fa;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #b8c5f2;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #8ea2f3;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f3f5fa;
+  }
+}
+/* ─────────────────────────────
+   ASM Label Styling
+────────────────────────────── */
+/* ─────────────────────────────
+   ASM Label Styling
+────────────────────────────── */
+/* 🔹 Styles must be global — not under a .timeline-container parent */
+.vis-label .asm-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: "Inter", sans-serif;
+  padding: 4px 0;
+}
+
+.vis-label .asm-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.vis-label .asm-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vis-label .asm-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  background: #f9fafb;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  i.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  &.done {
+    background: #ecfdf5;
+    color: #047857;
+    i.dot {
+      background: #10b981;
+    }
+  }
+
+  &.pending {
+    background: #fef2f2;
+    color: #b91c1c;
+    i.dot {
+      background: #ef4444;
+    }
+  }
+
+  b {
+    margin-left: 3px;
+    font-weight: 600;
+  }
+}
