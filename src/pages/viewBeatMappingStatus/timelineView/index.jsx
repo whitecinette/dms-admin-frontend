@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from "react";
 import moment from "moment";
-import { DataSet, Timeline } from "vis-timeline/standalone";
+import { Timeline } from "vis-timeline";
+import { DataSet } from "vis-data"; // ✅ fix here
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import "./style.scss";
 
@@ -8,30 +9,21 @@ const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onD
   const containerRef = useRef(null);
   const timelineRef = useRef(null);
 
-  // ✅ local state to keep the inputs reactive
   const [startDay, setStartDay] = useState(parentStart || moment().startOf("month").toDate());
   const [endDay, setEndDay] = useState(parentEnd || moment().endOf("month").toDate());
 
-  // if parent updates (like resetting), sync local state
   useEffect(() => {
     if (parentStart) setStartDay(parentStart);
     if (parentEnd) setEndDay(parentEnd);
   }, [parentStart, parentEnd]);
 
   const handleDateChange = (newStart, newEnd) => {
-    // auto-fix invalid ranges
     let fixedStart = newStart;
     let fixedEnd = newEnd;
-    if (fixedStart && fixedEnd && fixedStart > fixedEnd) {
-      fixedEnd = fixedStart;
-    }
-
+    if (fixedStart && fixedEnd && fixedStart > fixedEnd) fixedEnd = fixedStart;
     setStartDay(fixedStart);
     setEndDay(fixedEnd);
-
-    if (typeof onDateChange === "function") {
-      onDateChange(fixedStart, fixedEnd);
-    }
+    onDateChange?.(fixedStart, fixedEnd);
   };
 
   // 🔹 Prepare timeline data
@@ -49,48 +41,11 @@ const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onD
         .filter((d) => d.status === "done")
         .forEach((dealer, i) => {
           const doneTime = dealer.markedDoneAt ? moment(dealer.markedDoneAt) : null;
-
           itemsArr.push({
             id: `${asm.code}-${i}`,
             group: asm.code,
             start: doneTime ? doneTime.toDate() : startDay,
-            content: `
-              <div style="
-                font-size:10px;
-                line-height:1.3;
-                position:relative;
-                padding:4px 6px;
-                border-radius:6px;
-                background:#00b894;
-                color:#fff;
-                text-align:center;
-                min-width:70px;
-                box-shadow:0 1px 3px rgba(0,0,0,0.15);
-              ">
-                <div style="
-                  position:absolute;
-                  top:-6px;
-                  right:-6px;
-                  width:16px;
-                  height:16px;
-                  border-radius:50%;
-                  background:#fff;
-                  color:#00b894;
-                  font-weight:700;
-                  font-size:9px;
-                  display:flex;
-                  align-items:center;
-                  justify-content:center;
-                ">
-                  ${dealer.visited || 1}
-                </div>
-                <b>${dealer.name || "Unnamed Dealer"}</b><br/>
-                <small>${dealer.code || "—"}</small><br/>
-                <small>${dealer.taluka || "—"}</small><br/>
-                <small>${doneTime ? doneTime.format("hh:mm A") : "—"}</small>
-              </div>
-            `,
-            style: "border:none; background:none;",
+            dealer,
           });
         });
     });
@@ -107,28 +62,49 @@ const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onD
       zoomable: true,
       selectable: true,
       multiselect: false,
-      margin: { item: 10, axis: 5 },
+      margin: { item: 8, axis: 5 },
       orientation: "both",
       showCurrentTime: false,
       height: "100%",
       maxHeight: "600px",
       groupHeightMode: "fixed",
       groupMinHeight: 35,
+
+      // ✅ Render custom compact dealer cards
+template: (item) => {
+  const d = item.dealer;
+  if (!d) return "—";
+  const doneTime = d.markedDoneAt ? moment(d.markedDoneAt).format("hh:mm A") : "—";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "dealer-card compact";
+  wrapper.innerHTML = `
+    <div class="dealer-header">
+      <span class="dealer-dot"></span>
+      <span class="dealer-name">${d.name || "Unnamed Dealer"}</span>
+      <span class="dealer-chip">${d.visited || 0}</span>
+    </div>
+    <div class="dealer-details">
+      <div>${d.code || "—"}</div>
+      <div>${d.taluka || "—"}</div>
+    </div>
+    <div class="dealer-time">${doneTime}</div>
+  `;
+  return wrapper;
+},
+
     }),
     [startDay, endDay]
   );
 
-  // 🔹 Initialize timeline safely
   useEffect(() => {
     if (!containerRef.current) return;
-
     if (timelineRef.current) {
       try {
         timelineRef.current.destroy();
       } catch {}
       timelineRef.current = null;
     }
-
     if (items.length === 0 || groups.length === 0) return;
 
     try {
@@ -153,36 +129,10 @@ const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onD
     };
   }, [items, groups, options]);
 
-  // 🔹 CSV Download
-  const handleDownloadCSV = () => {
-    if (!data || data.length === 0) {
-      alert("No data available to download!");
-      return;
-    }
-    const csvRows = [];
-    csvRows.push(["ASM Code", "ASM Name", "Total", "Done", "Pending"].join(","));
-    data.forEach((asm) => {
-      const row = [
-        asm.code || "N/A",
-        asm.name || "N/A",
-        asm.total ?? "",
-        asm.done ?? "",
-        asm.pending ?? "",
-      ].join(",");
-      csvRows.push(row);
-    });
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `ASM_Timeline_${moment().format("YYYYMMDD_HHmmss")}.csv`;
-    link.click();
-  };
-
   return (
     <div className="timeline-view">
       <div className="timeline-header">
         <h2>Market Activity Timeline</h2>
-
         <div className="right-tools">
           <div className="date-range">
             <div className="date">
@@ -205,7 +155,7 @@ const TimelineView = ({ data = [], startDay: parentStart, endDay: parentEnd, onD
             </div>
           </div>
 
-          <button className="download-btn" onClick={handleDownloadCSV}>
+          <button className="download-btn" onClick={() => alert("CSV soon!")}>
             Download CSV
           </button>
         </div>
