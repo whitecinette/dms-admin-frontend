@@ -180,9 +180,60 @@ const { groups, items } = useMemo(() => {
             </div>
           </div>
 
-          <button className="download-btn" onClick={() => alert("CSV soon!")}>
-            Download CSV
-          </button>
+<button
+  className="download-btn"
+  onClick={() => {
+    if (!data?.length) {
+      alert("No data to export.");
+      return;
+    }
+
+    const rows = [];
+    rows.push(["ASM Code", "ASM Name", "Total", "Done", "Pending"]);
+
+    data.forEach((asm) => {
+      const schedule = asm.schedule || [];
+
+      const doneList = schedule
+        .filter((d) => d.status === "done" && d.markedDoneAt)
+        .sort((a, b) => new Date(a.markedDoneAt) - new Date(b.markedDoneAt)); // ⏫ ascending by time
+
+      const total = schedule.length;
+      const done = doneList.length;
+      const pending = total - done;
+
+      // Build dealer columns (only done ones)
+      const dealerCols = doneList.map((d) => {
+        const dealerName = d.name || "";
+        const code = d.code || "";
+        const taluka = d.taluka || "";
+        const doneAt = moment(d.markedDoneAt).format("YYYY-MM-DD HH:mm:ss");
+        const visited = d.visited || "";
+        return `${dealerName} | ${code} | ${taluka} | ${doneAt} | ${visited}`;
+      });
+
+      const row = [asm.code || "", asm.name || "", total, done, pending, ...dealerCols];
+      rows.push(row);
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `MarketTimeline_${moment().format("YYYYMMDD_HHmmss")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }}
+>
+  Download CSV
+</button>
+
+
+
         </div>
       </div>
 
