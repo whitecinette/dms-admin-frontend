@@ -98,7 +98,8 @@ const { groups, items } = useMemo(() => {
       template: (item) => {
         const d = item.dealer;
         if (!d) return '—';
-        const doneTime = d.markedDoneAt ? moment(d.markedDoneAt).format('hh:mm A') : '—';
+        const doneTime = d.markedDoneAt ? moment(d.markedDoneAt).format('DD/MM HH:mm') : '—';
+
 
         const wrapper = document.createElement('div');
         wrapper.className = 'dealer-card compact';
