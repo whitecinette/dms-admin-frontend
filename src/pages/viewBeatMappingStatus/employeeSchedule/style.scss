@@ -326,3 +326,22 @@ $breakpoint-desktop: 1024px;
         }
     }
 }
+
+.status-dropdown {
+  transition: all 0.2s ease;
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &.done {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #2e7d32;
+  }
+
+  &.pending {
+    background-color: #ffebee;
+    color: #e53935;
+    border-color: #e53935;
+  }
+}

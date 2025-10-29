@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { GiPathDistance } from "react-icons/gi";
+import config from "../../../config.js";
+import axios from "axios";
 import './style.scss';
+
+const backendUrl = config.backend_url;
+const token = localStorage.getItem("authToken");
 
 function EmployeeSchedule({ schedule, isClose, selectedRoute, data, expandedRow }) {
     const [expandedSearch, setExpandedSearch] = useState('');
@@ -125,7 +130,7 @@ function EmployeeSchedule({ schedule, isClose, selectedRoute, data, expandedRow 
                                                 <span className="tag">{scheduleItem.position}</span>
                                             )}
                                         </div>
-                                        <div className="card-bottom-row">
+                                        {/* <div className="card-bottom-row">
                                             {scheduleItem.distance ? (
                                                 <span className="distance-icon">
                                                     <GiPathDistance size={24} />
@@ -150,7 +155,93 @@ function EmployeeSchedule({ schedule, isClose, selectedRoute, data, expandedRow 
                                                     )}
                                                 </span>
                                             </div>
-                                        </div>
+                                        </div> */}
+
+                                        <div className="card-bottom-row">
+                                            {scheduleItem.distance ? (
+                                                <span className="distance-icon">
+                                                <GiPathDistance size={24} />
+                                                {scheduleItem.distance.slice(0, 4)} Km
+                                                </span>
+                                            ) : (
+                                                <span className="distance-icon">
+                                                <GiPathDistance size={24} />
+                                                N/A
+                                                </span>
+                                            )}
+
+                                            <div className="card-status-row">
+                                                {localStorage.getItem("role") === "super_admin" ? (
+                                                <select
+                                                    value={scheduleItem.status}
+                                                    onChange={async (e) => {
+                                                    const newStatus = e.target.value;
+
+                                                    try {
+                                                        const res = await axios.post(
+                                                        `${backendUrl}/super-admin/update-weekly-beat-status`,
+                                                        {
+                                                            scheduleId: data[expandedRow]._id,
+                                                            entryId: scheduleItem._id,
+                                                            status: newStatus,
+                                                        },
+                                                        {
+                                                        headers: { Authorization: token },
+                                                        }
+                                                        );
+
+                                                        if (res.data.success) {
+                                                        // Update local UI instantly
+                                                        scheduleItem.status = newStatus;
+                                                        setFilteredSchedule([...filteredSchedule]);
+                                                        } else {
+                                                        alert(res.data.message || "Failed to update status.");
+                                                        }
+                                                    } catch (err) {
+                                                        console.error("❌ Error updating dealer status:", err);
+                                                        alert(
+                                                        err.response?.data?.message ||
+                                                        "Error updating dealer status."
+                                                        );
+                                                    }
+                                                    }}
+                                                    className={`status-dropdown ${scheduleItem.status}`}
+                                                    style={{
+                                                    borderRadius: "8px",
+                                                    padding: "4px 8px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid",
+                                                    borderColor:
+                                                        scheduleItem.status === "done" ? "#2E7D32" : "#E53935",
+                                                    color: scheduleItem.status === "done" ? "#2E7D32" : "#E53935",
+                                                    backgroundColor:
+                                                        scheduleItem.status === "done" ? "#E8F5E9" : "#FFEBEE",
+                                                    cursor: "pointer",
+                                                    }}
+                                                >
+                                                    <option value="done" style={{ color: "green" }}>
+                                                    Done
+                                                    </option>
+                                                    <option value="pending" style={{ color: "red" }}>
+                                                    Pending
+                                                    </option>
+                                                </select>
+                                                ) : (
+                                                <span
+                                                    className={`status-pill ${isDone ? "done" : "pending"}`}
+                                                >
+                                                    {isDone ? (
+                                                    <>
+                                                        Done <span className="checkmark">✔</span>
+                                                    </>
+                                                    ) : (
+                                                    "Pending"
+                                                    )}
+                                                </span>
+                                                )}
+                                            </div>
+                                            </div>
+
                                     </div>
                                 );
                             })
