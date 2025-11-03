@@ -45,6 +45,7 @@ import MetadataPage from "./pages/metadata";
 import ExpensesMatrix from "./pages/expense/expenseMatrix";
 import MddWiseTargets from "./pages/mddWiseTarget";
 import 'rsuite/dist/rsuite.min.css';
+import SessionsViewer from "./pages/sessions/sessionViewer";
 
 
 
@@ -108,6 +109,7 @@ function App() {
             <Route path="/routePlan" element={<RoutesPlan />} />
             <Route path="/leaveApplication" element={<LeaveApplication />} />
             <Route path="/travelExpenses" element={<TravelExpenses />} />
+            <Route path="/super-admin/sessions" element={<SessionsViewer/>} />
             <Route path="/earth" element={<Earth />} />
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/attendance-matrix" element={<AttendanceMatrix />} />

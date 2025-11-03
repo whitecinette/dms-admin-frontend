@@ -30,6 +30,11 @@ import { TbBuildingSkyscraper } from "react-icons/tb";
 import { TbIdBadge } from "react-icons/tb";
 import { TbReportMoney } from "react-icons/tb";
 import { MdOutlineTrackChanges } from "react-icons/md";
+import { MdDevicesOther } from "react-icons/md"; // sleek device icon
+// OR a cooler one if you prefer:
+import { BiChip } from "react-icons/bi"; // gives a tech feel
+import { RiWifiOffLine } from "react-icons/ri"; // network/sessions vibe
+
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -212,6 +217,17 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "MDD Wise Targets", to: "/mdd-wise-targets", icon: <MdOutlineTrackChanges /> },
       ],
     },
+
+    // ✅ Add here
+    ...(role === "super_admin"
+      ? [
+          {
+            name: "Sessions",
+            to: "/super-admin/sessions",
+            icon: <MdDevicesOther size={20} />,
+          },
+        ]
+      : []),
     { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
     {
       name: "Logout",
