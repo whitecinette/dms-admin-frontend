@@ -6,6 +6,8 @@ import "./style.scss";
 import Table from "../../components/table";
 import axios from "axios";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
+import { FaPowerOff } from "react-icons/fa"; 
+
 
 const backendUrl = config.backend_url;
 
@@ -210,6 +212,7 @@ function Products() {
       }, 3000);
     }
   };
+
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -218,6 +221,63 @@ function Products() {
       [name]: value,
     }));
   };
+
+  const cleanSamsungData = async () => {
+  if (!window.confirm("Are you sure you want to clean duplicate Samsung products?")) return;
+
+  try {
+    const res = await axios.post(
+      `${backendUrl}/super-admin/products/clean-samsung`,
+      {},
+      {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      }
+    );
+
+    setSuccess(
+      res.data?.message ||
+      `Cleanup complete. ${res.data?.deletedCount || 0} duplicates removed.`
+    );
+    fetchProduct();
+    setTimeout(() => setSuccess(""), 3000);
+  } catch (err) {
+    console.error("❌ Error cleaning Samsung data:", err);
+    setErrorMessage(
+      err.response?.data?.message ||
+      "Something went wrong while cleaning Samsung data."
+    );
+    setTimeout(() => setErrorMessage(""), 3000);
+  }
+};
+
+  const makeAllInactive = async () => {
+  if (!window.confirm("Are you sure you want to mark all products as inactive?")) return;
+
+  try {
+    const res = await axios.put(
+      `${backendUrl}/admin/product/inactive-all`,
+      {},
+      {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      }
+    );
+
+    setSuccess(res.data.message || "All products are now inactive.");
+    fetchProduct();
+    setTimeout(() => setSuccess(""), 3000);
+  } catch (err) {
+    console.error("❌ Error:", err);
+    setErrorMessage(
+      err.response?.data?.message || "Something went wrong while updating."
+    );
+    setTimeout(() => setErrorMessage(""), 3000);
+  }
+};
+
 
   //call get function
   useEffect(() => {
@@ -315,6 +375,39 @@ function Products() {
               <FaDownload />
               Download CSV Format
             </div>
+
+            {localStorage.getItem("role") === "super_admin" && (
+            <button
+              className="make-inactive-btn"
+              onClick={makeAllInactive}
+            >
+              <FaPowerOff />
+              Make All Inactive
+            </button>
+          )}
+
+          {localStorage.getItem("role") === "super_admin" && (
+            <button
+              className="clean-samsung-btn"
+              onClick={cleanSamsungData}
+              style={{
+                backgroundColor: "#1E88E5",
+                color: "white",
+                border: "none",
+                padding: "8px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                fontWeight: "600"
+              }}
+            >
+              🧹 Clean Samsung Data
+            </button>
+          )}
+
+
           </div>
         </div>
         <Table
