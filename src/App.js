@@ -46,6 +46,7 @@ import ExpensesMatrix from "./pages/expense/expenseMatrix";
 import MddWiseTargets from "./pages/mddWiseTarget";
 import 'rsuite/dist/rsuite.min.css';
 import SessionsViewer from "./pages/sessions/sessionViewer";
+import DealerHierarchy from "./pages/dealerHierarchy";
 
 
 
@@ -120,6 +121,10 @@ function App() {
             <Route path="/metadata" element={<MetadataPage />} />
             <Route path="/expense" element={<ExpensesMatrix /> } />
             <Route path="/mdd-wise-targets" element={<MddWiseTargets/> } />
+
+            {/* new  */}
+
+            <Route path="/dealer-hierarchy" element={<DealerHierarchy/> } />
 
             
           </Route>

@@ -230,6 +230,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       : []),
     { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
     {
+      name: "Dealer Hierarchy",
+      to: "/dealer-hierarchy",
+      icon: <RiPinDistanceFill size={20} />,
+    },
+    {
       name: "Logout",
       to: "/",
       icon: <MdLogout size={20} />,
