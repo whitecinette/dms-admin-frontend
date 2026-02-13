@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./style.scss";
 import { FaDownload, FaFileUpload } from "react-icons/fa";
-import axios from "axios";
 import DealerTable from "./DealerTable";
 import dealerHeaders from "./dealerHeaders";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import UploadDealerHierarchyPopup from "./uploadDealerHierarchyPopup";
+import config from "../../config";
+
+const backendUrl = config.backend_url;
 
 function DealerHierarchy() {
   const [isUpload, setIsUpload] = useState(false);
@@ -13,10 +15,28 @@ function DealerHierarchy() {
   const [search, setSearch] = useState("");
 
   const fetchData = async () => {
-    const res = await axios.get(
-      `/dealer-hierarchy?search=${search}`
-    );
-    setData(res.data.data || []);
+    try {
+      const res = await fetch(
+        `${backendUrl}/dealer-hierarchy?search=${search}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        console.error("Fetch failed:", result.message);
+        return;
+      }
+
+      setData(result.data || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
   };
 
   useEffect(() => {
@@ -54,7 +74,9 @@ function DealerHierarchy() {
 
       <DealerTable data={data} />
 
-      {isUpload && <UploadDealerHierarchyPopup close={() => setIsUpload(false)} />}
+      {isUpload && (
+        <UploadDealerHierarchyPopup close={() => setIsUpload(false)} />
+      )}
     </div>
   );
 }
