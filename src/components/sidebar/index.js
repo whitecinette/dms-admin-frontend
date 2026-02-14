@@ -34,7 +34,9 @@ import { MdDevicesOther } from "react-icons/md"; // sleek device icon
 // OR a cooler one if you prefer:
 import { BiChip } from "react-icons/bi"; // gives a tech feel
 import { RiWifiOffLine } from "react-icons/ri"; // network/sessions vibe
-
+import { RiNodeTree } from "react-icons/ri";
+import { RiUploadCloud2Line } from "react-icons/ri";
+import { RiBarChartGroupedLine } from "react-icons/ri";
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -232,7 +234,17 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     {
       name: "Dealer Hierarchy",
       to: "/dealer-hierarchy",
-      icon: <RiPinDistanceFill size={20} />,
+      icon: <RiNodeTree size={20} />,
+    },
+      {
+      name: "Upload Combined",
+      to: "/combined-upload",
+      icon: <RiUploadCloud2Line size={20} />,
+    },
+    {
+      name: "Sales Report V2",
+      to: "/all-reports",
+      icon: <RiBarChartGroupedLine size={20} />,
     },
     {
       name: "Logout",

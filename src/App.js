@@ -47,6 +47,9 @@ import MddWiseTargets from "./pages/mddWiseTarget";
 import 'rsuite/dist/rsuite.min.css';
 import SessionsViewer from "./pages/sessions/sessionViewer";
 import DealerHierarchy from "./pages/dealerHierarchy";
+import CombinedDataUpload from "./pages/combinedDataUpload";
+import SalesReportV2 from "./pages/SalesReportV2";
+
 
 
 
@@ -125,6 +128,8 @@ function App() {
             {/* new  */}
 
             <Route path="/dealer-hierarchy" element={<DealerHierarchy/> } />
+            <Route path="/combined-upload" element={<CombinedDataUpload />} />
+            <Route path="/all-reports" element={<SalesReportV2 /> } />
 
             
           </Route>
