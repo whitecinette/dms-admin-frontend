@@ -37,6 +37,8 @@ import { RiWifiOffLine } from "react-icons/ri"; // network/sessions vibe
 import { RiNodeTree } from "react-icons/ri";
 import { RiUploadCloud2Line } from "react-icons/ri";
 import { RiBarChartGroupedLine } from "react-icons/ri";
+import { RiPriceTag3Line } from "react-icons/ri";
+
 
 /** Helper: subtle professional colors for sub-item icons */
 const SUB_ICON_COLORS = [
@@ -245,6 +247,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       name: "Sales Report V2",
       to: "/all-reports",
       icon: <RiBarChartGroupedLine size={20} />,
+    },
+    {
+      name: "Product Master",
+      to: "/product-master",
+      icon: <RiPriceTag3Line size={20} />,
     },
     {
       name: "Logout",

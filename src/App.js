@@ -49,6 +49,7 @@ import SessionsViewer from "./pages/sessions/sessionViewer";
 import DealerHierarchy from "./pages/dealerHierarchy";
 import CombinedDataUpload from "./pages/combinedDataUpload";
 import SalesReportV2 from "./pages/SalesReportV2";
+import ProductMaster from "./pages/productMaster";
 
 
 
@@ -130,6 +131,7 @@ function App() {
             <Route path="/dealer-hierarchy" element={<DealerHierarchy/> } />
             <Route path="/combined-upload" element={<CombinedDataUpload />} />
             <Route path="/all-reports" element={<SalesReportV2 /> } />
+            <Route path="/product-master" element={<ProductMaster /> } />
 
             
           </Route>

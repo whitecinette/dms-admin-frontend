@@ -1,0 +1,29 @@
+.upload-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.upload-container {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 400px;
+  text-align: center;
+
+  input {
+    margin: 20px 0;
+  }
+
+  button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #4a6cf7;
+    color: white;
+    cursor: pointer;
+  }
+}
