@@ -38,6 +38,7 @@ import { RiNodeTree } from "react-icons/ri";
 import { RiUploadCloud2Line } from "react-icons/ri";
 import { RiBarChartGroupedLine } from "react-icons/ri";
 import { RiPriceTag3Line } from "react-icons/ri";
+import { RiShieldCheckLine } from "react-icons/ri";
 
 
 /** Helper: subtle professional colors for sub-item icons */
@@ -252,6 +253,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       name: "Product Master",
       to: "/product-master",
       icon: <RiPriceTag3Line size={20} />,
+    },
+    {
+      name: "Data Police",
+      to: "/data-police",
+      icon: <RiShieldCheckLine size={20} />,
     },
     {
       name: "Logout",

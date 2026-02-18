@@ -69,7 +69,8 @@ function CombinedDataUpload() {
             setSecondaryFile(file);
           }
 
-          if (lower === "tertiary") {
+          if (lower.startsWith("tertiary")) {
+
             setPreviewData((prev) => ({ ...prev, tertiary: json }));
             setTertiaryFile(file);
           }
@@ -88,21 +89,29 @@ function CombinedDataUpload() {
   // =============================
   // UPLOAD FUNCTION
   // =============================
+const uploadFile = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
 
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
+  const res = await fetch(`${backendUrl}/combined-data-upload`, {
+    method: "POST",
+    headers: {
+      Authorization: localStorage.getItem("authToken"),
+    },
+    body: formData,
+  });
 
-    const res = await fetch(`${backendUrl}/combined-data-upload`, {
-      method: "POST",
-      headers: {
-        Authorization: localStorage.getItem("authToken"),
-      },
-      body: formData,
-    });
+  const data = await res.json();
 
-    return res.json();
-  };
+  console.log("UPLOAD RESPONSE:", data);
+
+  if (!res.ok) {
+    throw new Error(data.message || "Upload failed");
+  }
+
+  return data;
+};
+
 
   const handleUpload = async () => {
     setLoading(true);

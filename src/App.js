@@ -50,6 +50,7 @@ import DealerHierarchy from "./pages/dealerHierarchy";
 import CombinedDataUpload from "./pages/combinedDataUpload";
 import SalesReportV2 from "./pages/SalesReportV2";
 import ProductMaster from "./pages/productMaster";
+import DataPolice from "./pages/dataPolice";
 
 
 
@@ -132,6 +133,7 @@ function App() {
             <Route path="/combined-upload" element={<CombinedDataUpload />} />
             <Route path="/all-reports" element={<SalesReportV2 /> } />
             <Route path="/product-master" element={<ProductMaster /> } />
+            <Route path="/data-police" element={<DataPolice /> } />
 
             
           </Route>

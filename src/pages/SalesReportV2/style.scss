@@ -139,3 +139,57 @@
   }
 }
 
+.wod-section {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+}
+
+.wod-card {
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.06);
+
+  h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3436;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    th,
+    td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+
+    th {
+      background: #f4f6f8;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .row-label {
+      font-weight: 600;
+      text-align: left;
+      background: #fafafa;
+    }
+
+    tbody tr:hover {
+      background: #f9fbff;
+    }
+
+    td:nth-last-child(2) {
+      font-weight: bold;
+      color: #2e7d32; // growth column
+    }
+  }
+}
