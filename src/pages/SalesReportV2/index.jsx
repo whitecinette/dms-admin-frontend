@@ -5,7 +5,9 @@ import "./style.scss";
 const backendUrl = config.backend_url;
 
 function SalesReportV2() {
-  const [selectedMonth, setSelectedMonth] = useState("2026-02");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -74,16 +76,6 @@ function SalesReportV2() {
       : formatNormal(num, isCurrency);
   };
 
-  // ===============================
-  // DATE RANGE HELPER
-  // ===============================
-  const getMonthRange = (month) => {
-    const [year, mon] = month.split("-");
-    const start = `${year}-${mon}-01`;
-    const lastDay = new Date(year, mon, 0).getDate();
-    const end = `${year}-${mon}-${lastDay}`;
-    return { start, end };
-  };
 
   // ===============================
   // FETCH DASHBOARD API
@@ -92,7 +84,15 @@ function SalesReportV2() {
     setLoading(true);
 
     try {
-      const { start, end } = getMonthRange(selectedMonth);
+      const body = {
+        filters: {},
+      };
+
+      // Only send dates if user selected them
+      if (startDate && endDate) {
+        body.start_date = startDate;
+        body.end_date = endDate;
+      }
 
       const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
         method: "POST",
@@ -100,11 +100,7 @@ function SalesReportV2() {
           "Content-Type": "application/json",
           Authorization: localStorage.getItem("authToken"),
         },
-        body: JSON.stringify({
-          start_date: start,
-          end_date: end,
-          filters: {},
-        }),
+        body: JSON.stringify(body),
       });
 
       const result = await res.json();
@@ -121,9 +117,10 @@ function SalesReportV2() {
     setLoading(false);
   };
 
+
   useEffect(() => {
     fetchDashboard();
-  }, [selectedMonth]);
+  }, []);
 
   // ===============================
   // GENERIC TABLE RENDERER
@@ -268,11 +265,19 @@ function SalesReportV2() {
           <h2>📊 Sales Dashboard</h2>
 
           <div className="controls">
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{ marginLeft: "8px" }}
+          />
+
 
             <button onClick={fetchDashboard}>Refresh</button>
 
