@@ -197,63 +197,105 @@ function SalesReportV2() {
     const wodTables = dashboardData?.wodTables;
     if (!wodTables) return null;
 
+    const sellIn = wodTables.sellInWOD || {};
+    const sellOut = wodTables.sellOutWOD || {};
+
+    const columns = Object.keys(sellIn);
+
     return (
       <div className="wod-section">
         <div className="report-section">
           <h3>WOD</h3>
+
           <table className="report-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                {columns.map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+
             <tbody>
               <tr>
                 <td className="metric-title">Sell-In WOD</td>
-                {Object.values(wodTables.sellInWOD || {}).map((val, i) => (
-                  <td key={i}>{formatValue(val)}</td>
+                {columns.map((col) => (
+                  <td key={col}>{formatValue(sellIn[col])}</td>
                 ))}
               </tr>
 
               <tr>
                 <td className="metric-title">Sell-Out WOD</td>
-                {Object.values(wodTables.sellOutWOD || {}).map((val, i) => (
-                  <td key={i}>{formatValue(val)}</td>
+                {columns.map((col) => (
+                  <td key={col}>{formatValue(sellOut[col])}</td>
                 ))}
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div className="report-section">
-          <h3>Sell-In WOD</h3>
-          <table className="report-table">
-            <tbody>
-              {wodTables.sellInBreakdown?.map((row, idx) => (
-                <tr key={idx}>
-                  <td className="metric-title">{row.label}</td>
-                  {Object.values(row.data).map((val, i) => (
-                    <td key={i}>{formatValue(val)}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* SELL-IN BREAKDOWN */}
+        {wodTables.sellInBreakdown?.length > 0 && (
+          <div className="report-section">
+            <h3>Sell-In WOD</h3>
 
-        <div className="report-section">
-          <h3>Sell-Out WOD</h3>
-          <table className="report-table">
-            <tbody>
-              {wodTables.sellOutBreakdown?.map((row, idx) => (
-                <tr key={idx}>
-                  <td className="metric-title">{row.label}</td>
-                  {Object.values(row.data).map((val, i) => (
-                    <td key={i}>{formatValue(val)}</td>
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  {columns.map((col) => (
+                    <th key={col}>{col}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+
+              <tbody>
+                {wodTables.sellInBreakdown.map((row, idx) => (
+                  <tr key={idx}>
+                    <td className="metric-title">{row.label}</td>
+                    {columns.map((col) => (
+                      <td key={col}>{formatValue(row.data[col])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* SELL-OUT BREAKDOWN */}
+        {wodTables.sellOutBreakdown?.length > 0 && (
+          <div className="report-section">
+            <h3>Sell-Out WOD</h3>
+
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  {columns.map((col) => (
+                    <th key={col}>{col}</th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {wodTables.sellOutBreakdown.map((row, idx) => (
+                  <tr key={idx}>
+                    <td className="metric-title">{row.label}</td>
+                    {columns.map((col) => (
+                      <td key={col}>{formatValue(row.data[col])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };
+
 
   // ===============================
   // UI
