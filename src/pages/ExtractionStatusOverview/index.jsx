@@ -36,6 +36,95 @@ const pctStrToNum = (s) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+
+
+
+
+
+const DealerPopup = ({ open, onClose, title, dealers = [], loading }) => {
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    return (dealers || []).filter((d) => {
+      const name = String(d?.name || "").toLowerCase();
+      const code = String(d?.code || "").toLowerCase();
+      const st = String(d?.status || "").toLowerCase();
+      const okQ = !qq || name.includes(qq) || code.includes(qq);
+      const okS = status === "all" || st === status;
+      return okQ && okS;
+    });
+  }, [dealers, q, status]);
+
+  if (!open) return null;
+
+  return (
+    <div className="dealer-modal-overlay" onClick={onClose}>
+      <div className="dealer-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="dealer-modal-header">
+          <div>
+            <div className="dealer-title">{title}</div>
+            <div className="dealer-sub">{loading ? "Loading..." : `${filtered.length} dealers`}</div>
+          </div>
+          <button className="dealer-close" onClick={onClose}>×</button>
+        </div>
+
+        <div className="dealer-modal-filters">
+          <input
+            className="dealer-search"
+            placeholder="Search dealer name / code"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <select className="dealer-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+
+        <div className="dealer-modal-body">
+          <table className="dealer-table">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Town</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} className="dealer-empty">Loading...</td></tr>
+              ) : filtered.length ? (
+                filtered.map((d, i) => (
+                  <tr key={d._id || d.code || i}>
+                    <td>{i + 1}</td>
+                    <td>{d.code}</td>
+                    <td>{d.name}</td>
+                    <td>{d.town || "-"}</td>
+                    <td>
+                      <span className={`dealer-badge ${String(d.status).toLowerCase()}`}>
+                        {String(d.status || "-").toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan={5} className="dealer-empty">No dealers</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
 export default function ExtractionStatusOverview() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +145,27 @@ export default function ExtractionStatusOverview() {
 
   const [rows, setRows] = useState([]); // data[]
   const [selfData, setSelfData] = useState(null); // selfData
+
+  const [dealerPopup, setDealerPopup] = useState({ open: false, title: "", dealers: [], loading: false });
+
+const openDealers = async (actor) => {
+  try {
+    setDealerPopup({ open: true, title: `${actor.name} (${actor.code}) • ${actor.position}`, dealers: [], loading: true });
+
+    const url = `${backendUrl}/user/extraction-dealers-w-status?code=${encodeURIComponent(actor.code)}&startDate=${toInputDate(startDate)}&endDate=${toInputDate(endDate)}`;
+
+    const res = await axios.post(url, null, { headers: { ...getAuthHeader() } });
+
+    // IMPORTANT: remove sensitive fields (password etc)
+    const clean = (res.data?.dealers || []).map(({ password, __v, ...rest }) => rest);
+
+    setDealerPopup((p) => ({ ...p, dealers: clean, loading: false }));
+  } catch (e) {
+    console.error(e);
+    setDealerPopup((p) => ({ ...p, dealers: [], loading: false }));
+  }
+};
+
 
   // ----- Fetch subordinates for role filter -----
   const fetchSubordinates = async () => {
@@ -373,7 +483,7 @@ export default function ExtractionStatusOverview() {
                 </tr>
               ) : filteredRows.length ? (
                 filteredRows.map((r, i) => (
-                  <tr key={`${r.code}-${i}`}>
+                  <tr key={`${r.code}-${i}`} onClick={() => openDealers(r)} style={{ cursor: "pointer" }}>
                     <td>{r.name || "N/A"}</td>
                     <td>{r.code || "-"}</td>
                     <td>{String(r.position || "-").toUpperCase()}</td>
@@ -402,6 +512,14 @@ export default function ExtractionStatusOverview() {
             </tbody>
           </table>
         </div>
+
+        <DealerPopup
+            open={dealerPopup.open}
+            title={dealerPopup.title}
+            dealers={dealerPopup.dealers}
+            loading={dealerPopup.loading}
+            onClose={() => setDealerPopup({ open: false, title: "", dealers: [], loading: false })}
+            />
       </div>
     </div>
   );
