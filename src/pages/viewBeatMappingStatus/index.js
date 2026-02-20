@@ -20,7 +20,7 @@ import EmployeeSchedule from "./employeeSchedule";
 import * as XLSX from "xlsx";
 import TableLoading from "../../components/tableLoading";
 import ReactECharts from "echarts-for-react";
-import TimelineView from "./timelineView/index.jsx";
+// import TimelineView from "./timelineView/index.jsx";
 import moment from "moment";
 
 const backendUrl = config.backend_url;
@@ -623,20 +623,22 @@ const ViewBeatMappingStatus = () => {
             {/* first part  */}
 
               </>
-            ) : (
+            ) 
+            : (
+                <></>
 
-                <TimelineView
-                    data={data}
-                    startDay={startDay}
-                    endDay={endDay}
-                    onDateChange={(newStart, newEnd) => {
-                        if (newStart && newEnd) {
-                        setStartDay(newStart);
-                        setEndDay(newEnd);
-                        getBeatMapping();
-                        }
-                    }}
-                    />
+                // <TimelineView
+                //     data={data}
+                //     startDay={startDay}
+                //     endDay={endDay}
+                //     onDateChange={(newStart, newEnd) => {
+                //         if (newStart && newEnd) {
+                //         setStartDay(newStart);
+                //         setEndDay(newEnd);
+                //         getBeatMapping();
+                //         }
+                //     }}
+                //     />
 
 
             )}
