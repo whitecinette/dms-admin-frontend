@@ -51,6 +51,7 @@ import CombinedDataUpload from "./pages/combinedDataUpload";
 import SalesReportV2 from "./pages/SalesReportV2";
 import ProductMaster from "./pages/productMaster";
 import DataPolice from "./pages/dataPolice";
+import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
 
 
 
@@ -134,6 +135,7 @@ function App() {
             <Route path="/all-reports" element={<SalesReportV2 /> } />
             <Route path="/product-master" element={<ProductMaster /> } />
             <Route path="/data-police" element={<DataPolice /> } />
+            <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
 
             
           </Route>

@@ -108,6 +108,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       ),
     },
     { name: "Extraction", to: "/extraction", icon: <LuPickaxe size={20} /> },
+     { name: "Extraction Status", to: "/extraction-status-overview", icon: <LuPickaxe size={20} /> },
+
     { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
     {
       name: "HR",
