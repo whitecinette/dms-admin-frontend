@@ -222,6 +222,30 @@ function DataPolice() {
     );
   };
 
+    // ===============================
+  // WOD CARD
+  // ===============================
+  const renderWodCard = (dataset) => {
+    if (!dataset) return null;
+
+    return (
+      <div className="flag-card">
+        <h3>WOD</h3>
+
+        <div>
+          <strong>Total Dealers (Active):</strong>{" "}
+          {dataset.totalDealers}
+        </div>
+
+        <div>
+          <strong>Excluded Dealers:</strong>{" "}
+          {dataset.excludedDealers}
+        </div>
+      </div>
+    );
+  };
+
+
   // ===============================
   // UI
   // ===============================
@@ -305,21 +329,14 @@ function DataPolice() {
 
         {/* FLAGS */}
         {activeTab === "flags" && flagsData && (
-          <div className="flags-grid">
-            {renderFlagCard(
-              "Activation",
-              flagsData.activation
-            )}
-            {renderFlagCard(
-              "Tertiary",
-              flagsData.tertiary
-            )}
-            {renderFlagCard(
-              "Secondary",
-              flagsData.secondary
-            )}
-          </div>
+        <div className="flags-grid">
+            {renderFlagCard("Activation", flagsData.activation)}
+            {renderFlagCard("Tertiary", flagsData.tertiary)}
+            {renderFlagCard("Secondary", flagsData.secondary)}
+            {renderWodCard(flagsData.wod)} {/* ✅ Added */}
+        </div>
         )}
+
       </div>
     </div>
   );

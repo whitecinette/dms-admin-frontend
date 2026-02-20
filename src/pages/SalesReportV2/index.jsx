@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import config from "../../config";
 import "./style.scss";
+import PriceSegmentTable from "./priceSegmentTable";
 
 const backendUrl = config.backend_url;
 
@@ -292,9 +293,14 @@ function SalesReportV2() {
             </table>
           </div>
         )}
+
+
       </div>
     );
   };
+
+
+
 
 
   // ===============================
@@ -342,6 +348,14 @@ function SalesReportV2() {
             {renderTable("Secondary (SPD → MDD)", dashboardData.secondary)}
             {renderWodTables()}
           </>
+        )}
+
+            {/* 🔥 ADD THIS RIGHT HERE */}
+        {dashboardData?.priceSegmentTables && (
+          <PriceSegmentTable
+            data={dashboardData.priceSegmentTables}
+            title="Activation – Price Segment Wise"
+          />
         )}
       </div>
     </div>
