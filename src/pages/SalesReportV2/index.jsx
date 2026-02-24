@@ -5,17 +5,83 @@ import PriceSegmentTable from "./priceSegmentTable";
 
 const backendUrl = config.backend_url;
 
+/** ===============================
+ *  SHIMMER / SKELETON COMPONENTS
+ *  =============================== */
+
+const ShimmerBlock = ({ height = 14, width = "100%", style = {} }) => (
+  <div
+    className="shimmer"
+    style={{
+      height,
+      width,
+      borderRadius: 6,
+      ...style,
+    }}
+  />
+);
+
+const SectionLoader = ({ title, rows = 3, cols = 6 }) => (
+  <div className="report-section">
+    <h3 style={{ marginBottom: 10 }}>{title}</h3>
+
+    <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
+      <ShimmerBlock height={18} width="180px" style={{ marginBottom: 12 }} />
+
+      {/* header */}
+      <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${cols}, 1fr)`, gap: 10 }}>
+        <ShimmerBlock height={12} />
+        {Array.from({ length: cols }).map((_, i) => (
+          <ShimmerBlock key={i} height={12} />
+        ))}
+      </div>
+
+      {/* rows */}
+      <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+        {Array.from({ length: rows }).map((_, r) => (
+          <div
+            key={r}
+            style={{
+              display: "grid",
+              gridTemplateColumns: `160px repeat(${cols}, 1fr)`,
+              gap: 10,
+            }}
+          >
+            <ShimmerBlock height={12} />
+            {Array.from({ length: cols }).map((_, c) => (
+              <ShimmerBlock key={c} height={12} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+/** ===============================
+ *  MAIN COMPONENT
+ *  =============================== */
+
 function SalesReportV2() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  // 🔥 toggle
+  const [compactMode, setCompactMode] = useState(true);
 
-  // 🔥 NEW TOGGLE STATE
-  const [compactMode, setCompactMode] = useState(true); 
-  // true = Cr/Lac
-  // false = normal exact numbers
+  // ✅ section-wise data
+  const [activation, setActivation] = useState(null);
+  const [tertiary, setTertiary] = useState(null);
+  const [secondary, setSecondary] = useState(null);
+  const [wodTables, setWodTables] = useState(null);
+  const [priceSegmentTables, setPriceSegmentTables] = useState(null);
+
+  // ✅ section-wise loading flags
+  const [loadingActivation, setLoadingActivation] = useState(false);
+  const [loadingTertiary, setLoadingTertiary] = useState(false);
+  const [loadingSecondary, setLoadingSecondary] = useState(false);
+  const [loadingWod, setLoadingWod] = useState(false);
+  const [loadingPriceSegment, setLoadingPriceSegment] = useState(false);
 
   // ===============================
   // FORMATTERS
@@ -31,28 +97,16 @@ function SalesReportV2() {
     let formatted;
 
     if (abs >= 10000000) {
-      formatted =
-        (abs / 10000000)
-          .toFixed(2)
-          .replace(/\.00$/, "") + " Cr";
+      formatted = (abs / 10000000).toFixed(2).replace(/\.00$/, "") + " Cr";
     } else if (abs >= 100000) {
-      formatted =
-        (abs / 100000)
-          .toFixed(2)
-          .replace(/\.00$/, "") + " Lac";
+      formatted = (abs / 100000).toFixed(2).replace(/\.00$/, "") + " Lac";
     } else if (abs >= 1000) {
-      formatted =
-        (abs / 1000)
-          .toFixed(2)
-          .replace(/\.00$/, "") + " K";
+      formatted = (abs / 1000).toFixed(2).replace(/\.00$/, "") + " K";
     } else {
       formatted = abs.toLocaleString("en-IN");
     }
 
-    if (isCurrency) {
-      return (isNegative ? "-₹ " : "₹ ") + formatted;
-    }
-
+    if (isCurrency) return (isNegative ? "-₹ " : "₹ ") + formatted;
     return isNegative ? "-" + formatted : formatted;
   };
 
@@ -64,32 +118,39 @@ function SalesReportV2() {
       maximumFractionDigits: 2,
     });
 
-    if (isCurrency) {
-      return n < 0 ? `-₹ ${formatted}` : `₹ ${formatted}`;
-    }
-
+    if (isCurrency) return n < 0 ? `-₹ ${formatted}` : `₹ ${formatted}`;
     return n < 0 ? `-${formatted}` : formatted;
   };
 
-  const formatValue = (num, isCurrency = false) => {
-    return compactMode
-      ? formatCompact(num, isCurrency)
-      : formatNormal(num, isCurrency);
+  const formatValue = (num, isCurrency = false) =>
+    compactMode ? formatCompact(num, isCurrency) : formatNormal(num, isCurrency);
+
+  // ===============================
+  // RESET SECTIONS
+  // ===============================
+  const resetAllSections = () => {
+    setActivation(null);
+    setTertiary(null);
+    setSecondary(null);
+    setWodTables(null);
+    setPriceSegmentTables(null);
+
+    setLoadingActivation(true);
+    setLoadingTertiary(true);
+    setLoadingSecondary(true);
+    setLoadingWod(true);
+    setLoadingPriceSegment(true);
   };
 
-
   // ===============================
-  // FETCH DASHBOARD API
+  // FETCH DASHBOARD
   // ===============================
   const fetchDashboard = async () => {
-    setLoading(true);
+    resetAllSections();
 
     try {
-      const body = {
-        filters: {},
-      };
+      const body = { filters: {} };
 
-      // Only send dates if user selected them
       if (startDate && endDate) {
         body.start_date = startDate;
         body.end_date = endDate;
@@ -108,19 +169,55 @@ function SalesReportV2() {
 
       if (!res.ok) {
         alert(result.message || "Error fetching report");
-      } else {
-        setDashboardData(result);
+        // stop loaders if failed
+        setLoadingActivation(false);
+        setLoadingTertiary(false);
+        setLoadingSecondary(false);
+        setLoadingWod(false);
+        setLoadingPriceSegment(false);
+        return;
       }
+
+      // ✅ Progressive reveal (one by one)
+      // This gives React time to paint loaders and then replace sections gradually.
+      requestAnimationFrame(() => {
+        setActivation(result.activation || null);
+        setLoadingActivation(false);
+
+        requestAnimationFrame(() => {
+          setTertiary(result.tertiary || null);
+          setLoadingTertiary(false);
+
+          requestAnimationFrame(() => {
+            setSecondary(result.secondary || null);
+            setLoadingSecondary(false);
+
+            requestAnimationFrame(() => {
+              setWodTables(result.wodTables || null);
+              setLoadingWod(false);
+
+              requestAnimationFrame(() => {
+                setPriceSegmentTables(result.priceSegmentTables || null);
+                setLoadingPriceSegment(false);
+              });
+            });
+          });
+        });
+      });
     } catch (err) {
       alert("Network error");
+
+      setLoadingActivation(false);
+      setLoadingTertiary(false);
+      setLoadingSecondary(false);
+      setLoadingWod(false);
+      setLoadingPriceSegment(false);
     }
-
-    setLoading(false);
   };
-
 
   useEffect(() => {
     fetchDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===============================
@@ -129,7 +226,8 @@ function SalesReportV2() {
   const renderTable = (title, reportData) => {
     if (!reportData?.table) return null;
 
-    const { value, volume } = reportData.table;
+    const { value = {}, volume = {} } = reportData.table;
+    const columns = Object.keys(value || {});
 
     return (
       <div className="report-section">
@@ -139,7 +237,7 @@ function SalesReportV2() {
           <thead>
             <tr>
               <th>Metric</th>
-              {Object.keys(value).map((col) => (
+              {columns.map((col) => (
                 <th key={col}>{col}</th>
               ))}
             </tr>
@@ -148,42 +246,48 @@ function SalesReportV2() {
           <tbody>
             <tr>
               <td className="metric-title">Value</td>
-              {Object.entries(value).map(([key, val]) => (
-                <td
-                  key={key}
-                  className={
-                    key === "G/D%"
-                      ? val >= 0
-                        ? "positive"
-                        : "negative"
-                      : ""
-                  }
-                >
-                  {key.includes("%")
-                    ? `${val}%`
-                    : formatValue(val, true)}
-                </td>
-              ))}
+              {columns.map((key) => {
+                const val = value?.[key];
+                return (
+                  <td
+                    key={key}
+                    className={
+                      key === "G/D%"
+                        ? Number(val || 0) >= 0
+                          ? "positive"
+                          : "negative"
+                        : ""
+                    }
+                  >
+                    {key.includes("%")
+                      ? `${Number(val || 0).toFixed(2)}%`
+                      : formatValue(val, true)}
+                  </td>
+                );
+              })}
             </tr>
 
             <tr>
               <td className="metric-title">Volume</td>
-              {Object.entries(volume).map(([key, val]) => (
-                <td
-                  key={key}
-                  className={
-                    key === "G/D%"
-                      ? val >= 0
-                        ? "positive"
-                        : "negative"
-                      : ""
-                  }
-                >
-                  {key.includes("%")
-                    ? `${val}%`
-                    : formatValue(val, false)}
-                </td>
-              ))}
+              {columns.map((key) => {
+                const val = volume?.[key];
+                return (
+                  <td
+                    key={key}
+                    className={
+                      key === "G/D%"
+                        ? Number(val || 0) >= 0
+                          ? "positive"
+                          : "negative"
+                        : ""
+                    }
+                  >
+                    {key.includes("%")
+                      ? `${Number(val || 0).toFixed(2)}%`
+                      : formatValue(val, false)}
+                  </td>
+                );
+              })}
             </tr>
           </tbody>
         </table>
@@ -195,12 +299,10 @@ function SalesReportV2() {
   // WOD TABLES
   // ===============================
   const renderWodTables = () => {
-    const wodTables = dashboardData?.wodTables;
     if (!wodTables) return null;
 
     const sellIn = wodTables.sellInWOD || {};
     const sellOut = wodTables.sellOutWOD || {};
-
     const columns = Object.keys(sellIn);
 
     return (
@@ -256,7 +358,7 @@ function SalesReportV2() {
                   <tr key={idx}>
                     <td className="metric-title">{row.label}</td>
                     {columns.map((col) => (
-                      <td key={col}>{formatValue(row.data[col])}</td>
+                      <td key={col}>{formatValue(row.data?.[col])}</td>
                     ))}
                   </tr>
                 ))}
@@ -285,7 +387,7 @@ function SalesReportV2() {
                   <tr key={idx}>
                     <td className="metric-title">{row.label}</td>
                     {columns.map((col) => (
-                      <td key={col}>{formatValue(row.data[col])}</td>
+                      <td key={col}>{formatValue(row.data?.[col])}</td>
                     ))}
                   </tr>
                 ))}
@@ -293,15 +395,9 @@ function SalesReportV2() {
             </table>
           </div>
         )}
-
-
       </div>
     );
   };
-
-
-
-
 
   // ===============================
   // UI
@@ -313,23 +409,21 @@ function SalesReportV2() {
           <h2>📊 Sales Dashboard</h2>
 
           <div className="controls">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
 
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            style={{ marginLeft: "8px" }}
-          />
-
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={{ marginLeft: "8px" }}
+            />
 
             <button onClick={fetchDashboard}>Refresh</button>
 
-            {/* 🔥 NEW TOGGLE */}
             <button
               onClick={() => setCompactMode(!compactMode)}
               style={{ marginLeft: "10px" }}
@@ -339,24 +433,42 @@ function SalesReportV2() {
           </div>
         </div>
 
-        {loading && <div className="loader">Loading...</div>}
-
-        {dashboardData && (
-          <>
-            {renderTable("Activation (Sell-Out)", dashboardData.activation)}
-            {renderTable("Tertiary (Sell-In)", dashboardData.tertiary)}
-            {renderTable("Secondary (SPD → MDD)", dashboardData.secondary)}
-            {renderWodTables()}
-          </>
+        {/* ✅ Section-wise loaders + renders */}
+        {loadingActivation ? (
+          <SectionLoader title="Activation (Sell-Out)" rows={2} cols={6} />
+        ) : (
+          renderTable("Activation (Sell-Out)", activation)
         )}
 
-            {/* 🔥 ADD THIS RIGHT HERE */}
-        {dashboardData?.priceSegmentTables && (
+        {loadingTertiary ? (
+          <SectionLoader title="Tertiary (Sell-In)" rows={2} cols={6} />
+        ) : (
+          renderTable("Tertiary (Sell-In)", tertiary)
+        )}
+
+        {loadingSecondary ? (
+          <SectionLoader title="Secondary (SPD → MDD)" rows={2} cols={6} />
+        ) : (
+          renderTable("Secondary (SPD → MDD)", secondary)
+        )}
+
+        {loadingWod ? (
+          <SectionLoader title="WOD" rows={3} cols={6} />
+        ) : (
+          renderWodTables()
+        )}
+
+      {loadingPriceSegment ? (
+        <SectionLoader title="Activation – Price Segment Wise" rows={6} cols={8} />
+      ) : (
+        priceSegmentTables && (
           <PriceSegmentTable
-            data={dashboardData.priceSegmentTables}
+            data={priceSegmentTables}
             title="Activation – Price Segment Wise"
+            formatValue={formatValue}   // ✅ pass formatter
           />
-        )}
+        )
+      )}
       </div>
     </div>
   );
