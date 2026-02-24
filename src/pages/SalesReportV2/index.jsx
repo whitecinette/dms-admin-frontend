@@ -28,15 +28,19 @@ const SectionLoader = ({ title, rows = 3, cols = 6 }) => (
     <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
       <ShimmerBlock height={18} width="180px" style={{ marginBottom: 12 }} />
 
-      {/* header */}
-      <div style={{ display: "grid", gridTemplateColumns: `160px repeat(${cols}, 1fr)`, gap: 10 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `160px repeat(${cols}, 1fr)`,
+          gap: 10,
+        }}
+      >
         <ShimmerBlock height={12} />
         {Array.from({ length: cols }).map((_, i) => (
           <ShimmerBlock key={i} height={12} />
         ))}
       </div>
 
-      {/* rows */}
       <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
         {Array.from({ length: rows }).map((_, r) => (
           <div
@@ -58,35 +62,32 @@ const SectionLoader = ({ title, rows = 3, cols = 6 }) => (
   </div>
 );
 
-/** ===============================
- *  MAIN COMPONENT
- *  =============================== */
-
 function SalesReportV2() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // 🔥 toggle
   const [compactMode, setCompactMode] = useState(true);
 
-  // ✅ section-wise data
+  // data
   const [activation, setActivation] = useState(null);
   const [tertiary, setTertiary] = useState(null);
   const [secondary, setSecondary] = useState(null);
   const [wodTables, setWodTables] = useState(null);
   const [priceSegmentTables, setPriceSegmentTables] = useState(null);
+  const [priceSegmentSplit40k, setPriceSegmentSplit40k] = useState(null);
 
-  // ✅ section-wise loading flags
+  // loaders
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
   const [loadingSecondary, setLoadingSecondary] = useState(false);
   const [loadingWod, setLoadingWod] = useState(false);
   const [loadingPriceSegment, setLoadingPriceSegment] = useState(false);
+  const [loadingPriceSegmentSplit40k, setLoadingPriceSegmentSplit40k] =
+    useState(false);
 
   // ===============================
   // FORMATTERS
   // ===============================
-
   const formatCompact = (num, isCurrency = false) => {
     if (num === null || num === undefined || isNaN(num)) return "-";
 
@@ -134,12 +135,14 @@ function SalesReportV2() {
     setSecondary(null);
     setWodTables(null);
     setPriceSegmentTables(null);
+    setPriceSegmentSplit40k(null);
 
     setLoadingActivation(true);
     setLoadingTertiary(true);
     setLoadingSecondary(true);
     setLoadingWod(true);
     setLoadingPriceSegment(true);
+    setLoadingPriceSegmentSplit40k(true);
   };
 
   // ===============================
@@ -169,17 +172,15 @@ function SalesReportV2() {
 
       if (!res.ok) {
         alert(result.message || "Error fetching report");
-        // stop loaders if failed
         setLoadingActivation(false);
         setLoadingTertiary(false);
         setLoadingSecondary(false);
         setLoadingWod(false);
         setLoadingPriceSegment(false);
+        setLoadingPriceSegmentSplit40k(false);
         return;
       }
 
-      // ✅ Progressive reveal (one by one)
-      // This gives React time to paint loaders and then replace sections gradually.
       requestAnimationFrame(() => {
         setActivation(result.activation || null);
         setLoadingActivation(false);
@@ -199,6 +200,11 @@ function SalesReportV2() {
               requestAnimationFrame(() => {
                 setPriceSegmentTables(result.priceSegmentTables || null);
                 setLoadingPriceSegment(false);
+
+                requestAnimationFrame(() => {
+                  setPriceSegmentSplit40k(result.priceSegmentTables40k || null);
+                  setLoadingPriceSegmentSplit40k(false);
+                });
               });
             });
           });
@@ -206,14 +212,14 @@ function SalesReportV2() {
       });
     } catch (err) {
       alert("Network error");
-
       setLoadingActivation(false);
       setLoadingTertiary(false);
       setLoadingSecondary(false);
       setLoadingWod(false);
       setLoadingPriceSegment(false);
+      setLoadingPriceSegmentSplit40k(false);
     }
-  };
+  }; // ✅ IMPORTANT: close fetchDashboard
 
   useEffect(() => {
     fetchDashboard();
@@ -338,7 +344,6 @@ function SalesReportV2() {
           </table>
         </div>
 
-        {/* SELL-IN BREAKDOWN */}
         {wodTables.sellInBreakdown?.length > 0 && (
           <div className="report-section">
             <h3>Sell-In WOD</h3>
@@ -367,7 +372,6 @@ function SalesReportV2() {
           </div>
         )}
 
-        {/* SELL-OUT BREAKDOWN */}
         {wodTables.sellOutBreakdown?.length > 0 && (
           <div className="report-section">
             <h3>Sell-Out WOD</h3>
@@ -399,9 +403,6 @@ function SalesReportV2() {
     );
   };
 
-  // ===============================
-  // UI
-  // ===============================
   return (
     <div className="sales-report-page">
       <div className="report-container">
@@ -433,7 +434,6 @@ function SalesReportV2() {
           </div>
         </div>
 
-        {/* ✅ Section-wise loaders + renders */}
         {loadingActivation ? (
           <SectionLoader title="Activation (Sell-Out)" rows={2} cols={6} />
         ) : (
@@ -458,17 +458,29 @@ function SalesReportV2() {
           renderWodTables()
         )}
 
-      {loadingPriceSegment ? (
-        <SectionLoader title="Activation – Price Segment Wise" rows={6} cols={8} />
-      ) : (
-        priceSegmentTables && (
-          <PriceSegmentTable
-            data={priceSegmentTables}
-            title="Activation – Price Segment Wise"
-            formatValue={formatValue}   // ✅ pass formatter
-          />
-        )
-      )}
+        {loadingPriceSegment ? (
+          <SectionLoader title="Activation – Price Segment Wise" rows={6} cols={8} />
+        ) : (
+          priceSegmentTables && (
+            <PriceSegmentTable
+              data={priceSegmentTables}
+              title="Activation – Price Segment Wise"
+              formatValue={formatValue}
+            />
+          )
+        )}
+
+        {loadingPriceSegmentSplit40k ? (
+          <SectionLoader title="Activation – 40K vs >40K" rows={3} cols={8} />
+        ) : (
+          priceSegmentSplit40k && (
+            <PriceSegmentTable
+              data={priceSegmentSplit40k}
+              title="Activation – 40K vs >40K"
+              formatValue={formatValue}
+            />
+          )
+        )}
       </div>
     </div>
   );
