@@ -52,6 +52,7 @@ import SalesReportV2 from "./pages/SalesReportV2";
 import ProductMaster from "./pages/productMaster";
 import DataPolice from "./pages/dataPolice";
 import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
+import DumpSyncUpload from "./pages/dumpSync";
 
 
 
@@ -136,6 +137,7 @@ function App() {
             <Route path="/product-master" element={<ProductMaster /> } />
             <Route path="/data-police" element={<DataPolice /> } />
             <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
+            <Route path="/sync-dump-data" element={<DumpSyncUpload /> } />
 
             
           </Route>

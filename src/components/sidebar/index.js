@@ -39,6 +39,7 @@ import { RiUploadCloud2Line } from "react-icons/ri";
 import { RiBarChartGroupedLine } from "react-icons/ri";
 import { RiPriceTag3Line } from "react-icons/ri";
 import { RiShieldCheckLine } from "react-icons/ri";
+import { RiRefreshLine, RiDownloadCloud2Line, RiRepeatLine, RiDatabase2Line } from "react-icons/ri";
 
 
 /** Helper: subtle professional colors for sub-item icons */
@@ -261,6 +262,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       to: "/data-police",
       icon: <RiShieldCheckLine size={20} />,
     },
+    {
+        name: "Sync Params",
+        to: "/sync-dump-data",
+        icon: <RiRefreshLine size={20} />,
+      },
     {
       name: "Logout",
       to: "/",
