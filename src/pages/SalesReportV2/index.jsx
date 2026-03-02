@@ -44,31 +44,31 @@ const SectionLoader = ({ title }) => (
   <div className="report-section">
     <h3 style={{ marginBottom: 10 }}>{title}</h3>
 
-<div className="skeleton-box">
-  <div className="skeleton-title">
-    <ShimmerBlock height={22} width="220px" />
-  </div>
-
-  <div className="skeleton-cards">
-    {Array.from({ length: 4 }).map((_, i) => (
-      <div key={i} className="skeleton-card">
-        <div className="skeleton-card-label">
-          <ShimmerBlock height={12} width="45%" />
-        </div>
-        <ShimmerBlock height={22} width={`${55 + i * 8}%`} />
+    <div className="skeleton-box">
+      <div className="skeleton-title">
+        <ShimmerBlock height={22} width="220px" />
       </div>
-    ))}
-  </div>
 
-  <div className="skeleton-rows">
-    <div className="skeleton-row">
-      <ShimmerBlock height={18} width="70%" />
-      <ShimmerBlock height={18} width="55%" />
-      <ShimmerBlock height={18} width="85%" />
-      <ShimmerBlock height={18} width="60%" />
+      <div className="skeleton-cards">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="skeleton-card">
+            <div className="skeleton-card-label">
+              <ShimmerBlock height={12} width="45%" />
+            </div>
+            <ShimmerBlock height={22} width={`${55 + i * 8}%`} />
+          </div>
+        ))}
+      </div>
+
+      <div className="skeleton-rows">
+        <div className="skeleton-row">
+          <ShimmerBlock height={18} width="70%" />
+          <ShimmerBlock height={18} width="55%" />
+          <ShimmerBlock height={18} width="85%" />
+          <ShimmerBlock height={18} width="60%" />
+        </div>
+      </div>
     </div>
-  </div>
-</div>
   </div>
 );
 
@@ -136,101 +136,104 @@ function SalesReportV2() {
   const formatValue = (num, isCurrency = false) =>
     compactMode ? formatCompact(num, isCurrency) : formatNormal(num, isCurrency);
 
-  // ===============================
-  // RESET SECTIONS
-  // ===============================
-  const resetAllSections = () => {
-    setActivation(null);
-    setTertiary(null);
-    setSecondary(null);
-    setWodTables(null);
-    setPriceSegmentTables(null);
-    setPriceSegmentSplit40k(null);
 
-    setLoadingActivation(true);
-    setLoadingTertiary(true);
-    setLoadingSecondary(true);
-    setLoadingWod(true);
-    setLoadingPriceSegment(true);
-    setLoadingPriceSegmentSplit40k(true);
-  };
 
   // ===============================
-  // FETCH DASHBOARD
+  // FETCH DASHBOARD (multi-call)
   // ===============================
-  const fetchDashboard = async () => {
-    resetAllSections();
+// helper stays same
+const setAllLoadingFalse = () => {
+  setLoadingActivation(false);
+  setLoadingTertiary(false);
+  setLoadingSecondary(false);
+  setLoadingWod(false);
+  setLoadingPriceSegment(false);
+  setLoadingPriceSegmentSplit40k(false);
+};
 
-    try {
-      const body = { filters: {} };
+const getRequestBody = (report_type) => {
+  const body = { filters: { report_type } };
+  if (startDate && endDate) {
+    body.start_date = startDate;
+    body.end_date = endDate;
+  }
+  return body;
+};
 
-      if (startDate && endDate) {
-        body.start_date = startDate;
-        body.end_date = endDate;
-      }
+const postReport = async (report_type) => {
+  const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: localStorage.getItem("authToken"),
+    },
+    body: JSON.stringify(getRequestBody(report_type)),
+  });
 
-      const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: localStorage.getItem("authToken"),
-        },
-        body: JSON.stringify(body),
-      });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message || "Error fetching report");
+  return result;
+};
 
-      const result = await res.json();
+// ✅ SIMULTANEOUS: all start together, whichever finishes updates UI
+const fetchDashboard = async () => {
+  // clear old data
+  setActivation(null);
+  setTertiary(null);
+  setSecondary(null);
+  setWodTables(null);
+  setPriceSegmentTables(null);
+  setPriceSegmentSplit40k(null);
 
-      if (!res.ok) {
-        alert(result.message || "Error fetching report");
-        setLoadingActivation(false);
-        setLoadingTertiary(false);
-        setLoadingSecondary(false);
-        setLoadingWod(false);
-        setLoadingPriceSegment(false);
-        setLoadingPriceSegmentSplit40k(false);
-        return;
-      }
+  // turn on all loaders
+  setLoadingActivation(true);
+  setLoadingTertiary(true);
+  setLoadingSecondary(true);
+  setLoadingWod(true);
+  setLoadingPriceSegment(true);
+  setLoadingPriceSegmentSplit40k(true);
 
-      requestAnimationFrame(() => {
-        setActivation(result.activation || null);
-        setLoadingActivation(false);
+  const tasks = [
+    postReport("activation")
+      .then((r) => setActivation(r.activation || r.data || null))
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingActivation(false)),
 
-        requestAnimationFrame(() => {
-          setTertiary(result.tertiary || null);
-          setLoadingTertiary(false);
+    postReport("tertiary")
+      .then((r) => setTertiary(r.tertiary || r.data || null))
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingTertiary(false)),
 
-          requestAnimationFrame(() => {
-            setSecondary(result.secondary || null);
-            setLoadingSecondary(false);
+    postReport("secondary")
+      .then((r) => setSecondary(r.secondary || r.data || null))
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingSecondary(false)),
 
-            requestAnimationFrame(() => {
-              setWodTables(result.wodTables || null);
-              setLoadingWod(false);
+    postReport("wod")
+      .then((r) => setWodTables(r.wod || r.wodTables || r.data || null))
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingWod(false)),
 
-              requestAnimationFrame(() => {
-                setPriceSegmentTables(result.priceSegmentTables || null);
-                setLoadingPriceSegment(false);
+    postReport("price_segment")
+      .then((r) =>
+        setPriceSegmentTables(r.price_segment || r.priceSegmentTables || r.data || null)
+      )
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingPriceSegment(false)),
 
-                requestAnimationFrame(() => {
-                  setPriceSegmentSplit40k(result.priceSegmentTables40k || null);
-                  setLoadingPriceSegmentSplit40k(false);
-                });
-              });
-            });
-          });
-        });
-      });
-    } catch (err) {
-      alert("Network error");
-      setLoadingActivation(false);
-      setLoadingTertiary(false);
-      setLoadingSecondary(false);
-      setLoadingWod(false);
-      setLoadingPriceSegment(false);
-      setLoadingPriceSegmentSplit40k(false);
-    }
-  }; // ✅ IMPORTANT: close fetchDashboard
+    postReport("price_segment_40k")
+      .then((r) =>
+        setPriceSegmentSplit40k(
+          r.price_segment_40k || r.priceSegmentTables40k || r.data || null
+        )
+      )
+      .catch((e) => alert(e.message))
+      .finally(() => setLoadingPriceSegmentSplit40k(false)),
+  ];
 
+  // optional: wait for all to settle (not required for UI)
+  await Promise.allSettled(tasks);
+};
   useEffect(() => {
     fetchDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -317,6 +320,7 @@ function SalesReportV2() {
   const renderWodTables = () => {
     if (!wodTables) return null;
 
+    // keep compatibility: server might return same as before (wodTables)
     const sellIn = wodTables.sellInWOD || {};
     const sellOut = wodTables.sellOutWOD || {};
     const columns = Object.keys(sellIn);
@@ -469,7 +473,11 @@ function SalesReportV2() {
         )}
 
         {loadingPriceSegment ? (
-          <SectionLoader title="Activation – Price Segment Wise" rows={6} cols={8} />
+          <SectionLoader
+            title="Activation – Price Segment Wise"
+            rows={6}
+            cols={8}
+          />
         ) : (
           priceSegmentTables && (
             <PriceSegmentTable
