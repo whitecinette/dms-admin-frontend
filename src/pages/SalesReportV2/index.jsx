@@ -21,44 +21,54 @@ const ShimmerBlock = ({ height = 14, width = "100%", style = {} }) => (
   />
 );
 
-const SectionLoader = ({ title, rows = 3, cols = 6 }) => (
+const BlockRow = ({ items = 4 }) => (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: `repeat(${items}, minmax(120px, 1fr))`,
+      gap: 12,
+    }}
+  >
+    {Array.from({ length: items }).map((_, i) => (
+      <ShimmerBlock
+        key={i}
+        height={18}
+        width={`${60 + (i * 10) % 35}%`} // varying widths
+        style={{ borderRadius: 10 }}
+      />
+    ))}
+  </div>
+);
+
+const SectionLoader = ({ title }) => (
   <div className="report-section">
     <h3 style={{ marginBottom: 10 }}>{title}</h3>
 
-    <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
-      <ShimmerBlock height={18} width="180px" style={{ marginBottom: 12 }} />
+<div className="skeleton-box">
+  <div className="skeleton-title">
+    <ShimmerBlock height={22} width="220px" />
+  </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `160px repeat(${cols}, 1fr)`,
-          gap: 10,
-        }}
-      >
-        <ShimmerBlock height={12} />
-        {Array.from({ length: cols }).map((_, i) => (
-          <ShimmerBlock key={i} height={12} />
-        ))}
+  <div className="skeleton-cards">
+    {Array.from({ length: 4 }).map((_, i) => (
+      <div key={i} className="skeleton-card">
+        <div className="skeleton-card-label">
+          <ShimmerBlock height={12} width="45%" />
+        </div>
+        <ShimmerBlock height={22} width={`${55 + i * 8}%`} />
       </div>
+    ))}
+  </div>
 
-      <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-        {Array.from({ length: rows }).map((_, r) => (
-          <div
-            key={r}
-            style={{
-              display: "grid",
-              gridTemplateColumns: `160px repeat(${cols}, 1fr)`,
-              gap: 10,
-            }}
-          >
-            <ShimmerBlock height={12} />
-            {Array.from({ length: cols }).map((_, c) => (
-              <ShimmerBlock key={c} height={12} />
-            ))}
-          </div>
-        ))}
-      </div>
+  <div className="skeleton-rows">
+    <div className="skeleton-row">
+      <ShimmerBlock height={18} width="70%" />
+      <ShimmerBlock height={18} width="55%" />
+      <ShimmerBlock height={18} width="85%" />
+      <ShimmerBlock height={18} width="60%" />
     </div>
+  </div>
+</div>
   </div>
 );
 
