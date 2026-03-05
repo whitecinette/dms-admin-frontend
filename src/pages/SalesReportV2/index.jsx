@@ -33,7 +33,7 @@ const BlockRow = ({ items = 4 }) => (
       <ShimmerBlock
         key={i}
         height={18}
-        width={`${60 + (i * 10) % 35}%`} // varying widths
+        width={`${60 + (i * 10) % 35}%`}
         style={{ borderRadius: 10 }}
       />
     ))}
@@ -78,7 +78,7 @@ function SalesReportV2() {
 
   const [compactMode, setCompactMode] = useState(true);
 
-  // data
+  // data (existing)
   const [activation, setActivation] = useState(null);
   const [tertiary, setTertiary] = useState(null);
   const [secondary, setSecondary] = useState(null);
@@ -86,7 +86,13 @@ function SalesReportV2() {
   const [priceSegmentTables, setPriceSegmentTables] = useState(null);
   const [priceSegmentSplit40k, setPriceSegmentSplit40k] = useState(null);
 
-  // loaders
+  // ✅ NEW: YTD pace report data
+  const [activationValueYtd, setActivationValueYtd] = useState(null);
+  const [activationVolYtd, setActivationVolYtd] = useState(null);
+  const [tertiaryValueYtd, setTertiaryValueYtd] = useState(null);
+  const [tertiaryVolYtd, setTertiaryVolYtd] = useState(null);
+
+  // loaders (existing)
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
   const [loadingSecondary, setLoadingSecondary] = useState(false);
@@ -94,6 +100,13 @@ function SalesReportV2() {
   const [loadingPriceSegment, setLoadingPriceSegment] = useState(false);
   const [loadingPriceSegmentSplit40k, setLoadingPriceSegmentSplit40k] =
     useState(false);
+
+  // ✅ NEW: YTD loaders
+  const [loadingActivationValueYtd, setLoadingActivationValueYtd] =
+    useState(false);
+  const [loadingActivationVolYtd, setLoadingActivationVolYtd] = useState(false);
+  const [loadingTertiaryValueYtd, setLoadingTertiaryValueYtd] = useState(false);
+  const [loadingTertiaryVolYtd, setLoadingTertiaryVolYtd] = useState(false);
 
   // ===============================
   // FORMATTERS
@@ -136,111 +149,173 @@ function SalesReportV2() {
   const formatValue = (num, isCurrency = false) =>
     compactMode ? formatCompact(num, isCurrency) : formatNormal(num, isCurrency);
 
-
+  const formatPercent = (num) => {
+    if (num === null || num === undefined || isNaN(num)) return "-";
+    return `${Number(num).toFixed(2)}%`;
+  };
 
   // ===============================
-  // FETCH DASHBOARD (multi-call)
+  // FETCH HELPERS
   // ===============================
-// helper stays same
-const setAllLoadingFalse = () => {
-  setLoadingActivation(false);
-  setLoadingTertiary(false);
-  setLoadingSecondary(false);
-  setLoadingWod(false);
-  setLoadingPriceSegment(false);
-  setLoadingPriceSegmentSplit40k(false);
-};
+  const setAllLoadingFalse = () => {
+    setLoadingActivation(false);
+    setLoadingTertiary(false);
+    setLoadingSecondary(false);
+    setLoadingWod(false);
+    setLoadingPriceSegment(false);
+    setLoadingPriceSegmentSplit40k(false);
 
-const getRequestBody = (report_type) => {
-  const body = { filters: { report_type } };
-  if (startDate && endDate) {
-    body.start_date = startDate;
-    body.end_date = endDate;
-  }
-  return body;
-};
+    // ✅ YTD
+    setLoadingActivationValueYtd(false);
+    setLoadingActivationVolYtd(false);
+    setLoadingTertiaryValueYtd(false);
+    setLoadingTertiaryVolYtd(false);
+  };
 
-const postReport = async (report_type) => {
-  const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: localStorage.getItem("authToken"),
-    },
-    body: JSON.stringify(getRequestBody(report_type)),
-  });
+  const getRequestBody = (report_type) => {
+    const body = { filters: { report_type } };
+    if (startDate && endDate) {
+      body.start_date = startDate;
+      body.end_date = endDate;
+    }
+    return body;
+  };
 
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message || "Error fetching report");
-  return result;
-};
+  const postReport = async (report_type) => {
+    const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("authToken"),
+      },
+      body: JSON.stringify(getRequestBody(report_type)),
+    });
 
-// ✅ SIMULTANEOUS: all start together, whichever finishes updates UI
-const fetchDashboard = async () => {
-  // clear old data
-  setActivation(null);
-  setTertiary(null);
-  setSecondary(null);
-  setWodTables(null);
-  setPriceSegmentTables(null);
-  setPriceSegmentSplit40k(null);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Error fetching report");
+    return result;
+  };
 
-  // turn on all loaders
-  setLoadingActivation(true);
-  setLoadingTertiary(true);
-  setLoadingSecondary(true);
-  setLoadingWod(true);
-  setLoadingPriceSegment(true);
-  setLoadingPriceSegmentSplit40k(true);
+  // ===============================
+  // FETCH DASHBOARD (multi-call, simultaneous)
+  // ===============================
+  const fetchDashboard = async () => {
+    // clear old data
+    setActivation(null);
+    setTertiary(null);
+    setSecondary(null);
+    setWodTables(null);
+    setPriceSegmentTables(null);
+    setPriceSegmentSplit40k(null);
 
-  const tasks = [
-    postReport("activation")
-      .then((r) => setActivation(r.activation || r.data || null))
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingActivation(false)),
+    // ✅ clear YTD
+    setActivationValueYtd(null);
+    setActivationVolYtd(null);
+    setTertiaryValueYtd(null);
+    setTertiaryVolYtd(null);
 
-    postReport("tertiary")
-      .then((r) => setTertiary(r.tertiary || r.data || null))
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingTertiary(false)),
+    // turn on all loaders
+    setLoadingActivation(true);
+    setLoadingTertiary(true);
+    setLoadingSecondary(true);
+    setLoadingWod(true);
+    setLoadingPriceSegment(true);
+    setLoadingPriceSegmentSplit40k(true);
 
-    postReport("secondary")
-      .then((r) => setSecondary(r.secondary || r.data || null))
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingSecondary(false)),
+    // ✅ YTD loaders
+    setLoadingActivationValueYtd(true);
+    setLoadingActivationVolYtd(true);
+    setLoadingTertiaryValueYtd(true);
+    setLoadingTertiaryVolYtd(true);
 
-    postReport("wod")
-      .then((r) => setWodTables(r.wod || r.wodTables || r.data || null))
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingWod(false)),
+    const tasks = [
+      // existing
+      postReport("activation")
+        .then((r) => setActivation(r.activation || r.data || null))
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingActivation(false)),
 
-    postReport("price_segment")
-      .then((r) =>
-        setPriceSegmentTables(r.price_segment || r.priceSegmentTables || r.data || null)
-      )
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingPriceSegment(false)),
+      postReport("tertiary")
+        .then((r) => setTertiary(r.tertiary || r.data || null))
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingTertiary(false)),
 
-    postReport("price_segment_40k")
-      .then((r) =>
-        setPriceSegmentSplit40k(
-          r.price_segment_40k || r.priceSegmentTables40k || r.data || null
+      postReport("secondary")
+        .then((r) => setSecondary(r.secondary || r.data || null))
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingSecondary(false)),
+
+      postReport("wod")
+        .then((r) => setWodTables(r.wod || r.wodTables || r.data || null))
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingWod(false)),
+
+      postReport("price_segment")
+        .then((r) =>
+          setPriceSegmentTables(
+            r.price_segment || r.priceSegmentTables || r.data || null
+          )
         )
-      )
-      .catch((e) => alert(e.message))
-      .finally(() => setLoadingPriceSegmentSplit40k(false)),
-  ];
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingPriceSegment(false)),
 
-  // optional: wait for all to settle (not required for UI)
-  await Promise.allSettled(tasks);
-};
+      postReport("price_segment_40k")
+        .then((r) =>
+          setPriceSegmentSplit40k(
+            r.price_segment_40k || r.priceSegmentTables40k || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingPriceSegmentSplit40k(false)),
+
+      // ✅ NEW: YTD pace reports
+      postReport("activation_value_ytd")
+        .then((r) =>
+          setActivationValueYtd(
+            r.activation_value_ytd || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingActivationValueYtd(false)),
+
+      postReport("activation_vol_ytd")
+        .then((r) =>
+          setActivationVolYtd(
+            r.activation_vol_ytd || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingActivationVolYtd(false)),
+
+      postReport("tertiary_value_ytd")
+        .then((r) =>
+          setTertiaryValueYtd(
+            r.tertiary_value_ytd || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingTertiaryValueYtd(false)),
+
+      postReport("tertiary_vol_ytd")
+        .then((r) =>
+          setTertiaryVolYtd(
+            r.tertiary_vol_ytd || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingTertiaryVolYtd(false)),
+    ];
+
+    await Promise.allSettled(tasks);
+  };
+
   useEffect(() => {
     fetchDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===============================
-  // GENERIC TABLE RENDERER
+  // GENERIC TABLE RENDERER (existing)
   // ===============================
   const renderTable = (title, reportData) => {
     if (!reportData?.table) return null;
@@ -315,12 +390,75 @@ const fetchDashboard = async () => {
   };
 
   // ===============================
-  // WOD TABLES
+  // ✅ YTD TABLE RENDERER (new)
+  // ===============================
+  const renderYtdTable = (report, { isCurrency = false } = {}) => {
+    if (!report?.columns || !report?.rows) return null;
+
+    const { title, columns, rows } = report;
+
+    return (
+      <div className="report-section">
+        <h3>{title}</h3>
+
+        <table className="report-table">
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((row, idx) => {
+              const isGdRow =
+                String(row?.Year || "")
+                  .toLowerCase()
+                  .includes("g/d") ||
+                String(row?.Year || "")
+                  .toLowerCase()
+                  .includes("gd");
+
+              return (
+                <tr key={idx}>
+                  {columns.map((col) => {
+                    const v = row?.[col];
+
+                    let cell = "-";
+                    if (col === "Year") cell = row?.Year ?? "-";
+                    else if (v === null || v === undefined) cell = "-";
+                    else if (isGdRow) cell = formatPercent(v);
+                    else cell = formatValue(v, isCurrency);
+
+                    const cls =
+                      isGdRow && col !== "Year"
+                        ? Number(v || 0) >= 0
+                          ? "positive"
+                          : "negative"
+                        : "";
+
+                    return (
+                      <td key={col} className={cls}>
+                        {cell}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // ===============================
+  // WOD TABLES (existing)
   // ===============================
   const renderWodTables = () => {
     if (!wodTables) return null;
 
-    // keep compatibility: server might return same as before (wodTables)
     const sellIn = wodTables.sellInWOD || {};
     const sellOut = wodTables.sellOutWOD || {};
     const columns = Object.keys(sellIn);
@@ -449,35 +587,27 @@ const fetchDashboard = async () => {
         </div>
 
         {loadingActivation ? (
-          <SectionLoader title="Activation (Sell-Out)" rows={2} cols={6} />
+          <SectionLoader title="Activation (Sell-Out)" />
         ) : (
           renderTable("Activation (Sell-Out)", activation)
         )}
 
         {loadingTertiary ? (
-          <SectionLoader title="Tertiary (Sell-In)" rows={2} cols={6} />
+          <SectionLoader title="Tertiary (Sell-In)" />
         ) : (
           renderTable("Tertiary (Sell-In)", tertiary)
         )}
 
         {loadingSecondary ? (
-          <SectionLoader title="Secondary (SPD → MDD)" rows={2} cols={6} />
+          <SectionLoader title="Secondary (SPD → MDD)" />
         ) : (
           renderTable("Secondary (SPD → MDD)", secondary)
         )}
 
-        {loadingWod ? (
-          <SectionLoader title="WOD" rows={3} cols={6} />
-        ) : (
-          renderWodTables()
-        )}
+        {loadingWod ? <SectionLoader title="WOD" /> : renderWodTables()}
 
         {loadingPriceSegment ? (
-          <SectionLoader
-            title="Activation – Price Segment Wise"
-            rows={6}
-            cols={8}
-          />
+          <SectionLoader title="Activation – Price Segment Wise" />
         ) : (
           priceSegmentTables && (
             <PriceSegmentTable
@@ -489,7 +619,7 @@ const fetchDashboard = async () => {
         )}
 
         {loadingPriceSegmentSplit40k ? (
-          <SectionLoader title="Activation – 40K vs >40K" rows={3} cols={8} />
+          <SectionLoader title="Activation – 40K vs >40K" />
         ) : (
           priceSegmentSplit40k && (
             <PriceSegmentTable
@@ -498,6 +628,31 @@ const fetchDashboard = async () => {
               formatValue={formatValue}
             />
           )
+        )}
+
+        {/* ✅ NEW: YTD Pace Sections */}
+        {loadingActivationValueYtd ? (
+          <SectionLoader title="Activation Value YTD G/D" />
+        ) : (
+          renderYtdTable(activationValueYtd, { isCurrency: true })
+        )}
+
+        {loadingActivationVolYtd ? (
+          <SectionLoader title="Activation Vol YTD G/D" />
+        ) : (
+          renderYtdTable(activationVolYtd, { isCurrency: false })
+        )}
+
+        {loadingTertiaryValueYtd ? (
+          <SectionLoader title="Tertiary Value YTD G/D" />
+        ) : (
+          renderYtdTable(tertiaryValueYtd, { isCurrency: true })
+        )}
+
+        {loadingTertiaryVolYtd ? (
+          <SectionLoader title="Tertiary Vol YTD G/D" />
+        ) : (
+          renderYtdTable(tertiaryVolYtd, { isCurrency: false })
         )}
       </div>
     </div>
