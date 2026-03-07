@@ -786,16 +786,16 @@ function SalesReportV2() {
         </ReportGroup>
 
         <ReportGroup
-          title="YTD Actual Reports"
-          subtitle="Full-month year-to-date actual monthly analysis"
+          title="YTD Reports"
+          subtitle="Full-month year-to-date monthly analysis"
           tone="teal"
           defaultOpen={false}
         >
           {loadingActivationValueYtdActual ? (
-            <SectionLoader title="Activation Value YTD Actual" tone="teal" />
+            <SectionLoader title="Activation Value YTD " tone="teal" />
           ) : (
             <ReportCard
-              title="Activation Value YTD Actual"
+              title="Activation Value YTD "
               subtitle="Full-month activation value trend"
               tone="teal"
             >
@@ -806,10 +806,10 @@ function SalesReportV2() {
           )}
 
           {loadingActivationVolYtdActual ? (
-            <SectionLoader title="Activation Vol YTD Actual" tone="teal" />
+            <SectionLoader title="Activation Vol YTD " tone="teal" />
           ) : (
             <ReportCard
-              title="Activation Vol YTD Actual"
+              title="Activation Vol YTD "
               subtitle="Full-month activation volume trend"
               tone="teal"
             >

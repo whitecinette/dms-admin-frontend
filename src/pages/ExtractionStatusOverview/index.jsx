@@ -36,11 +36,6 @@ const pctStrToNum = (s) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-
-
-
-
-
 const DealerPopup = ({ open, onClose, title, dealers = [], loading }) => {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
@@ -123,16 +118,15 @@ const DealerPopup = ({ open, onClose, title, dealers = [], loading }) => {
   );
 };
 
-
-
 export default function ExtractionStatusOverview() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const [subordinates, setSubordinates] = useState([]); // ["smd","zsm","asm"...]
-  const [selectedRoles, setSelectedRoles] = useState([]); // ["asm","tse"...]
+  const [subordinates, setSubordinates] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState([]);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   const [search, setSearch] = useState("");
+  const [topOutletOnly, setTopOutletOnly] = useState(false);
 
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
@@ -143,50 +137,53 @@ export default function ExtractionStatusOverview() {
     return new Date(now.getFullYear(), now.getMonth() + 1, 0);
   });
 
-  const [rows, setRows] = useState([]); // data[]
-  const [selfData, setSelfData] = useState(null); // selfData
+  const [rows, setRows] = useState([]);
+  const [selfData, setSelfData] = useState(null);
 
   const [dealerPopup, setDealerPopup] = useState({ open: false, title: "", dealers: [], loading: false });
 
-const openDealers = async (actor) => {
-  try {
-    setDealerPopup({ open: true, title: `${actor.name} (${actor.code}) • ${actor.position}`, dealers: [], loading: true });
+  const openDealers = async (actor) => {
+    try {
+      setDealerPopup({
+        open: true,
+        title: `${actor.name} (${actor.code}) • ${actor.position}`,
+        dealers: [],
+        loading: true,
+      });
 
-    const url = `${backendUrl}/user/extraction-dealers-w-status?code=${encodeURIComponent(actor.code)}&startDate=${toInputDate(startDate)}&endDate=${toInputDate(endDate)}`;
+      const url =
+        `${backendUrl}/user/extraction-dealers-w-status` +
+        `?code=${encodeURIComponent(actor.code)}` +
+        `&startDate=${toInputDate(startDate)}` +
+        `&endDate=${toInputDate(endDate)}` +
+        `&topOutlet=${topOutletOnly}`;
 
-    const res = await axios.post(url, null, { headers: { ...getAuthHeader() } });
+      const res = await axios.post(url, null, { headers: { ...getAuthHeader() } });
 
-    // IMPORTANT: remove sensitive fields (password etc)
-    const clean = (res.data?.dealers || []).map(({ password, __v, ...rest }) => rest);
+      const clean = (res.data?.dealers || []).map(({ password, __v, ...rest }) => rest);
 
-    setDealerPopup((p) => ({ ...p, dealers: clean, loading: false }));
-  } catch (e) {
-    console.error(e);
-    setDealerPopup((p) => ({ ...p, dealers: [], loading: false }));
-  }
-};
+      setDealerPopup((p) => ({ ...p, dealers: clean, loading: false }));
+    } catch (e) {
+      console.error(e);
+      setDealerPopup((p) => ({ ...p, dealers: [], loading: false }));
+    }
+  };
 
-
-  // ----- Fetch subordinates for role filter -----
   const fetchSubordinates = async () => {
     const res = await axios.get(`${backendUrl}/user/get-subordinate-positions`, {
       headers: { ...getAuthHeader() },
     });
 
     const subs = (res.data?.subordinates || []).map((r) => String(r).toLowerCase());
-    // optional: remove "dealer" from roles filter (keep if you want)
     const cleaned = subs.filter((r) => r !== "dealer");
     setSubordinates(cleaned);
 
-    // default selection
     if (selectedRoles.length === 0) {
-      // if tse exists, default tse else first available
       const def = cleaned.includes("tse") ? ["tse"] : cleaned.slice(0, 1);
       setSelectedRoles(def);
     }
   };
 
-  // ----- Fetch main data -----
   const fetchStatus = async () => {
     try {
       setIsLoading(true);
@@ -195,6 +192,7 @@ const openDealers = async (actor) => {
         roles: selectedRoles.length ? selectedRoles : ["tse"],
         startDate: toInputDate(startDate),
         endDate: toInputDate(endDate),
+        topOutlet: topOutletOnly,
       };
 
       const res = await axios.post(`${backendUrl}/user/extraction-status-role-wise`, body, {
@@ -220,7 +218,6 @@ const openDealers = async (actor) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // initial load (after role defaults set)
   useEffect(() => {
     if (selectedRoles.length) fetchStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,9 +235,7 @@ const openDealers = async (actor) => {
     });
   }, [rows, search]);
 
-  // ----- Charts -----
   const donutData = useMemo(() => {
-    // Use selfData as primary (simple and always relevant)
     const total = safeNum(selfData?.total);
     const done = safeNum(selfData?.done);
     const pending = safeNum(selfData?.pending);
@@ -248,12 +243,11 @@ const openDealers = async (actor) => {
     return [
       { name: "Done", value: done },
       { name: "Pending", value: pending },
-      { name: "Total", value: Math.max(0, total - (done + pending)) }, // usually 0, safety
+      { name: "Total", value: Math.max(0, total - (done + pending)) },
     ].filter((x) => x.value > 0);
   }, [selfData]);
 
   const barData = useMemo(() => {
-    // Top 10 by pending (readable)
     const list = [...filteredRows]
       .map((r) => ({
         name: String(r?.name || "").slice(0, 14),
@@ -280,7 +274,6 @@ const openDealers = async (actor) => {
     <div className="extraction-status-page">
       <div className="page-title">Extraction Status</div>
 
-      {/* Filters */}
       <div className="filters-card">
         <div className="filters-row">
           <input
@@ -353,12 +346,29 @@ const openDealers = async (actor) => {
             )}
           </div>
 
+          <label
+            className="top-outlet-toggle"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              whiteSpace: "nowrap",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={topOutletOnly}
+              onChange={(e) => setTopOutletOnly(e.target.checked)}
+            />
+            <span>Top Outlet Only</span>
+          </label>
+
           <button className="btn primary" onClick={apply} type="button">
             Refresh
           </button>
         </div>
 
-        {/* Selected role chips */}
         {selectedRoles.length > 0 && (
           <div className="chip-row">
             {selectedRoles.map((r) => (
@@ -370,7 +380,6 @@ const openDealers = async (actor) => {
         )}
       </div>
 
-      {/* Self card + Charts */}
       <div className="top-grid">
         <div className="self-card">
           <div className="self-head">
@@ -395,7 +404,9 @@ const openDealers = async (actor) => {
             </div>
             <div className="kpi">
               <div className="k">Done %</div>
-              <div className="v">{selfData?.["Done Percent"] || `${pctStrToNum(selfData?.["Done Percent"])}%`}</div>
+              <div className="v">
+                {selfData?.["Done Percent"] || `${pctStrToNum(selfData?.["Done Percent"])}%`}
+              </div>
             </div>
           </div>
 
@@ -452,7 +463,6 @@ const openDealers = async (actor) => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="table-card">
         <div className="table-head">
           <div className="table-title">Extraction Data</div>
@@ -514,12 +524,12 @@ const openDealers = async (actor) => {
         </div>
 
         <DealerPopup
-            open={dealerPopup.open}
-            title={dealerPopup.title}
-            dealers={dealerPopup.dealers}
-            loading={dealerPopup.loading}
-            onClose={() => setDealerPopup({ open: false, title: "", dealers: [], loading: false })}
-            />
+          open={dealerPopup.open}
+          title={dealerPopup.title}
+          dealers={dealerPopup.dealers}
+          loading={dealerPopup.loading}
+          onClose={() => setDealerPopup({ open: false, title: "", dealers: [], loading: false })}
+        />
       </div>
     </div>
   );
