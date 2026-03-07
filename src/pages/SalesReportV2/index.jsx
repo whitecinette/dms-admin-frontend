@@ -849,7 +849,7 @@ function SalesReportV2() {
         </ReportGroup>
 
         <ReportGroup
-          title="YTD Pace Reports"
+          title="YTD Pace Reports "
           subtitle="Pace-based YTD analysis using same day-of-month comparison"
           tone="green"
           defaultOpen={false}
