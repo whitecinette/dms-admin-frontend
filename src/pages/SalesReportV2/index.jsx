@@ -40,35 +40,81 @@ const BlockRow = ({ items = 4 }) => (
   </div>
 );
 
-const SectionLoader = ({ title }) => (
-  <div className="report-section">
-    <h3 style={{ marginBottom: 10 }}>{title}</h3>
-
-    <div className="skeleton-box">
-      <div className="skeleton-title">
-        <ShimmerBlock height={22} width="220px" />
+const SectionLoader = ({ title, tone = "blue" }) => (
+  <div className={`report-card report-card--${tone}`}>
+    <div className="report-card__header">
+      <div>
+        <h3>{title}</h3>
+        <p>Loading report data...</p>
       </div>
+      <span className="report-card__badge">REPORT</span>
+    </div>
 
-      <div className="skeleton-cards">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="skeleton-card">
-            <div className="skeleton-card-label">
-              <ShimmerBlock height={12} width="45%" />
+    <div className="report-card__content">
+      <div className="skeleton-box">
+        <div className="skeleton-title">
+          <ShimmerBlock height={22} width="220px" />
+        </div>
+
+        <div className="skeleton-cards">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton-card-label">
+                <ShimmerBlock height={12} width="45%" />
+              </div>
+              <ShimmerBlock height={22} width={`${55 + i * 8}%`} />
             </div>
-            <ShimmerBlock height={22} width={`${55 + i * 8}%`} />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div className="skeleton-rows">
-        <div className="skeleton-row">
-          <ShimmerBlock height={18} width="70%" />
-          <ShimmerBlock height={18} width="55%" />
-          <ShimmerBlock height={18} width="85%" />
-          <ShimmerBlock height={18} width="60%" />
+        <div className="skeleton-rows">
+          <div className="skeleton-row">
+            <ShimmerBlock height={18} width="70%" />
+            <ShimmerBlock height={18} width="55%" />
+            <ShimmerBlock height={18} width="85%" />
+            <ShimmerBlock height={18} width="60%" />
+          </div>
         </div>
       </div>
     </div>
+  </div>
+);
+
+const ReportGroup = ({
+  title,
+  subtitle,
+  tone = "blue",
+  children,
+  defaultOpen = true,
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <section className={`report-group report-group--${tone}`}>
+      <div className="report-group__header" onClick={() => setOpen(!open)}>
+        <div>
+          <h2>{title}</h2>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
+        <span className="report-group__toggle">{open ? "−" : "+"}</span>
+      </div>
+
+      {open && <div className="report-group__body">{children}</div>}
+    </section>
+  );
+};
+
+const ReportCard = ({ title, subtitle, tone = "blue", children }) => (
+  <div className={`report-card report-card--${tone}`}>
+    <div className="report-card__header">
+      <div>
+        <h3>{title}</h3>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      <span className="report-card__badge">REPORT</span>
+    </div>
+
+    <div className="report-card__content">{children}</div>
   </div>
 );
 
@@ -270,38 +316,22 @@ function SalesReportV2() {
 
       // ✅ NEW: YTD pace reports
       postReport("activation_value_ytd")
-        .then((r) =>
-          setActivationValueYtd(
-            r.activation_value_ytd || r.data || null
-          )
-        )
+        .then((r) => setActivationValueYtd(r.activation_value_ytd || r.data || null))
         .catch((e) => alert(e.message))
         .finally(() => setLoadingActivationValueYtd(false)),
 
       postReport("activation_vol_ytd")
-        .then((r) =>
-          setActivationVolYtd(
-            r.activation_vol_ytd || r.data || null
-          )
-        )
+        .then((r) => setActivationVolYtd(r.activation_vol_ytd || r.data || null))
         .catch((e) => alert(e.message))
         .finally(() => setLoadingActivationVolYtd(false)),
 
       postReport("tertiary_value_ytd")
-        .then((r) =>
-          setTertiaryValueYtd(
-            r.tertiary_value_ytd || r.data || null
-          )
-        )
+        .then((r) => setTertiaryValueYtd(r.tertiary_value_ytd || r.data || null))
         .catch((e) => alert(e.message))
         .finally(() => setLoadingTertiaryValueYtd(false)),
 
       postReport("tertiary_vol_ytd")
-        .then((r) =>
-          setTertiaryVolYtd(
-            r.tertiary_vol_ytd || r.data || null
-          )
-        )
+        .then((r) => setTertiaryVolYtd(r.tertiary_vol_ytd || r.data || null))
         .catch((e) => alert(e.message))
         .finally(() => setLoadingTertiaryVolYtd(false)),
     ];
@@ -315,18 +345,16 @@ function SalesReportV2() {
   }, []);
 
   // ===============================
-  // GENERIC TABLE RENDERER (existing)
+  // GENERIC TABLE CONTENT RENDERER
   // ===============================
-  const renderTable = (title, reportData) => {
+  const renderTableContent = (reportData) => {
     if (!reportData?.table) return null;
 
     const { value = {}, volume = {} } = reportData.table;
     const columns = Object.keys(value || {});
 
     return (
-      <div className="report-section">
-        <h3>{title}</h3>
-
+      <div className="report-table-wrapper">
         <table className="report-table">
           <thead>
             <tr>
@@ -390,17 +418,15 @@ function SalesReportV2() {
   };
 
   // ===============================
-  // ✅ YTD TABLE RENDERER (new)
+  // ✅ YTD TABLE CONTENT RENDERER
   // ===============================
-  const renderYtdTable = (report, { isCurrency = false } = {}) => {
+  const renderYtdTableContent = (report, { isCurrency = false } = {}) => {
     if (!report?.columns || !report?.rows) return null;
 
-    const { title, columns, rows } = report;
+    const { columns, rows } = report;
 
     return (
-      <div className="report-section">
-        <h3>{title}</h3>
-
+      <div className="report-table-wrapper">
         <table className="report-table">
           <thead>
             <tr>
@@ -413,12 +439,8 @@ function SalesReportV2() {
           <tbody>
             {rows.map((row, idx) => {
               const isGdRow =
-                String(row?.Year || "")
-                  .toLowerCase()
-                  .includes("g/d") ||
-                String(row?.Year || "")
-                  .toLowerCase()
-                  .includes("gd");
+                String(row?.Year || "").toLowerCase().includes("g/d") ||
+                String(row?.Year || "").toLowerCase().includes("gd");
 
               return (
                 <tr key={idx}>
@@ -454,9 +476,9 @@ function SalesReportV2() {
   };
 
   // ===============================
-  // WOD TABLES (existing)
+  // WOD TABLES CONTENT
   // ===============================
-  const renderWodTables = () => {
+  const renderWodTablesContent = () => {
     if (!wodTables) return null;
 
     const sellIn = wodTables.sellInWOD || {};
@@ -465,41 +487,9 @@ function SalesReportV2() {
 
     return (
       <div className="wod-section">
-        <div className="report-section">
-          <h3>WOD</h3>
-
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                {columns.map((col) => (
-                  <th key={col}>{col}</th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td className="metric-title">Sell-In WOD</td>
-                {columns.map((col) => (
-                  <td key={col}>{formatValue(sellIn[col])}</td>
-                ))}
-              </tr>
-
-              <tr>
-                <td className="metric-title">Sell-Out WOD</td>
-                {columns.map((col) => (
-                  <td key={col}>{formatValue(sellOut[col])}</td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {wodTables.sellInBreakdown?.length > 0 && (
-          <div className="report-section">
-            <h3>Sell-In WOD</h3>
-
+        <div className="sub-report-block">
+          <div className="sub-report-heading">WOD Summary</div>
+          <div className="report-table-wrapper">
             <table className="report-table">
               <thead>
                 <tr>
@@ -511,44 +501,79 @@ function SalesReportV2() {
               </thead>
 
               <tbody>
-                {wodTables.sellInBreakdown.map((row, idx) => (
-                  <tr key={idx}>
-                    <td className="metric-title">{row.label}</td>
-                    {columns.map((col) => (
-                      <td key={col}>{formatValue(row.data?.[col])}</td>
-                    ))}
-                  </tr>
-                ))}
+                <tr>
+                  <td className="metric-title">Sell-In WOD</td>
+                  {columns.map((col) => (
+                    <td key={col}>{formatValue(sellIn[col])}</td>
+                  ))}
+                </tr>
+
+                <tr>
+                  <td className="metric-title">Sell-Out WOD</td>
+                  {columns.map((col) => (
+                    <td key={col}>{formatValue(sellOut[col])}</td>
+                  ))}
+                </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {wodTables.sellInBreakdown?.length > 0 && (
+          <div className="sub-report-block">
+            <div className="sub-report-heading">Sell-In WOD Breakdown</div>
+            <div className="report-table-wrapper">
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    {columns.map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {wodTables.sellInBreakdown.map((row, idx) => (
+                    <tr key={idx}>
+                      <td className="metric-title">{row.label}</td>
+                      {columns.map((col) => (
+                        <td key={col}>{formatValue(row.data?.[col])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {wodTables.sellOutBreakdown?.length > 0 && (
-          <div className="report-section">
-            <h3>Sell-Out WOD</h3>
-
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  {columns.map((col) => (
-                    <th key={col}>{col}</th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {wodTables.sellOutBreakdown.map((row, idx) => (
-                  <tr key={idx}>
-                    <td className="metric-title">{row.label}</td>
+          <div className="sub-report-block">
+            <div className="sub-report-heading">Sell-Out WOD Breakdown</div>
+            <div className="report-table-wrapper">
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
                     {columns.map((col) => (
-                      <td key={col}>{formatValue(row.data?.[col])}</td>
+                      <th key={col}>{col}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {wodTables.sellOutBreakdown.map((row, idx) => (
+                    <tr key={idx}>
+                      <td className="metric-title">{row.label}</td>
+                      {columns.map((col) => (
+                        <td key={col}>{formatValue(row.data?.[col])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -586,74 +611,165 @@ function SalesReportV2() {
           </div>
         </div>
 
-        {loadingActivation ? (
-          <SectionLoader title="Activation (Sell-Out)" />
-        ) : (
-          renderTable("Activation (Sell-Out)", activation)
-        )}
+        <ReportGroup
+          title="Core Sales Reports"
+          subtitle="Primary value and volume summaries"
+          tone="blue"
+          defaultOpen={true}
+        >
+          {loadingActivation ? (
+            <SectionLoader title="Activation (Sell-Out)" tone="blue" />
+          ) : (
+            <ReportCard
+              title="Activation (Sell-Out)"
+              subtitle="Sell-out value and volume summary"
+              tone="blue"
+            >
+              {renderTableContent(activation)}
+            </ReportCard>
+          )}
 
-        {loadingTertiary ? (
-          <SectionLoader title="Tertiary (Sell-In)" />
-        ) : (
-          renderTable("Tertiary (Sell-In)", tertiary)
-        )}
+          {loadingTertiary ? (
+            <SectionLoader title="Tertiary (Sell-In)" tone="blue" />
+          ) : (
+            <ReportCard
+              title="Tertiary (Sell-In)"
+              subtitle="Sell-in value and volume summary"
+              tone="blue"
+            >
+              {renderTableContent(tertiary)}
+            </ReportCard>
+          )}
 
-        {loadingSecondary ? (
-          <SectionLoader title="Secondary (SPD → MDD)" />
-        ) : (
-          renderTable("Secondary (SPD → MDD)", secondary)
-        )}
+          {loadingSecondary ? (
+            <SectionLoader title="Secondary (SPD → MDD)" tone="blue" />
+          ) : (
+            <ReportCard
+              title="Secondary (SPD → MDD)"
+              subtitle="Movement summary across channel"
+              tone="blue"
+            >
+              {renderTableContent(secondary)}
+            </ReportCard>
+          )}
+        </ReportGroup>
 
-        {loadingWod ? <SectionLoader title="WOD" /> : renderWodTables()}
+        <ReportGroup
+          title="WOD Reports"
+          subtitle="Week of distribution insights"
+          tone="purple"
+          defaultOpen={true}
+        >
+          {loadingWod ? (
+            <SectionLoader title="WOD" tone="purple" />
+          ) : (
+            <ReportCard
+              title="WOD"
+              subtitle="Sell-in and sell-out WOD overview"
+              tone="purple"
+            >
+              {renderWodTablesContent()}
+            </ReportCard>
+          )}
+        </ReportGroup>
 
-        {loadingPriceSegment ? (
-          <SectionLoader title="Activation – Price Segment Wise" />
-        ) : (
-          priceSegmentTables && (
-            <PriceSegmentTable
-              data={priceSegmentTables}
-              title="Activation – Price Segment Wise"
-              formatValue={formatValue}
-            />
-          )
-        )}
+        <ReportGroup
+          title="Price Segment Reports"
+          subtitle="Price-wise performance breakdown"
+          tone="orange"
+          defaultOpen={false}
+        >
+          {loadingPriceSegment ? (
+            <SectionLoader title="Activation – Price Segment Wise" tone="orange" />
+          ) : (
+            priceSegmentTables && (
+              <ReportCard
+                title="Activation – Price Segment Wise"
+                subtitle="Segment-based activation distribution"
+                tone="orange"
+              >
+                <PriceSegmentTable
+                  data={priceSegmentTables}
+                  title=""
+                  formatValue={formatValue}
+                />
+              </ReportCard>
+            )
+          )}
 
-        {loadingPriceSegmentSplit40k ? (
-          <SectionLoader title="Activation – 40K vs >40K" />
-        ) : (
-          priceSegmentSplit40k && (
-            <PriceSegmentTable
-              data={priceSegmentSplit40k}
-              title="Activation – 40K vs >40K"
-              formatValue={formatValue}
-            />
-          )
-        )}
+          {loadingPriceSegmentSplit40k ? (
+            <SectionLoader title="Activation – 40K vs >40K" tone="orange" />
+          ) : (
+            priceSegmentSplit40k && (
+              <ReportCard
+                title="Activation – 40K vs >40K"
+                subtitle="Premium split analysis"
+                tone="orange"
+              >
+                <PriceSegmentTable
+                  data={priceSegmentSplit40k}
+                  title=""
+                  formatValue={formatValue}
+                />
+              </ReportCard>
+            )
+          )}
+        </ReportGroup>
 
-        {/* ✅ NEW: YTD Pace Sections */}
-        {loadingActivationValueYtd ? (
-          <SectionLoader title="Activation Value YTD G/D" />
-        ) : (
-          renderYtdTable(activationValueYtd, { isCurrency: true })
-        )}
+        <ReportGroup
+          title="YTD Pace Reports"
+          subtitle="Year-to-date growth and decline analysis"
+          tone="green"
+          defaultOpen={false}
+        >
+          {loadingActivationValueYtd ? (
+            <SectionLoader title="Activation Value YTD G/D" tone="green" />
+          ) : (
+            <ReportCard
+              title="Activation Value YTD G/D"
+              subtitle="Year-to-date value trend"
+              tone="green"
+            >
+              {renderYtdTableContent(activationValueYtd, { isCurrency: true })}
+            </ReportCard>
+          )}
 
-        {loadingActivationVolYtd ? (
-          <SectionLoader title="Activation Vol YTD G/D" />
-        ) : (
-          renderYtdTable(activationVolYtd, { isCurrency: false })
-        )}
+          {loadingActivationVolYtd ? (
+            <SectionLoader title="Activation Vol YTD G/D" tone="green" />
+          ) : (
+            <ReportCard
+              title="Activation Vol YTD G/D"
+              subtitle="Year-to-date volume trend"
+              tone="green"
+            >
+              {renderYtdTableContent(activationVolYtd, { isCurrency: false })}
+            </ReportCard>
+          )}
 
-        {loadingTertiaryValueYtd ? (
-          <SectionLoader title="Tertiary Value YTD G/D" />
-        ) : (
-          renderYtdTable(tertiaryValueYtd, { isCurrency: true })
-        )}
+          {loadingTertiaryValueYtd ? (
+            <SectionLoader title="Tertiary Value YTD G/D" tone="green" />
+          ) : (
+            <ReportCard
+              title="Tertiary Value YTD G/D"
+              subtitle="Year-to-date value performance"
+              tone="green"
+            >
+              {renderYtdTableContent(tertiaryValueYtd, { isCurrency: true })}
+            </ReportCard>
+          )}
 
-        {loadingTertiaryVolYtd ? (
-          <SectionLoader title="Tertiary Vol YTD G/D" />
-        ) : (
-          renderYtdTable(tertiaryVolYtd, { isCurrency: false })
-        )}
+          {loadingTertiaryVolYtd ? (
+            <SectionLoader title="Tertiary Vol YTD G/D" tone="green" />
+          ) : (
+            <ReportCard
+              title="Tertiary Vol YTD G/D"
+              subtitle="Year-to-date volume performance"
+              tone="green"
+            >
+              {renderYtdTableContent(tertiaryVolYtd, { isCurrency: false })}
+            </ReportCard>
+          )}
+        </ReportGroup>
       </div>
     </div>
   );
