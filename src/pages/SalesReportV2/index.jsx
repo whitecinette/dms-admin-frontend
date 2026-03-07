@@ -138,6 +138,12 @@ function SalesReportV2() {
   const [tertiaryValueYtd, setTertiaryValueYtd] = useState(null);
   const [tertiaryVolYtd, setTertiaryVolYtd] = useState(null);
 
+    // ✅ NEW: YTD actual report data
+  const [activationValueYtdActual, setActivationValueYtdActual] = useState(null);
+  const [activationVolYtdActual, setActivationVolYtdActual] = useState(null);
+  const [tertiaryValueYtdActual, setTertiaryValueYtdActual] = useState(null);
+  const [tertiaryVolYtdActual, setTertiaryVolYtdActual] = useState(null);
+
   // loaders (existing)
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
@@ -153,6 +159,16 @@ function SalesReportV2() {
   const [loadingActivationVolYtd, setLoadingActivationVolYtd] = useState(false);
   const [loadingTertiaryValueYtd, setLoadingTertiaryValueYtd] = useState(false);
   const [loadingTertiaryVolYtd, setLoadingTertiaryVolYtd] = useState(false);
+
+    // ✅ NEW: YTD actual loaders
+  const [loadingActivationValueYtdActual, setLoadingActivationValueYtdActual] =
+    useState(false);
+  const [loadingActivationVolYtdActual, setLoadingActivationVolYtdActual] =
+    useState(false);
+  const [loadingTertiaryValueYtdActual, setLoadingTertiaryValueYtdActual] =
+    useState(false);
+  const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
+    useState(false);
 
   // ===============================
   // FORMATTERS
@@ -216,6 +232,12 @@ function SalesReportV2() {
     setLoadingActivationVolYtd(false);
     setLoadingTertiaryValueYtd(false);
     setLoadingTertiaryVolYtd(false);
+
+        // ✅ YTD Actual
+    setLoadingActivationValueYtdActual(false);
+    setLoadingActivationVolYtdActual(false);
+    setLoadingTertiaryValueYtdActual(false);
+    setLoadingTertiaryVolYtdActual(false);
   };
 
   const getRequestBody = (report_type) => {
@@ -260,6 +282,11 @@ function SalesReportV2() {
     setTertiaryValueYtd(null);
     setTertiaryVolYtd(null);
 
+    setActivationValueYtdActual(null);
+    setActivationVolYtdActual(null);
+    setTertiaryValueYtdActual(null);
+    setTertiaryVolYtdActual(null);
+
     // turn on all loaders
     setLoadingActivation(true);
     setLoadingTertiary(true);
@@ -273,6 +300,11 @@ function SalesReportV2() {
     setLoadingActivationVolYtd(true);
     setLoadingTertiaryValueYtd(true);
     setLoadingTertiaryVolYtd(true);
+
+    setLoadingActivationValueYtdActual(true);
+    setLoadingActivationVolYtdActual(true);
+    setLoadingTertiaryValueYtdActual(true);
+    setLoadingTertiaryVolYtdActual(true);
 
     const tasks = [
       // existing
@@ -334,6 +366,43 @@ function SalesReportV2() {
         .then((r) => setTertiaryVolYtd(r.tertiary_vol_ytd || r.data || null))
         .catch((e) => alert(e.message))
         .finally(() => setLoadingTertiaryVolYtd(false)),
+
+              // ✅ NEW: YTD actual reports
+      postReport("activation_value_ytd_actual")
+        .then((r) =>
+          setActivationValueYtdActual(
+            r.activation_value_ytd_actual || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingActivationValueYtdActual(false)),
+
+      postReport("activation_vol_ytd_actual")
+        .then((r) =>
+          setActivationVolYtdActual(
+            r.activation_vol_ytd_actual || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingActivationVolYtdActual(false)),
+
+      postReport("tertiary_value_ytd_actual")
+        .then((r) =>
+          setTertiaryValueYtdActual(
+            r.tertiary_value_ytd_actual || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingTertiaryValueYtdActual(false)),
+
+      postReport("tertiary_vol_ytd_actual")
+        .then((r) =>
+          setTertiaryVolYtdActual(
+            r.tertiary_vol_ytd_actual || r.data || null
+          )
+        )
+        .catch((e) => alert(e.message))
+        .finally(() => setLoadingTertiaryVolYtdActual(false)),
     ];
 
     await Promise.allSettled(tasks);
@@ -717,8 +786,71 @@ function SalesReportV2() {
         </ReportGroup>
 
         <ReportGroup
+          title="YTD Actual Reports"
+          subtitle="Full-month year-to-date actual monthly analysis"
+          tone="teal"
+          defaultOpen={false}
+        >
+          {loadingActivationValueYtdActual ? (
+            <SectionLoader title="Activation Value YTD Actual" tone="teal" />
+          ) : (
+            <ReportCard
+              title="Activation Value YTD Actual"
+              subtitle="Full-month activation value trend"
+              tone="teal"
+            >
+              {renderYtdTableContent(activationValueYtdActual, {
+                isCurrency: true,
+              })}
+            </ReportCard>
+          )}
+
+          {loadingActivationVolYtdActual ? (
+            <SectionLoader title="Activation Vol YTD Actual" tone="teal" />
+          ) : (
+            <ReportCard
+              title="Activation Vol YTD Actual"
+              subtitle="Full-month activation volume trend"
+              tone="teal"
+            >
+              {renderYtdTableContent(activationVolYtdActual, {
+                isCurrency: false,
+              })}
+            </ReportCard>
+          )}
+
+          {loadingTertiaryValueYtdActual ? (
+            <SectionLoader title="Tertiary Value YTD Actual" tone="teal" />
+          ) : (
+            <ReportCard
+              title="Tertiary Value YTD Actual"
+              subtitle="Full-month tertiary value performance"
+              tone="teal"
+            >
+              {renderYtdTableContent(tertiaryValueYtdActual, {
+                isCurrency: true,
+              })}
+            </ReportCard>
+          )}
+
+          {loadingTertiaryVolYtdActual ? (
+            <SectionLoader title="Tertiary Vol YTD Actual" tone="teal" />
+          ) : (
+            <ReportCard
+              title="Tertiary Vol YTD Actual"
+              subtitle="Full-month tertiary volume performance"
+              tone="teal"
+            >
+              {renderYtdTableContent(tertiaryVolYtdActual, {
+                isCurrency: false,
+              })}
+            </ReportCard>
+          )}
+        </ReportGroup>
+
+        <ReportGroup
           title="YTD Pace Reports"
-          subtitle="Year-to-date growth and decline analysis"
+          subtitle="Pace-based YTD analysis using same day-of-month comparison"
           tone="green"
           defaultOpen={false}
         >
@@ -770,6 +902,8 @@ function SalesReportV2() {
             </ReportCard>
           )}
         </ReportGroup>
+
+
       </div>
     </div>
   );

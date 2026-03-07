@@ -151,6 +151,13 @@
       border-left: 5px solid #22c55e;
     }
   }
+
+    &--teal {
+    .report-group__header {
+      background: linear-gradient(90deg, #ebfbfa, #f7fefe);
+      border-left: 5px solid #14b8a6;
+    }
+  }
 }
 
 .report-card {
