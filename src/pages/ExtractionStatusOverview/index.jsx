@@ -120,6 +120,7 @@ const DealerPopup = ({ open, onClose, title, dealers = [], loading }) => {
 
 export default function ExtractionStatusOverview() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [subordinates, setSubordinates] = useState([]);
   const [selectedRoles, setSelectedRoles] = useState([]);
@@ -210,6 +211,60 @@ export default function ExtractionStatusOverview() {
       setSelfData(null);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const downloadExcel = async () => {
+    try {
+      setIsDownloading(true);
+
+      const body = {
+        roles: selectedRoles.length ? selectedRoles : ["tse"],
+        startDate: toInputDate(startDate),
+        endDate: toInputDate(endDate),
+        topOutlet: topOutletOnly,
+      };
+
+      const response = await axios.post(
+        `${backendUrl}/user/extraction-status-role-wise/download`,
+        body,
+        {
+          responseType: "blob",
+          headers: {
+            ...getAuthHeader(),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const contentType =
+        response.headers["content-type"] ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      const disposition = response.headers["content-disposition"] || "";
+      let fileName = `Extraction_Status_${toInputDate(startDate)}_to_${toInputDate(endDate)}.xlsx`;
+
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      if (match?.[1]) {
+        fileName = match[1];
+      }
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Excel download failed:", e);
+      alert("Failed to download excel file");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -366,6 +421,15 @@ export default function ExtractionStatusOverview() {
 
           <button className="btn primary" onClick={apply} type="button">
             Refresh
+          </button>
+
+          <button
+            className="btn ghost"
+            onClick={downloadExcel}
+            type="button"
+            disabled={isDownloading}
+          >
+            {isDownloading ? "Exporting..." : "Export Excel"}
           </button>
         </div>
 
