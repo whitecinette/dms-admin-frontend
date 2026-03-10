@@ -24,6 +24,16 @@ const DUMP_APIS = [
     endpoint: "/admin/sync-mdd-dealer-from-dump", // <-- put your route here
     accept: [".csv"], // since you said no xlsx
     hint: "Headers used: MDD Code, MDD Name, Buyer Type, BuyerCode, BuyerName",
+    },
+    {
+      key: "hierarchy_sync",
+      title: "Dump → Default Sales Flow Hierarchy",
+      subtitle:
+        "Creates only missing hierarchy entries for dealers not already present in default_sales_flow.",
+      endpoint: "/admin/sync-heirarchy-from-dump",
+      accept: [".csv", ".xlsx", ".xls"],
+      hint:
+        "Headers used: SPD Code, MDD Code, Buyer Type, BuyerCode, ABM/RSO or ABM, ZSM",
     }
 ];
 
@@ -186,14 +196,23 @@ function DumpSyncUpload() {
             </>
         ) : selectedApiKey === "mdd_dealer_sync" ? (
             <>
-            <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Unique Actors</div><div className="kpi__value">{result.uniqueActorsInFile ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Matched Existing</div><div className="kpi__value">{result.existingMatched ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Will Insert</div><div className="kpi__value">{result.willInsert ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Will Update</div><div className="kpi__value">{result.willUpdate ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Users Synced</div><div className="kpi__value">{result.usersSynced ? "Yes" : "No"}</div></div>
+              <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Unique Actors</div><div className="kpi__value">{result.uniqueActorsInFile ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Matched Existing</div><div className="kpi__value">{result.existingMatched ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Will Insert</div><div className="kpi__value">{result.willInsert ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Will Update</div><div className="kpi__value">{result.willUpdate ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Users Synced</div><div className="kpi__value">{result.usersSynced ? "Yes" : "No"}</div></div>
             </>
-        ) : null}
+          ) : selectedApiKey === "hierarchy_sync" ? (
+            <>
+              <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Unique Dealers</div><div className="kpi__value">{result.uniqueDealersInFile ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Existing In Hierarchy</div><div className="kpi__value">{result.existingInHierarchy ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">To Insert</div><div className="kpi__value">{result.toInsert ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Inserted</div><div className="kpi__value">{result.inserted ?? "-"}</div></div>
+              <div className="kpi"><div className="kpi__label">Skipped</div><div className="kpi__value">{result.skipped ?? "-"}</div></div>
+            </>
+          ) : null}
         </div>
 
         {Array.isArray(result.sampleNewProducts) && result.sampleNewProducts.length > 0 && (
@@ -270,6 +289,37 @@ function DumpSyncUpload() {
         </div>
         )}
 
+        {Array.isArray(result.sampleNewHierarchyEntries) && result.sampleNewHierarchyEntries.length > 0 && (
+        <div className="dumpsync-result__sample">
+          <div className="dumpsync-result__title2">Sample New Hierarchy Entries</div>
+          <div className="dumpsync-result__tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  {["hierarchy_name", "smd", "zsm", "asm", "mdd", "tse", "dealer"].map((h) => (
+                    <th key={h}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.sampleNewHierarchyEntries.slice(0, 15).map((item, i) => (
+                  <tr key={i}>
+                    <td>{item.hierarchy_name}</td>
+                    <td>{item.smd}</td>
+                    <td>{item.zsm}</td>
+                    <td>{item.asm}</td>
+                    <td>{item.mdd}</td>
+                    <td>{item.tse}</td>
+                    <td>{item.dealer}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="dumpsync-muted">Tip: Turn off Dry Run to apply changes.</div>
+        </div>
+      )}
+
         {result.message ? (
           <div className="dumpsync-alert">{result.message}</div>
         ) : null}
@@ -283,9 +333,9 @@ function DumpSyncUpload() {
         <div className="dumpsync-header">
           <div className="dumpsync-header__left">
             <div className="dumpsync-title">📥 Dump Sync Upload</div>
-            <div className="dumpsync-subtitle">
-              Upload Samsung dump (Excel/CSV) and auto-create missing products in Product Master.
-            </div>
+              <div className="dumpsync-subtitle">
+                Upload a dump file and sync products, actor codes, or hierarchy entries using the selected sync type.
+              </div>
           </div>
           <div className="dumpsync-header__right">
             <label className="switch">
@@ -306,10 +356,10 @@ function DumpSyncUpload() {
         <div className="dumpsync-steps">
           <div className="dumpsync-steps__title">Steps</div>
           <ul>
-            <li>Upload .xlsx / .xls / .csv file.</li>
+            <li>Upload .xlsx / .xls / .csv file as allowed by the selected sync type.</li>
             <li>Do not rename headers.</li>
-            <li>Dry Run shows what will be inserted.</li>
-            <li>Turn Dry Run OFF to insert new products.</li>
+            <li>Dry Run shows what will be inserted or synced.</li>
+            <li>Turn Dry Run OFF to apply actual changes.</li>
           </ul>
         </div>
 
