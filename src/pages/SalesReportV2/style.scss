@@ -328,79 +328,98 @@
 .sub-report-block {
   background: #fafbfd;
   border: 1px solid #edf1f6;
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 16px;
+  padding: 16px;
 }
 
 .sub-report-heading {
   font-size: 14px;
   font-weight: 700;
   color: #4b5563;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   padding-left: 10px;
   border-left: 4px solid #8b5cf6;
 }
 
-.wod-box {
-  margin-top: 15px;
-  font-size: 15px;
-  font-weight: 600;
-  background: #f3f6ff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  display: inline-block;
+.wod-report-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  overflow: hidden;
+  border: 1px solid #e7ecf3;
+  border-radius: 16px;
+  background: #ffffff;
 
-  span {
-    margin-right: 6px;
+  th,
+  td {
+    padding: 14px 16px;
+    text-align: center;
+    border-right: 1px solid #e7ecf3;
+    border-bottom: 1px solid #e7ecf3;
+    font-size: 14px;
+  }
+
+  th:last-child,
+  td:last-child {
+    border-right: none;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  thead th {
+    background: #f8fafc;
+    color: #475467;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    background: #fff;
+    transition: background 0.18s ease;
+  }
+
+  tbody tr:hover td {
+    background-clip: padding-box;
+  }
+
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fcfcfd;
+  }
+
+  thead .sticky-col {
+    z-index: 3;
+    background: #f8fafc;
+  }
+
+  .metric-title {
+    text-align: left;
+    font-weight: 700;
+    color: #344054;
+    min-width: 180px;
+  }
+
+  .wod-value-cell {
+    color: #344054;
+    font-variant-numeric: tabular-nums;
+    transition: all 0.2s ease;
+  }
+
+  .wod-value-cell.is-growth,
+  .wod-value-cell.is-exp {
+    letter-spacing: 0.1px;
   }
 }
 
-.wod-card {
-  background: white;
-  border-radius: 18px;
-  padding: 25px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.06);
-
-  h3 {
-    margin-bottom: 15px;
-    font-size: 18px;
-    font-weight: 600;
-    color: #2d3436;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-
-    th,
-    td {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #e0e0e0;
-    }
-
-    th {
-      background: #f4f6f8;
-      font-weight: 600;
-      color: #555;
-    }
-
-    .row-label {
-      font-weight: 600;
-      text-align: left;
-      background: #fafafa;
-    }
-
-    tbody tr:hover {
-      background: #f9fbff;
-    }
-
-    td:nth-last-child(2) {
-      font-weight: bold;
-      color: #2e7d32;
-    }
-  }
+.report-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
 }
 
 /* =========================

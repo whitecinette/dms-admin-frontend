@@ -547,22 +547,165 @@ function SalesReportV2() {
   // ===============================
   // WOD TABLES CONTENT
   // ===============================
-  const renderWodTablesContent = () => {
-    if (!wodTables) return null;
 
-    const sellIn = wodTables.sellInWOD || {};
-    const sellOut = wodTables.sellOutWOD || {};
-    const columns = Object.keys(sellIn);
 
-    return (
-      <div className="wod-section">
+  // ===============================
+  // wod heatmap and wod
+  // ===============================
+
+
+const WOD_FIXED_COLUMNS = ["MTD", "LMTD", "FTD", "G/D%", "Exp.Ach"];
+
+const isNumeric = (val) => {
+  return val !== null && val !== undefined && val !== "" && !Number.isNaN(Number(val));
+};
+
+const getComparableColumns = (columns) => {
+  return columns.filter((col) => col !== "G/D%" && col !== "Exp.Ach");
+};
+
+const getRowScaleStats = (rowData, columns) => {
+  const comparableCols = getComparableColumns(columns);
+
+  const values = comparableCols
+    .map((col) => Number(rowData?.[col]))
+    .filter((v) => !Number.isNaN(v));
+
+  if (!values.length) return { min: 0, max: 0 };
+
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+};
+
+const getNeutralIntensityStyle = (value, stats) => {
+  if (!isNumeric(value)) return {};
+
+  const num = Number(value);
+  const { min, max } = stats;
+
+  if (max === min) {
+    return {
+      background: "#fbfcfe",
+      fontWeight: 500,
+    };
+  }
+
+  const ratio = (num - min) / (max - min);
+
+  // very subtle neutral indigo/gray tint
+  const alpha = 0.03 + ratio * 0.08;
+
+  return {
+    background: `linear-gradient(180deg, rgba(99, 102, 241, ${alpha}) 0%, rgba(99, 102, 241, ${alpha * 0.75}) 100%)`,
+    boxShadow: ratio > 0.55 ? "inset 0 0 0 1px rgba(99,102,241,0.08)" : "none",
+    fontWeight: ratio > 0.7 ? 600 : 500,
+    color: "#374151",
+  };
+};
+
+const getGrowthStyle = (value) => {
+  if (!isNumeric(value)) return {};
+
+  const num = Number(value);
+
+  if (num > 0) {
+    return {
+      background: "rgba(34, 197, 94, 0.08)",
+      color: "#166534",
+      fontWeight: 700,
+    };
+  }
+
+  if (num < 0) {
+    return {
+      background: "rgba(239, 68, 68, 0.08)",
+      color: "#b42318",
+      fontWeight: 700,
+    };
+  }
+
+  return {
+    background: "#f8fafc",
+    color: "#475467",
+    fontWeight: 600,
+  };
+};
+
+const getExpAchStyle = () => {
+  return {
+    background: "#fcfcfd",
+    color: "#667085",
+    fontWeight: 500,
+  };
+};
+
+const getCellStyle = (value, col, rowData, columns) => {
+  if (!isNumeric(value)) return {};
+
+  if (col === "G/D%") return getGrowthStyle(value);
+  if (col === "Exp.Ach") return getExpAchStyle();
+
+  const stats = getRowScaleStats(rowData, columns);
+  return getNeutralIntensityStyle(value, stats);
+};
+
+const renderWodRow = (label, rowData, columns, rowKey) => {
+  return (
+    <tr key={rowKey}>
+      <td className="metric-title sticky-col">{label}</td>
+      {columns.map((col) => (
+        <td
+          key={col}
+          className={`wod-value-cell ${col === "G/D%" ? "is-growth" : ""} ${col === "Exp.Ach" ? "is-exp" : ""}`}
+          style={getCellStyle(rowData?.[col], col, rowData, columns)}
+        >
+          {formatValue(rowData?.[col])}
+        </td>
+      ))}
+    </tr>
+  );
+};
+
+const renderWodTablesContent = () => {
+  if (!wodTables) return null;
+
+  const sellIn = wodTables.sellInWOD || {};
+  const sellOut = wodTables.sellOutWOD || {};
+  const columns = Object.keys(sellIn);
+
+  return (
+    <div className="wod-section">
+      <div className="sub-report-block">
+        <div className="sub-report-heading">WOD Summary</div>
+        <div className="report-table-wrapper">
+          <table className="report-table wod-report-table">
+            <thead>
+              <tr>
+                <th className="sticky-col">Metric</th>
+                {columns.map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {renderWodRow("Sell-In WOD", sellIn, columns, "sell-in")}
+              {renderWodRow("Sell-Out WOD", sellOut, columns, "sell-out")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {wodTables.sellInBreakdown?.length > 0 && (
         <div className="sub-report-block">
-          <div className="sub-report-heading">WOD Summary</div>
+          <div className="sub-report-heading">Sell-In WOD Breakdown</div>
           <div className="report-table-wrapper">
-            <table className="report-table">
+            <table className="report-table wod-report-table">
               <thead>
                 <tr>
-                  <th>Metric</th>
+                  <th className="sticky-col">Metric</th>
                   {columns.map((col) => (
                     <th key={col}>{col}</th>
                   ))}
@@ -570,84 +713,45 @@ function SalesReportV2() {
               </thead>
 
               <tbody>
-                <tr>
-                  <td className="metric-title">Sell-In WOD</td>
-                  {columns.map((col) => (
-                    <td key={col}>{formatValue(sellIn[col])}</td>
-                  ))}
-                </tr>
-
-                <tr>
-                  <td className="metric-title">Sell-Out WOD</td>
-                  {columns.map((col) => (
-                    <td key={col}>{formatValue(sellOut[col])}</td>
-                  ))}
-                </tr>
+                {wodTables.sellInBreakdown.map((row, idx) =>
+                  renderWodRow(row.label, row.data || {}, columns, `sellin-breakdown-${idx}`)
+                )}
               </tbody>
             </table>
           </div>
         </div>
+      )}
 
-        {wodTables.sellInBreakdown?.length > 0 && (
-          <div className="sub-report-block">
-            <div className="sub-report-heading">Sell-In WOD Breakdown</div>
-            <div className="report-table-wrapper">
-              <table className="report-table">
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    {columns.map((col) => (
-                      <th key={col}>{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {wodTables.sellInBreakdown.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="metric-title">{row.label}</td>
-                      {columns.map((col) => (
-                        <td key={col}>{formatValue(row.data?.[col])}</td>
-                      ))}
-                    </tr>
+      {wodTables.sellOutBreakdown?.length > 0 && (
+        <div className="sub-report-block">
+          <div className="sub-report-heading">Sell-Out WOD Breakdown</div>
+          <div className="report-table-wrapper">
+            <table className="report-table wod-report-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col">Metric</th>
+                  {columns.map((col) => (
+                    <th key={col}>{col}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                </tr>
+              </thead>
 
-        {wodTables.sellOutBreakdown?.length > 0 && (
-          <div className="sub-report-block">
-            <div className="sub-report-heading">Sell-Out WOD Breakdown</div>
-            <div className="report-table-wrapper">
-              <table className="report-table">
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    {columns.map((col) => (
-                      <th key={col}>{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {wodTables.sellOutBreakdown.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="metric-title">{row.label}</td>
-                      {columns.map((col) => (
-                        <td key={col}>{formatValue(row.data?.[col])}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <tbody>
+                {wodTables.sellOutBreakdown.map((row, idx) =>
+                  renderWodRow(row.label, row.data || {}, columns, `sellout-breakdown-${idx}`)
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      )}
+    </div>
+  );
+};
+
+  // ===============================
+  // wod heatmap and wod
+  // ===============================
 
   return (
     <div className="sales-report-page">
@@ -725,7 +829,7 @@ function SalesReportV2() {
 
         <ReportGroup
           title="WOD Reports"
-          subtitle="Week of distribution insights"
+          subtitle="Width of distribution insights"
           tone="purple"
           defaultOpen={true}
         >
