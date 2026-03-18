@@ -40,6 +40,7 @@ import { RiBarChartGroupedLine } from "react-icons/ri";
 import { RiPriceTag3Line } from "react-icons/ri";
 import { RiShieldCheckLine } from "react-icons/ri";
 import { RiRefreshLine, RiDownloadCloud2Line, RiRepeatLine, RiDatabase2Line } from "react-icons/ri";
+import { LuTrophy, LuPackageSearch, LuChartColumnIncreasing } from "react-icons/lu";
 
 
 /** Helper: subtle professional colors for sub-item icons */
@@ -81,37 +82,45 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       to: "/dashboard",
       icon: <FaChartPie size={20} />,
     },
-    {
-      name: "Sales Dashboard",
-      to: "/salesDashboard",
-      icon: (
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 53 62"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M26.2083 2.90045L49.9167 16.8465V44.8201L26.2083 58.7662L2.5 44.8201V16.8465L26.2083 2.90045Z"
-            stroke="currentColor"
-            strokeWidth="5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M26.2083 27.75V40.0834M38.5417 21.5834V40.0834M13.875 33.9167V40.0834"
-            stroke="currentColor"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ),
+        {
+      name: "Sales Report",
+      to: "/all-reports",
+      icon: <RiBarChartGroupedLine size={20} />,
     },
-    { name: "Extraction", to: "/extraction", icon: <LuPickaxe size={20} /> },
-     { name: "Extraction Status", to: "/extraction-status-overview", icon: <LuPickaxe size={20} /> },
+    // {
+    //   name: "Sales Dashboard",
+    //   to: "/salesDashboard",
+    //   icon: (
+    //     <svg
+    //       width="20"
+    //       height="20"
+    //       viewBox="0 0 53 62"
+    //       fill="none"
+    //       xmlns="http://www.w3.org/2000/svg"
+    //     >
+    //       <path
+    //         d="M26.2083 2.90045L49.9167 16.8465V44.8201L26.2083 58.7662L2.5 44.8201V16.8465L26.2083 2.90045Z"
+    //         stroke="currentColor"
+    //         strokeWidth="5"
+    //         strokeLinejoin="round"
+    //       />
+    //       <path
+    //         d="M26.2083 27.75V40.0834M38.5417 21.5834V40.0834M13.875 33.9167V40.0834"
+    //         stroke="currentColor"
+    //         strokeWidth="5"
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //       />
+    //     </svg>
+    //   ),
+    // },
 
-    { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
+
+{ name: "Top Selling", to: "/self/top-selling", icon: <LuTrophy size={20} /> },
+{ name: "Extraction", to: "/extraction", icon: <LuPackageSearch size={20} /> },
+{ name: "Extraction Status", to: "/extraction-status-overview", icon: <LuChartColumnIncreasing size={20} /> },
+
+    // { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
     {
       name: "HR",
       to: "#",
@@ -246,11 +255,6 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       name: "Upload Combined",
       to: "/combined-upload",
       icon: <RiUploadCloud2Line size={20} />,
-    },
-    {
-      name: "Sales Report V2",
-      to: "/all-reports",
-      icon: <RiBarChartGroupedLine size={20} />,
     },
     {
       name: "Product Master",

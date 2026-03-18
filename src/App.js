@@ -53,6 +53,8 @@ import ProductMaster from "./pages/productMaster";
 import DataPolice from "./pages/dataPolice";
 import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
 import DumpSyncUpload from "./pages/dumpSync";
+import TopSellingSelf from "./pages/SalesReportV2/topSellingSelf";
+
 
 
 
@@ -138,6 +140,7 @@ function App() {
             <Route path="/data-police" element={<DataPolice /> } />
             <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
             <Route path="/sync-dump-data" element={<DumpSyncUpload /> } />
+            <Route path="/self/top-selling" element={<TopSellingSelf /> } />
 
             
           </Route>
