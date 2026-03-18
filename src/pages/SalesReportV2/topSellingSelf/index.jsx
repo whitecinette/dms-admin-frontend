@@ -23,8 +23,18 @@ const formatNum = (v) => {
   return n.toLocaleString("en-IN");
 };
 
-const formatMoney = (v) => {
+const formatMoneyNormal = (v) => {
   const n = safeNum(v);
+  return `₹${n.toLocaleString("en-IN")}`;
+};
+
+const formatMoneyCompact = (v) => {
+  const n = safeNum(v);
+
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
+  if (n >= 100000) return `₹${(n / 100000).toFixed(2)} Lac`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(2)} K`;
+
   return `₹${n.toLocaleString("en-IN")}`;
 };
 
@@ -118,18 +128,6 @@ const normalizeRow = (row = {}, segmentKey = "") => {
     row.sales_value ??
     0;
 
-  const mtdValue =
-    row.MTDValue ??
-    row.mtdValue ??
-    row.mtd_value ??
-    0;
-
-  const lmValue =
-    row.LMValue ??
-    row.lmValue ??
-    row.lm_value ??
-    0;
-
   return {
     segment: row.segment || segmentKey || "unknown",
     model: row.model || row.model_no || row.modelCode || row.model_code || row.product_code || "-",
@@ -139,8 +137,8 @@ const normalizeRow = (row = {}, segmentKey = "") => {
     MTD: safeNum(mtd),
     total: safeNum(total),
     totalValue: safeNum(totalValue),
-    MTDValue: safeNum(mtdValue),
-    LMValue: safeNum(lmValue),
+    topDealersByVolume: Array.isArray(row.topDealersByVolume) ? row.topDealersByVolume : [],
+    topDealersByValue: Array.isArray(row.topDealersByValue) ? row.topDealersByValue : [],
   };
 };
 
@@ -154,8 +152,42 @@ const SummaryCard = ({ title, value, sub, accent = "blue" }) => {
   );
 };
 
-const TopProductItem = ({ item, rank, type = "volume" }) => {
+const TopDealerList = ({ dealers = [], moneyFormatter }) => {
+  if (!dealers.length) return null;
+
+  return (
+    <div className="tss-dealer-block">
+      <div className="tss-dealer-title">Top Dealers</div>
+
+      <div className="tss-dealer-list">
+        {dealers.map((dealer, idx) => (
+          <div className="tss-dealer-item" key={`${dealer.dealerCode}-${idx}`}>
+            <div className="tss-dealer-left">
+              <span className="tss-dealer-rank">#{idx + 1}</span>
+              <div className="tss-dealer-meta">
+                <div className="tss-dealer-name">{dealer.dealerName || dealer.dealerCode}</div>
+                <div className="tss-dealer-code">{dealer.dealerCode}</div>
+              </div>
+            </div>
+
+            <div className="tss-dealer-pills">
+              <span className="mini-pill">Vol {formatNum(dealer.totalQty)}</span>
+              <span className="mini-pill strong">Val {moneyFormatter(dealer.totalValue)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TopProductItem = ({ item, rank, type = "volume", moneyFormatter }) => {
   if (!item) return null;
+
+  const dealers =
+    type === "value"
+      ? item.topDealersByValue || []
+      : item.topDealersByVolume || [];
 
   return (
     <div className="tss-top-item">
@@ -168,26 +200,28 @@ const TopProductItem = ({ item, rank, type = "volume" }) => {
 
         <div className="tss-top-pills">
           <span className="meta-pill">{item.segment}</span>
-          <span className="meta-pill">DP {formatMoney(item.dp)}</span>
+          <span className="meta-pill">DP {moneyFormatter(item.dp)}</span>
 
           {type === "value" ? (
             <>
               <span className="meta-pill">Vol {formatNum(item.total)}</span>
-              <span className="meta-pill strong">Val {formatMoney(item.totalValue)}</span>
+              <span className="meta-pill strong">Val {moneyFormatter(item.totalValue)}</span>
             </>
           ) : (
             <>
-              <span className="meta-pill">Val {formatMoney(item.totalValue)}</span>
+              <span className="meta-pill">Val {moneyFormatter(item.totalValue)}</span>
               <span className="meta-pill strong">Vol {formatNum(item.total)}</span>
             </>
           )}
         </div>
+
+        <TopDealerList dealers={dealers} moneyFormatter={moneyFormatter} />
       </div>
     </div>
   );
 };
 
-const SegmentSection = ({ segment, rows = [], defaultOpen = false }) => {
+const SegmentSection = ({ segment, rows = [], defaultOpen = false, moneyFormatter }) => {
   const [open, setOpen] = useState(defaultOpen);
 
   const sortedRows = useMemo(() => {
@@ -235,30 +269,30 @@ const SegmentSection = ({ segment, rows = [], defaultOpen = false }) => {
             <table className="tss-table">
               <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Model</th>
-                    <th>Name</th>
-                    <th>DP</th>
-                    <th>LM</th>
-                    <th>MTD</th>
-                    <th>Total Vol</th>
-                    <th>Total Value</th>
+                  <th>#</th>
+                  <th>Model</th>
+                  <th>Name</th>
+                  <th>DP</th>
+                  <th>LM</th>
+                  <th>MTD</th>
+                  <th>Total Vol</th>
+                  <th>Total Value</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedRows.length ? (
                   sortedRows.map((row, idx) => (
                     <tr key={`${segment}-${row.model}-${idx}`}>
-                        <td>{idx + 1}</td>
-                        <td>{row.model}</td>
-                        <td>{row.name}</td>
-                        <td>{formatMoney(row.dp)}</td>
-                        <td>{formatNum(row.LM)}</td>
-                        <td>{formatNum(row.MTD)}</td>
-                        <td>
+                      <td>{idx + 1}</td>
+                      <td>{row.model}</td>
+                      <td>{row.name}</td>
+                      <td>{moneyFormatter(row.dp)}</td>
+                      <td>{formatNum(row.LM)}</td>
+                      <td>{formatNum(row.MTD)}</td>
+                      <td>
                         <span className="qty-badge">{formatNum(row.total)}</span>
-                        </td>
-                        <td>{formatMoney(row.totalValue)}</td>
+                      </td>
+                      <td>{moneyFormatter(row.totalValue)}</td>
                     </tr>
                   ))
                 ) : (
@@ -285,10 +319,14 @@ const SegmentSection = ({ segment, rows = [], defaultOpen = false }) => {
                   </div>
 
                   <div className="tss-mobile-grid">
-                   <div className="kv">
-                        <span>Value</span>
-                        <strong>{formatMoney(row.totalValue)}</strong>
-                        </div>
+                    <div className="kv">
+                      <span>DP</span>
+                      <strong>{moneyFormatter(row.dp)}</strong>
+                    </div>
+                    <div className="kv">
+                      <span>Value</span>
+                      <strong>{moneyFormatter(row.totalValue)}</strong>
+                    </div>
                     <div className="kv">
                       <span>LM</span>
                       <strong>{formatNum(row.LM)}</strong>
@@ -317,7 +355,6 @@ const SegmentSection = ({ segment, rows = [], defaultOpen = false }) => {
 export default function TopSellingSelf() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
-  
 
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
@@ -334,49 +371,53 @@ export default function TopSellingSelf() {
   const [top3ByVolume, setTop3ByVolume] = useState([]);
   const [top3ByValue, setTop3ByValue] = useState([]);
   const [apiSummary, setApiSummary] = useState(null);
+  const [moneyView, setMoneyView] = useState("normal");
 
-const fetchReport = async () => {
-  try {
-    setIsLoading(true);
-    setErrorText("");
+  const moneyFormatter = (value) =>
+    moneyView === "compact" ? formatMoneyCompact(value) : formatMoneyNormal(value);
 
-    const url =
-      `${backendUrl}/other-reports/samsung/top-selling-products` +
-      `?startDate=${encodeURIComponent(toInputDate(startDate))}` +
-      `&endDate=${encodeURIComponent(toInputDate(endDate))}`;
+  const fetchReport = async () => {
+    try {
+      setIsLoading(true);
+      setErrorText("");
 
-    const res = await axios.get(url, {
-      headers: {
-        ...getAuthHeader(),
-        "Content-Type": "application/json",
-      },
-    });
+      const url =
+        `${backendUrl}/other-reports/samsung/top-selling-products` +
+        `?startDate=${encodeURIComponent(toInputDate(startDate))}` +
+        `&endDate=${encodeURIComponent(toInputDate(endDate))}`;
 
-    const rawMap = normalizeSegmentMap(res.data);
+      const res = await axios.get(url, {
+        headers: {
+          ...getAuthHeader(),
+          "Content-Type": "application/json",
+        },
+      });
 
-    const cleaned = {};
-    Object.keys(rawMap || {}).forEach((segmentKey) => {
-      const arr = Array.isArray(rawMap[segmentKey]) ? rawMap[segmentKey] : [];
-      cleaned[segmentKey] = arr.map((row) => normalizeRow(row, segmentKey));
-    });
+      const rawMap = normalizeSegmentMap(res.data);
 
-    setSegmentMap(cleaned);
-    setApiSummary(res.data?.summary || null);
-    setTop3ByVolume((res.data?.top3ByVolume || []).map((row) => normalizeRow(row, row?.segment)));
-    setTop3ByValue((res.data?.top3ByValue || []).map((row) => normalizeRow(row, row?.segment)));
-  } catch (e) {
-    console.error("Top selling products fetch failed:", e);
-    setSegmentMap({});
-    setTop3ByVolume([]);
-    setTop3ByValue([]);
-    setApiSummary(null);
-    setErrorText(
-      e?.response?.data?.message || "Failed to fetch top selling products report"
-    );
-  } finally {
-    setIsLoading(false);
-  }
-};
+      const cleaned = {};
+      Object.keys(rawMap || {}).forEach((segmentKey) => {
+        const arr = Array.isArray(rawMap[segmentKey]) ? rawMap[segmentKey] : [];
+        cleaned[segmentKey] = arr.map((row) => normalizeRow(row, segmentKey));
+      });
+
+      setSegmentMap(cleaned);
+      setApiSummary(res.data?.summary || null);
+      setTop3ByVolume((res.data?.top3ByVolume || []).map((row) => normalizeRow(row, row?.segment)));
+      setTop3ByValue((res.data?.top3ByValue || []).map((row) => normalizeRow(row, row?.segment)));
+    } catch (e) {
+      console.error("Top selling products fetch failed:", e);
+      setSegmentMap({});
+      setTop3ByVolume([]);
+      setTop3ByValue([]);
+      setApiSummary(null);
+      setErrorText(
+        e?.response?.data?.message || "Failed to fetch top selling products report"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchReport();
@@ -410,28 +451,28 @@ const fetchReport = async () => {
     return sortedSegments.flatMap((segment) => filteredSegmentMap[segment] || []);
   }, [filteredSegmentMap, sortedSegments]);
 
-const summary = useMemo(() => {
-  const totals = flatRows.reduce(
-    (acc, row) => {
-      acc.models += 1;
-      acc.lm += safeNum(row.LM);
-      acc.mtd += safeNum(row.MTD);
-      acc.total += safeNum(row.total);
-      acc.totalValue += safeNum(row.totalValue);
-      return acc;
-    },
-    { models: 0, lm: 0, mtd: 0, total: 0, totalValue: 0 }
-  );
+  const summary = useMemo(() => {
+    const totals = flatRows.reduce(
+      (acc, row) => {
+        acc.models += 1;
+        acc.lm += safeNum(row.LM);
+        acc.mtd += safeNum(row.MTD);
+        acc.total += safeNum(row.total);
+        acc.totalValue += safeNum(row.totalValue);
+        return acc;
+      },
+      { models: 0, lm: 0, mtd: 0, total: 0, totalValue: 0 }
+    );
 
-  return {
-    segments: safeNum(apiSummary?.segments || sortedSegments.length),
-    models: safeNum(apiSummary?.models || totals.models),
-    lm: safeNum(apiSummary?.lm || totals.lm),
-    mtd: safeNum(apiSummary?.mtd || totals.mtd),
-    total: safeNum(apiSummary?.total || totals.total),
-    totalValue: safeNum(apiSummary?.totalValue || totals.totalValue),
-  };
-}, [flatRows, sortedSegments, apiSummary]);
+    return {
+      segments: safeNum(apiSummary?.segments || sortedSegments.length),
+      models: safeNum(apiSummary?.models || totals.models),
+      lm: safeNum(apiSummary?.lm || totals.lm),
+      mtd: safeNum(apiSummary?.mtd || totals.mtd),
+      total: safeNum(apiSummary?.total || totals.total),
+      totalValue: safeNum(apiSummary?.totalValue || totals.totalValue),
+    };
+  }, [flatRows, sortedSegments, apiSummary]);
 
   return (
     <div className="tss-page">
@@ -455,6 +496,23 @@ const summary = useMemo(() => {
           >
             Current Month
           </button>
+
+          <div className="tss-toggle-group">
+            <button
+              type="button"
+              className={`tss-toggle-btn ${moneyView === "normal" ? "active" : ""}`}
+              onClick={() => setMoneyView("normal")}
+            >
+              Normal View
+            </button>
+            <button
+              type="button"
+              className={`tss-toggle-btn ${moneyView === "compact" ? "active" : ""}`}
+              onClick={() => setMoneyView("compact")}
+            >
+              Cr/Lac View
+            </button>
+          </div>
 
           <button className="tss-btn primary" type="button" onClick={fetchReport}>
             {isLoading ? "Refreshing..." : "Refresh"}
@@ -530,63 +588,63 @@ const summary = useMemo(() => {
         />
       </div>
 
-<div className="tss-highlight-row top3-layout">
-  <div className="tss-highlight-card">
-    <div className="label">Top 3 by Volume</div>
+      <div className="tss-highlight-row top3-layout">
+        <div className="tss-highlight-card">
+          <div className="label">Top 3 by Volume</div>
 
-    {top3ByVolume.length ? (
-      <div className="tss-top-list">
-        {top3ByVolume.map((item, idx) => (
-          <TopProductItem
-            key={`vol-${item.model}-${idx}`}
-            item={item}
-            rank={idx + 1}
-            type="volume"
-          />
-        ))}
+          {top3ByVolume.length ? (
+            <div className="tss-top-list">
+              {top3ByVolume.map((item, idx) => (
+                <TopProductItem
+                  key={`vol-${item.model}-${idx}`}
+                  item={item}
+                  rank={idx + 1}
+                  type="volume"
+                  moneyFormatter={moneyFormatter}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-text">No product data available</div>
+          )}
+        </div>
+
+        <div className="tss-highlight-card">
+          <div className="label">Top 3 by Value</div>
+
+          {top3ByValue.length ? (
+            <div className="tss-top-list">
+              {top3ByValue.map((item, idx) => (
+                <TopProductItem
+                  key={`val-${item.model}-${idx}`}
+                  item={item}
+                  rank={idx + 1}
+                  type="value"
+                  moneyFormatter={moneyFormatter}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-text">No product data available</div>
+          )}
+        </div>
       </div>
-    ) : (
-      <div className="empty-text">No product data available</div>
-    )}
-  </div>
 
-  <div className="tss-highlight-card">
-    <div className="label">Top 3 by Value</div>
+      <div className="tss-highlight-row compact">
+        <div className="tss-highlight-card">
+          <div className="label">Overall Quantity</div>
+          <div className="value">{formatNum(summary.total)}</div>
+          <div className="muted-line">Combined total across all visible segments</div>
+        </div>
 
-    {top3ByValue.length ? (
-      <div className="tss-top-list">
-        {top3ByValue.map((item, idx) => (
-          <TopProductItem
-            key={`val-${item.model}-${idx}`}
-            item={item}
-            rank={idx + 1}
-            type="value"
-          />
-        ))}
+        <div className="tss-highlight-card">
+          <div className="label">Overall Value</div>
+          <div className="value">{moneyFormatter(summary.totalValue)}</div>
+          <div className="muted-line">Combined invoice value across all visible segments</div>
+        </div>
       </div>
-    ) : (
-      <div className="empty-text">No product data available</div>
-    )}
-  </div>
-</div>
 
-<div className="tss-highlight-row compact">
-  <div className="tss-highlight-card">
-    <div className="label">Overall Quantity</div>
-    <div className="value">{formatNum(summary.total)}</div>
-    <div className="muted-line">Combined total across all visible segments</div>
-  </div>
-
-  <div className="tss-highlight-card">
-    <div className="label">Overall Value</div>
-    <div className="value">{formatMoney(summary.totalValue)}</div>
-    <div className="muted-line">Combined invoice value across all visible segments</div>
-  </div>
-</div>
-
-      {errorText ? (
-        <div className="tss-alert error">{errorText}</div>
-      ) : null}
+      {errorText ? <div className="tss-alert error">{errorText}</div> : null}
 
       {isLoading ? (
         <div className="tss-loading-card">Loading report...</div>
@@ -598,6 +656,7 @@ const summary = useMemo(() => {
               segment={segment}
               rows={filteredSegmentMap[segment] || []}
               defaultOpen={idx === 0}
+              moneyFormatter={moneyFormatter}
             />
           ))}
         </div>

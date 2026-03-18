@@ -624,3 +624,121 @@
     font-size: 18px;
   }
 }
+
+.tss-dealer-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #e4ebf5;
+}
+
+.tss-dealer-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7b879b;
+  margin-bottom: 10px;
+}
+
+.tss-dealer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tss-dealer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fbff;
+  border: 1px solid #e6eef8;
+}
+
+.tss-dealer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tss-dealer-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #d7e4ff;
+  color: #2950b3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.tss-dealer-meta {
+  min-width: 0;
+}
+
+.tss-dealer-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #22314c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tss-dealer-code {
+  font-size: 11px;
+  color: #7c8798;
+  margin-top: 2px;
+}
+
+.tss-dealer-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .tss-dealer-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tss-dealer-pills {
+    justify-content: flex-start;
+  }
+
+  .tss-dealer-name {
+    white-space: normal;
+  }
+}
+
+.tss-toggle-btn {
+  border: 0;
+  background: transparent;
+  color: #56657a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  &:hover {
+    background: #f4f7fb;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.16);
+  }
+}
