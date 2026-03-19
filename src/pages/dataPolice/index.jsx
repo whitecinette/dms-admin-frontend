@@ -16,16 +16,110 @@ function DataPolice() {
   const [excludedData, setExcludedData] = useState(null);
   const [flagsData, setFlagsData] = useState(null);
 
+  const today = new Date();
+  const [downloadMonth, setDownloadMonth] = useState(today.getMonth() + 1);
+  const [downloadYear, setDownloadYear] = useState(today.getFullYear());
+  const [isDownloadingMarketSales, setIsDownloadingMarketSales] =
+    useState(false);
+
+  const monthOptions = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const yearOptions = Array.from(
+    { length: 7 },
+    (_, i) => today.getFullYear() - 3 + i
+  );
+
   // ===============================
   // DEFAULT DATE RANGE
   // ===============================
   useEffect(() => {
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const todayDate = new Date();
+    const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
 
     setStartDate(firstDay.toISOString().split("T")[0]);
-    setEndDate(today.toISOString().split("T")[0]);
+    setEndDate(todayDate.toISOString().split("T")[0]);
   }, []);
+
+  // ===============================
+  // DOWNLOAD MARKET SALES DATA
+  // ===============================
+  const downloadMarketSalesData = async () => {
+    setIsDownloadingMarketSales(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `${backendUrl}/download-market-sales-data-month-wise`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            month: Number(downloadMonth),
+            year: Number(downloadYear),
+          }),
+        }
+      );
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!res.ok) {
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          setError(data.message || "Download failed");
+        } else {
+          setError("Download failed");
+        }
+        return;
+      }
+
+      if (
+        contentType.includes(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+      ) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = `Market_Sales_Data_${String(downloadMonth).padStart(
+          2,
+          "0"
+        )}_${downloadYear}.xlsx`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else if (contentType.includes("application/json")) {
+        const data = await res.json();
+        setError(data.message || "No data found");
+      } else {
+        setError("Unexpected response received");
+      }
+    } catch (err) {
+      console.error("Error downloading market sales data:", err);
+      setError("Network error");
+    } finally {
+      setIsDownloadingMarketSales(false);
+    }
+  };
 
   // ===============================
   // UNMAPPED PRODUCTS
@@ -36,14 +130,11 @@ function DataPolice() {
     setActiveTab("unmapped");
 
     try {
-      const res = await fetch(
-        `${backendUrl}/police/unmapped-products`,
-        {
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
+      const res = await fetch(`${backendUrl}/police/unmapped-products`, {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
 
       const data = await res.json();
 
@@ -68,21 +159,18 @@ function DataPolice() {
     setActiveTab("excluded");
 
     try {
-      const res = await fetch(
-        `${backendUrl}/police/excluded-raw-data`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: localStorage.getItem("authToken"),
-          },
-          body: JSON.stringify({
-            start_date: startDate,
-            end_date: endDate,
-            filters: {},
-          }),
-        }
-      );
+      const res = await fetch(`${backendUrl}/police/excluded-raw-data`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate,
+          filters: {},
+        }),
+      });
 
       const data = await res.json();
 
@@ -107,21 +195,18 @@ function DataPolice() {
     setActiveTab("flags");
 
     try {
-      const res = await fetch(
-        `${backendUrl}/reports/sales-report-flags`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: localStorage.getItem("authToken"),
-          },
-          body: JSON.stringify({
-            start_date: startDate,
-            end_date: endDate,
-            filters: {},
-          }),
-        }
-      );
+      const res = await fetch(`${backendUrl}/reports/sales-report-flags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate,
+          filters: {},
+        }),
+      });
 
       const data = await res.json();
 
@@ -162,14 +247,9 @@ function DataPolice() {
             {dataset.rows.map((row, i) => (
               <tr key={row._id}>
                 <td>{i + 1}</td>
+                <td>{row.activation_date_raw || row.invoice_date_raw}</td>
                 <td>
-                  {row.activation_date_raw ||
-                    row.invoice_date_raw}
-                </td>
-                <td>
-                  {row.tertiary_buyer_code ||
-                    row.dealer_code ||
-                    row.mdd_code}
+                  {row.tertiary_buyer_code || row.dealer_code || row.mdd_code}
                 </td>
                 <td>{row[valueField]}</td>
                 <td>{row[qtyField]}</td>
@@ -210,19 +290,17 @@ function DataPolice() {
         </div>
 
         <div className="flag-breakdown">
-          {Object.entries(dataset.breakdown || {}).map(
-            ([reason, count]) => (
-              <div key={reason}>
-                {count} → {reason}
-              </div>
-            )
-          )}
+          {Object.entries(dataset.breakdown || {}).map(([reason, count]) => (
+            <div key={reason}>
+              {count} → {reason}
+            </div>
+          ))}
         </div>
       </div>
     );
   };
 
-    // ===============================
+  // ===============================
   // WOD CARD
   // ===============================
   const renderWodCard = (dataset) => {
@@ -233,18 +311,15 @@ function DataPolice() {
         <h3>WOD</h3>
 
         <div>
-          <strong>Total Dealers (Active):</strong>{" "}
-          {dataset.totalDealers}
+          <strong>Total Dealers (Active):</strong> {dataset.totalDealers}
         </div>
 
         <div>
-          <strong>Excluded Dealers:</strong>{" "}
-          {dataset.excludedDealers}
+          <strong>Excluded Dealers:</strong> {dataset.excludedDealers}
         </div>
       </div>
     );
   };
-
 
   // ===============================
   // UI
@@ -268,19 +343,51 @@ function DataPolice() {
           />
         </div>
 
+        {/* MONTH YEAR DOWNLOAD */}
+        <div className="market-sales-download-box">
+          <h3>Download Market Sales Data</h3>
+
+          <div className="market-sales-download-controls">
+            <select
+              value={downloadMonth}
+              onChange={(e) => setDownloadMonth(Number(e.target.value))}
+            >
+              {monthOptions.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={downloadYear}
+              onChange={(e) => setDownloadYear(Number(e.target.value))}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={downloadMarketSalesData}
+              disabled={isDownloadingMarketSales}
+            >
+              {isDownloadingMarketSales
+                ? "Downloading..."
+                : "Download Market Sales"}
+            </button>
+          </div>
+        </div>
+
         {/* BUTTONS */}
         <div className="button-group">
-          <button onClick={fetchUnmappedProducts}>
-            Unmapped Products
-          </button>
+          <button onClick={fetchUnmappedProducts}>Unmapped Products</button>
 
-          <button onClick={fetchExcludedData}>
-            Excluded Raw Data
-          </button>
+          <button onClick={fetchExcludedData}>Excluded Raw Data</button>
 
-          <button onClick={fetchSalesReportFlags}>
-            Sales Report Flags
-          </button>
+          <button onClick={fetchSalesReportFlags}>Sales Report Flags</button>
         </div>
 
         {loading && <div className="loader">Loading...</div>}
@@ -329,14 +436,13 @@ function DataPolice() {
 
         {/* FLAGS */}
         {activeTab === "flags" && flagsData && (
-        <div className="flags-grid">
+          <div className="flags-grid">
             {renderFlagCard("Activation", flagsData.activation)}
             {renderFlagCard("Tertiary", flagsData.tertiary)}
             {renderFlagCard("Secondary", flagsData.secondary)}
-            {renderWodCard(flagsData.wod)} {/* ✅ Added */}
-        </div>
+            {renderWodCard(flagsData.wod)}
+          </div>
         )}
-
       </div>
     </div>
   );
