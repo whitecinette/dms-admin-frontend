@@ -54,6 +54,7 @@ import DataPolice from "./pages/dataPolice";
 import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
 import DumpSyncUpload from "./pages/dumpSync";
 import TopSellingSelf from "./pages/SalesReportV2/topSellingSelf";
+import SessionsPage from "./pages/sessions";
 
 
 
@@ -141,6 +142,7 @@ function App() {
             <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
             <Route path="/sync-dump-data" element={<DumpSyncUpload /> } />
             <Route path="/self/top-selling" element={<TopSellingSelf /> } />
+            <Route path="/sessions" element={<SessionsPage /> } />
 
             
           </Route>

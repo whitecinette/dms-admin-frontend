@@ -41,6 +41,7 @@ import { RiPriceTag3Line } from "react-icons/ri";
 import { RiShieldCheckLine } from "react-icons/ri";
 import { RiRefreshLine, RiDownloadCloud2Line, RiRepeatLine, RiDatabase2Line } from "react-icons/ri";
 import { LuTrophy, LuPackageSearch, LuChartColumnIncreasing } from "react-icons/lu";
+import { MdDevices } from "react-icons/md";
 
 
 /** Helper: subtle professional colors for sub-item icons */
@@ -119,6 +120,15 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
 { name: "Top Selling", to: "/self/top-selling", icon: <LuTrophy size={20} /> },
 { name: "Extraction", to: "/extraction", icon: <LuPackageSearch size={20} /> },
 { name: "Extraction Status", to: "/extraction-status-overview", icon: <LuChartColumnIncreasing size={20} /> },
+  ...(role === "super_admin"
+    ? [
+        {
+          name: "Sessions",
+          to: "/sessions",
+          icon: <MdDevices size={20} />,
+        },
+      ]
+    : []),
 
     // { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
     {
@@ -235,16 +245,16 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       ],
     },
 
-    // ✅ Add here
-    ...(role === "super_admin"
-      ? [
-          {
-            name: "Sessions",
-            to: "/super-admin/sessions",
-            icon: <MdDevicesOther size={20} />,
-          },
-        ]
-      : []),
+    // // ✅ Add here
+    // ...(role === "super_admin"
+    //   ? [
+    //       {
+    //         name: "Sessions",
+    //         to: "/super-admin/sessions",
+    //         icon: <MdDevicesOther size={20} />,
+    //       },
+    //     ]
+    //   : []),
     { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
     {
       name: "Dealer Hierarchy",
