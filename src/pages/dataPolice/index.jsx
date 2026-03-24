@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import config from "../../config";
+import CsvUploadModal from "./CsvUploadModal";
 import "./style.scss";
 
 const backendUrl = config.backend_url;
@@ -15,6 +16,8 @@ function DataPolice() {
   const [unmappedProducts, setUnmappedProducts] = useState([]);
   const [excludedData, setExcludedData] = useState(null);
   const [flagsData, setFlagsData] = useState(null);
+
+  const [showUserCsvModal, setShowUserCsvModal] = useState(false);
 
   const today = new Date();
   const [downloadMonth, setDownloadMonth] = useState(today.getMonth() + 1);
@@ -42,9 +45,6 @@ function DataPolice() {
     (_, i) => today.getFullYear() - 3 + i
   );
 
-  // ===============================
-  // DEFAULT DATE RANGE
-  // ===============================
   useEffect(() => {
     const todayDate = new Date();
     const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
@@ -53,9 +53,6 @@ function DataPolice() {
     setEndDate(todayDate.toISOString().split("T")[0]);
   }, []);
 
-  // ===============================
-  // DOWNLOAD MARKET SALES DATA
-  // ===============================
   const downloadMarketSalesData = async () => {
     setIsDownloadingMarketSales(true);
     setError("");
@@ -121,9 +118,6 @@ function DataPolice() {
     }
   };
 
-  // ===============================
-  // UNMAPPED PRODUCTS
-  // ===============================
   const fetchUnmappedProducts = async () => {
     setLoading(true);
     setError("");
@@ -150,9 +144,6 @@ function DataPolice() {
     setLoading(false);
   };
 
-  // ===============================
-  // EXCLUDED RAW DATA
-  // ===============================
   const fetchExcludedData = async () => {
     setLoading(true);
     setError("");
@@ -186,9 +177,6 @@ function DataPolice() {
     setLoading(false);
   };
 
-  // ===============================
-  // SALES REPORT FLAGS
-  // ===============================
   const fetchSalesReportFlags = async () => {
     setLoading(true);
     setError("");
@@ -222,9 +210,6 @@ function DataPolice() {
     setLoading(false);
   };
 
-  // ===============================
-  // RENDER EXCLUDED TABLE
-  // ===============================
   const renderExcludedTable = (title, dataset, valueField, qtyField) => {
     if (!dataset?.rows?.length) return null;
 
@@ -245,7 +230,7 @@ function DataPolice() {
           </thead>
           <tbody>
             {dataset.rows.map((row, i) => (
-              <tr key={row._id}>
+              <tr key={row._id || i}>
                 <td>{i + 1}</td>
                 <td>{row.activation_date_raw || row.invoice_date_raw}</td>
                 <td>
@@ -269,9 +254,6 @@ function DataPolice() {
     );
   };
 
-  // ===============================
-  // FLAG CARD
-  // ===============================
   const renderFlagCard = (title, dataset) => {
     if (!dataset) return null;
 
@@ -300,9 +282,6 @@ function DataPolice() {
     );
   };
 
-  // ===============================
-  // WOD CARD
-  // ===============================
   const renderWodCard = (dataset) => {
     if (!dataset) return null;
 
@@ -321,15 +300,25 @@ function DataPolice() {
     );
   };
 
-  // ===============================
-  // UI
-  // ===============================
   return (
     <div className="data-police-page">
       <div className="container">
-        <h2>🚨 Data Police</h2>
+        <div className="data-police-header">
+          <div>
+            <h2>Data Manager</h2>
+            <p>
+              Manage sync tools, validations, flags, and bulk master uploads.
+            </p>
+          </div>
 
-        {/* DATE RANGE */}
+          <button
+            className="primary-action-btn"
+            onClick={() => setShowUserCsvModal(true)}
+          >
+            Update Users From CSV
+          </button>
+        </div>
+
         <div className="date-controls">
           <input
             type="date"
@@ -343,7 +332,6 @@ function DataPolice() {
           />
         </div>
 
-        {/* MONTH YEAR DOWNLOAD */}
         <div className="market-sales-download-box">
           <h3>Download Market Sales Data</h3>
 
@@ -381,19 +369,36 @@ function DataPolice() {
           </div>
         </div>
 
-        {/* BUTTONS */}
-        <div className="button-group">
-          <button onClick={fetchUnmappedProducts}>Unmapped Products</button>
+        <div className="tool-grid">
+          <div className="tool-card feature-card">
+            <div className="tool-card-top">
+              <h3>User Master Sync</h3>
+              <span className="pill">CSV</span>
+            </div>
+            <p>
+              Bulk update users by code using CSV upload with dry run and field
+              creation support.
+            </p>
+            <button
+              className="feature-btn"
+              onClick={() => setShowUserCsvModal(true)}
+            >
+              Open Upload Tool
+            </button>
+          </div>
 
-          <button onClick={fetchExcludedData}>Excluded Raw Data</button>
-
-          <button onClick={fetchSalesReportFlags}>Sales Report Flags</button>
+          <div className="tool-card">
+            <div className="button-group">
+              <button onClick={fetchUnmappedProducts}>Unmapped Products</button>
+              <button onClick={fetchExcludedData}>Excluded Raw Data</button>
+              <button onClick={fetchSalesReportFlags}>Sales Report Flags</button>
+            </div>
+          </div>
         </div>
 
         {loading && <div className="loader">Loading...</div>}
         {error && <div className="error">{error}</div>}
 
-        {/* UNMAPPED */}
         {activeTab === "unmapped" && (
           <div className="table-section">
             <h3>Unmapped Products</h3>
@@ -410,7 +415,6 @@ function DataPolice() {
           </div>
         )}
 
-        {/* EXCLUDED RAW */}
         {activeTab === "excluded" && excludedData && (
           <>
             {renderExcludedTable(
@@ -434,7 +438,6 @@ function DataPolice() {
           </>
         )}
 
-        {/* FLAGS */}
         {activeTab === "flags" && flagsData && (
           <div className="flags-grid">
             {renderFlagCard("Activation", flagsData.activation)}
@@ -444,6 +447,18 @@ function DataPolice() {
           </div>
         )}
       </div>
+
+      <CsvUploadModal
+        open={showUserCsvModal}
+        onClose={() => setShowUserCsvModal(false)}
+        title="Update Users From CSV"
+        subtitle="Match by user code, preview with dry run, and optionally create new fields in user documents."
+        endpoint={`${backendUrl}/master/update-users-from-csv`}
+        fileFieldName="file"
+        onSuccess={() => {
+          setError("");
+        }}
+      />
     </div>
   );
 }
