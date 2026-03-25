@@ -7,6 +7,7 @@ import axios from "axios";
 import ExtractionReport from "./ExtractionReport/index.js";
 import TextToggle from "../../components/toggle/index.js";
 import TableBodyLoading from "../../components/tableLoading/index.js";
+import DynamicExtractionReport from "./DynamicExtractionReport/index.jsx";
 const backendUrl = config.backend_url;
 
 const DealerPopUp = ({ dealer, close }) => {
@@ -279,7 +280,7 @@ function Extraction() {
 
 return (
   <div className="extraction-page">
-    <ExtractionReport />
+    <DynamicExtractionReport />
   </div>
 );
 }
