@@ -25,6 +25,10 @@ function DataPolice() {
   const [isDownloadingMarketSales, setIsDownloadingMarketSales] =
     useState(false);
 
+  const [isRecalculatingSegments, setIsRecalculatingSegments] = useState(false);
+  const [segmentRecalcResult, setSegmentRecalcResult] = useState(null);
+
+
   const monthOptions = [
     { value: 1, label: "January" },
     { value: 2, label: "February" },
@@ -208,6 +212,42 @@ function DataPolice() {
     }
 
     setLoading(false);
+  };
+
+  const recalculateExtractionSegments = async () => {
+    setIsRecalculatingSegments(true);
+    setError("");
+    setSegmentRecalcResult(null);
+
+    try {
+      const res = await fetch(
+        `${backendUrl}/recalculate-extraction-segments-by-date-range`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            startDate,
+            endDate,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Failed to recalculate extraction segments");
+      } else {
+        setSegmentRecalcResult(data);
+      }
+    } catch (err) {
+      console.error("Error recalculating extraction segments:", err);
+      setError("Network error");
+    } finally {
+      setIsRecalculatingSegments(false);
+    }
   };
 
   const renderExcludedTable = (title, dataset, valueField, qtyField) => {
@@ -396,8 +436,85 @@ function DataPolice() {
           </div>
         </div>
 
+        <div className="tool-card feature-card">
+          <div className="tool-card-top">
+            <h3>Recalculate Extraction Segments</h3>
+            <span className="pill">Price Bucket Fix</span>
+          </div>
+
+          <p>
+            Recalculate extraction record price segments for all entries between the
+            selected start and end dates.
+          </p>
+
+          <button
+            className="feature-btn"
+            onClick={recalculateExtractionSegments}
+            disabled={isRecalculatingSegments || !startDate || !endDate}
+          >
+            {isRecalculatingSegments
+              ? "Recalculating..."
+              : "Recalculate Segments"}
+          </button>
+        </div>
+
         {loading && <div className="loader">Loading...</div>}
         {error && <div className="error">{error}</div>}
+
+        {segmentRecalcResult && (
+          <div className="table-section">
+            <h3>Extraction Segment Recalculation Result</h3>
+
+            <div className="flag-card" style={{ marginBottom: "16px" }}>
+              <div>
+                <strong>Matched Count:</strong> {segmentRecalcResult.matchedCount || 0}
+              </div>
+              <div>
+                <strong>Modified Count:</strong> {segmentRecalcResult.modifiedCount || 0}
+              </div>
+              <div>
+                <strong>Message:</strong> {segmentRecalcResult.message || "-"}
+              </div>
+            </div>
+
+            {segmentRecalcResult.preview?.length > 0 && (
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Dealer</th>
+                    <th>Brand</th>
+                    <th>Product Code</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Old Segment</th>
+                    <th>New Segment</th>
+                    <th>Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {segmentRecalcResult.preview.map((row, i) => (
+                    <tr key={row._id || i}>
+                      <td>{i + 1}</td>
+                      <td>{row.dealer}</td>
+                      <td>{row.brand}</td>
+                      <td>{row.product_code}</td>
+                      <td>{row.product_name}</td>
+                      <td>{row.price}</td>
+                      <td>{row.oldSegment}</td>
+                      <td>{row.newSegment}</td>
+                      <td>
+                        {row.createdAt
+                          ? new Date(row.createdAt).toLocaleString()
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
 
         {activeTab === "unmapped" && (
           <div className="table-section">
