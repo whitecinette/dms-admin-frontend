@@ -32,6 +32,103 @@ const parseNumericValue = (value) => {
   return isNaN(num) ? NaN : num;
 };
 
+const getHeatmapStats = (row, header) => {
+  const values = header
+    .filter((key) => !["Price Class", "Group", "Rank of Samsung", "Total"].includes(key))
+    .map((key) => parseNumericValue(row[key]))
+    .filter((v) => !isNaN(v));
+
+  if (!values.length) {
+    return {
+      min: 0,
+      max: 0,
+      p25: 0,
+      p50: 0,
+      p75: 0,
+    };
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const getPercentile = (arr, p) => {
+    const index = (arr.length - 1) * p;
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    if (lower === upper) return arr[lower];
+    return arr[lower] + (arr[upper] - arr[lower]) * (index - lower);
+  };
+
+  return {
+    min: sorted[0],
+    max: sorted[sorted.length - 1],
+    p25: getPercentile(sorted, 0.25),
+    p50: getPercentile(sorted, 0.5),
+    p75: getPercentile(sorted, 0.75),
+  };
+};
+
+const getSmartHeatmapColor = (value, stats) => {
+  const numValue = parseNumericValue(value);
+  if (isNaN(numValue)) return { background: "", text: "" };
+
+  const { min, max } = stats;
+
+  if (min === max) {
+    return {
+      background: "rgb(248,250,252)",
+      text: "#374151",
+    };
+  }
+
+  const spreadRatio = max / Math.max(min || 1, 1);
+  let normalized = 0;
+
+  if (spreadRatio > 8) {
+    const safeMin = Math.max(0, min);
+    const shifted = numValue - safeMin + 1;
+    const shiftedMax = max - safeMin + 1;
+    normalized =
+      shiftedMax <= 1 ? 0 : Math.log(shifted) / Math.log(shiftedMax);
+  } else {
+    normalized = (numValue - min) / (max - min);
+  }
+
+  // clamp
+  normalized = Math.max(0, Math.min(1, normalized));
+
+  let r, g, b;
+
+  // blue -> cyan -> green -> yellow -> red
+  if (normalized <= 0.25) {
+    const t = normalized / 0.25;
+    r = Math.round(232 + (103 - 232) * t);
+    g = Math.round(244 + (232 - 244) * t);
+    b = Math.round(253 + (249 - 253) * t);
+  } else if (normalized <= 0.5) {
+    const t = (normalized - 0.25) / 0.25;
+    r = Math.round(103 + (110 - 103) * t);
+    g = Math.round(232 + (231 - 232) * t);
+    b = Math.round(249 + (183 - 249) * t);
+  } else if (normalized <= 0.75) {
+    const t = (normalized - 0.5) / 0.25;
+    r = Math.round(110 + (253 - 110) * t);
+    g = Math.round(231 + (224 - 231) * t);
+    b = Math.round(183 + (71 - 183) * t);
+  } else {
+    const t = (normalized - 0.75) / 0.25;
+    r = Math.round(253 + (239 - 253) * t);
+    g = Math.round(224 + (68 - 224) * t);
+    b = Math.round(71 + (68 - 71) * t);
+  }
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const textColor = luminance < 0.58 ? "#ffffff" : "#1f2937";
+
+  return {
+    background: `rgb(${r}, ${g}, ${b})`,
+    text: textColor,
+  };
+};
+
 const formatIndianNumber = (value) => {
   if (typeof value !== "string" && typeof value !== "number") return value;
 
@@ -867,77 +964,74 @@ function DynamicExtractionReport() {
             {isLoading ? (
               <TableBodyLoading columnCount={header.length || 12} />
             ) : (
-              <tbody>
+                <tbody>
                 {reportRows.length > 0 ? (
-                  reportRows.map((row, i) => {
-                    const { min: rowMin, max: rowMax } = calculateRowHeatmapRange(
-                      row,
-                      header
-                    );
+                    reportRows.map((row, i) => {
+                    const heatmapStats = getHeatmapStats(row, header);
 
                     const isTotalRow =
-                      row["Price Class"] === "Total" || row["Group"] === "Total";
+                        row["Price Class"] === "Total" || row["Group"] === "Total";
 
                     return (
-                      <tr key={i} className={isTotalRow ? "total-row" : ""}>
+                        <tr key={i} className={isTotalRow ? "total-row" : ""}>
                         {header.map((headerKey) => {
-                          const value =
+                            const value =
                             row[headerKey] !== undefined
-                              ? row[headerKey]
-                              : headerKey === "Total"
-                              ? "0"
-                              : "";
+                                ? row[headerKey]
+                                : headerKey === "Total"
+                                ? "0"
+                                : "";
 
-                          const isHeatmapColumn = ![
+                            const isHeatmapColumn = ![
                             "Price Class",
                             "Group",
                             "Rank of Samsung",
                             "Total",
-                          ].includes(headerKey);
+                            ].includes(headerKey);
 
-                          const isNumeric = !isNaN(parseNumericValue(value));
+                            const isNumeric = !isNaN(parseNumericValue(value));
 
-                          const { background, text } =
+                            const { background, text } =
                             isHeatmapColumn && isNumeric && !isTotalRow
-                              ? getRedShadeColor(value, rowMin, rowMax)
-                              : { background: "", text: "" };
+                                ? getSmartHeatmapColor(value, heatmapStats)
+                                : { background: "", text: "" };
 
-                          return (
+                            return (
                             <td
-                              key={headerKey}
-                              style={{
+                                key={headerKey}
+                                style={{
                                 textAlign: "center",
                                 ...(isHeatmapColumn && isNumeric && !isTotalRow
-                                  ? {
-                                      backgroundColor: background,
-                                      color: text,
-                                      fontWeight: "bold",
-                                      padding: "8px 5px",
+                                    ? {
+                                        backgroundColor: background,
+                                        color: text,
+                                        fontWeight: "bold",
+                                        padding: "8px 5px",
                                     }
-                                  : {}),
-                              }}
+                                    : {}),
+                                }}
                             >
-                              {isHeatmapColumn && isNumeric ? (
+                                {isHeatmapColumn && isNumeric ? (
                                 view === "share" ? value : formatIndianNumber(value)
-                              ) : headerKey === "Total" ? (
+                                ) : headerKey === "Total" ? (
                                 formatIndianNumber(value)
-                              ) : (
+                                ) : (
                                 value
-                              )}
+                                )}
                             </td>
-                          );
+                            );
                         })}
-                      </tr>
+                        </tr>
                     );
-                  })
+                    })
                 ) : (
-                  <tr>
+                    <tr>
                     <td colSpan={header.length || 1} style={{ textAlign: "center" }}>
-                      No data available
+                        No data available
                     </td>
-                  </tr>
+                    </tr>
                 )}
-              </tbody>
+                </tbody>
             )}
           </table>
         </div>
