@@ -166,18 +166,18 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
 
       ],
     },
-    {
-      name: "Users",
-      to: "#",
-      icon: <MdOutlineGroups2 size={20} />,
-      children: [
-        { name: "Dealer", to: "/dealer" },
-        { name: "Employee", to: "/employee" },
-        { name: "MDD", to: "/mdd" },
-        ...(role === "super_admin" ? [{ name: "Admin", to: "/admin" }] : []),
-      ],
-      onClick: () => open(),
-    },
+    // {
+    //   name: "Users",
+    //   to: "#",
+    //   icon: <MdOutlineGroups2 size={20} />,
+    //   children: [
+    //     { name: "Dealer", to: "/dealer" },
+    //     { name: "Employee", to: "/employee" },
+    //     { name: "MDD", to: "/mdd" },
+    //     ...(role === "super_admin" ? [{ name: "Admin", to: "/admin" }] : []),
+    //   ],
+    //   onClick: () => open(),
+    // },
     {
       name: "Inventory",
       to: "#",
@@ -202,12 +202,12 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "View Outstanding Data", to: "/finance/vouchers", icon: <FaFileAlt /> },
       ],
     },
-    { name: "Target", to: "/segment", icon: <TbTargetArrow size={20} /> },
-    {
-      name: "Employee Time Line",
-      to: "/segment",
-      icon: <RiTimeLine size={20} />,
-    },
+    // { name: "Target", to: "/segment", icon: <TbTargetArrow size={20} /> },
+    // {
+    //   name: "Employee Time Line",
+    //   to: "/segment",
+    //   icon: <RiTimeLine size={20} />,
+    // },
     {
       name: "Geo Tagging",
       to: "/geoTagging",
@@ -272,7 +272,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       icon: <RiPriceTag3Line size={20} />,
     },
     {
-      name: "Data Police",
+      name: "Data Manager",
       to: "/data-police",
       icon: <RiShieldCheckLine size={20} />,
     },

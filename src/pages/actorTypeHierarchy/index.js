@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import React from "react";
 import "./style.scss";
 import axios from "axios";
@@ -9,9 +9,11 @@ import {
   FaTimes,
   FaChevronDown,
   FaChevronUp,
+  FaSearch,
 } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoAddSharp } from "react-icons/io5";
+import { HiOutlineUserGroup } from "react-icons/hi2";
 
 const backendUrl = config.backend_url;
 
@@ -20,51 +22,106 @@ export default function ActorTypeHierarchy() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [editId, setEditId] = useState("");
-  const [editRow, setEditRow] = useState({});
+  const [editRow, setEditRow] = useState(null);
   const [expand, setExpand] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [addBox, setAddBox] = useState(false);
-  const [ActorTypes, setActorTypes] = useState({
+  const [search, setSearch] = useState("");
+  const [actorTypes, setActorTypes] = useState({
     name: "",
     hierarchy: [""],
   });
 
-  // Add actor hierarchy
+  const showSuccess = (message) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(""), 3000);
+  };
+
+  const resetAddForm = () => {
+    setActorTypes({
+      name: "",
+      hierarchy: [""],
+    });
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const sanitizePayload = (payload) => ({
+    ...payload,
+    name: String(payload.name || "").trim(),
+    hierarchy: (payload.hierarchy || [])
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+  });
+
+  const getActorHierarchy = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/actorTypesHierarchy/get-by-admin`
+      );
+      setData(res?.data?.data || []);
+    } catch (err) {
+      showError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Something went wrong. Please try again."
+      );
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getActorHierarchy();
+  }, []);
+
   const handleSubmit = async () => {
     try {
+      const payload = sanitizePayload(actorTypes);
+
+      if (!payload.name) {
+        return showError("Actor type name is required");
+      }
+
+      if (!payload.hierarchy.length) {
+        return showError("At least one hierarchy field is required");
+      }
+
       const res = await axios.post(
         `${backendUrl}/actorTypesHierarchy/add-by-admin`,
-        ActorTypes,
+        payload,
         {
           headers: {
             Authorization: localStorage.getItem("authToken"),
           },
         }
       );
-      setSuccess(res.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+
+      showSuccess(res?.data?.message || "Actor type hierarchy added");
       setAddBox(false);
-      setActorTypes({
-        name: "",
-        hierarchy: [""],
-      });
+      resetAddForm();
       getActorHierarchy();
     } catch (error) {
-      setAddBox(false);
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
-  // delete actor hierarchy
+
   const deleteActorHierarchy = async () => {
     try {
       const res = await axios.delete(
@@ -75,323 +132,349 @@ export default function ActorTypeHierarchy() {
           },
         }
       );
-      setSuccess(res.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+
+      showSuccess(res?.data?.message || "Actor type hierarchy deleted");
       setDeleteId(null);
       getActorHierarchy();
     } catch (error) {
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
-  //edit actor hierarchy
+
   const editActorHierarchy = async () => {
     try {
+      const payload = sanitizePayload(editRow || {});
+
+      if (!payload.name) {
+        return showError("Actor type name is required");
+      }
+
+      if (!payload.hierarchy.length) {
+        return showError("At least one hierarchy field is required");
+      }
+
       const res = await axios.put(
         `${backendUrl}/actorTypesHierarchy/edit-by-admin/${editId}`,
-        editRow,
+        payload,
         {
           headers: {
             Authorization: localStorage.getItem("authToken"),
           },
         }
       );
-      setSuccess(res.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+
+      showSuccess(res?.data?.message || "Actor type hierarchy updated");
       setEditId("");
-      setEditRow({});
+      setEditRow(null);
       getActorHierarchy();
     } catch (error) {
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
-
-  // Fetch actor hierarchy
-  const getActorHierarchy = async () => {
-    try {
-      const res = await axios.get(
-        `${backendUrl}/actorTypesHierarchy/get-by-admin`
-      );
-      setData(res.data.data);
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Something went wrong. Please try again."
-      );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    getActorHierarchy();
-  }, []);
 
   const handleEditClick = (row) => {
     setEditId(row._id);
-    setEditRow({ ...row });
+    setEditRow({
+      ...row,
+      hierarchy: Array.isArray(row.hierarchy) && row.hierarchy.length
+        ? row.hierarchy
+        : [""],
+    });
   };
+
   const handleChange = (e) => {
     setActorTypes((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Handle hierarchy input change
   const handleHierarchyChange = (index, value) => {
     setActorTypes((prev) => ({
       ...prev,
-      hierarchy: prev.hierarchy.map((item, i) => (i === index ? value : item)), // Properly updating the array
+      hierarchy: prev.hierarchy.map((item, i) => (i === index ? value : item)),
     }));
   };
 
-  // Add new hierarchy input field
   const addHierarchyField = () => {
     setActorTypes((prev) => ({
       ...prev,
-      hierarchy: [...(prev.hierarchy || []), ""], // Ensure hierarchy is an array before spreading
+      hierarchy: [...(prev.hierarchy || []), ""],
     }));
   };
 
-  // Remove hierarchy input field
   const removeHierarchyField = (index) => {
-    setActorTypes((prev) => ({
-      ...prev,
-      hierarchy: prev.hierarchy.filter((_, i) => i !== index),
-    }));
+    setActorTypes((prev) => {
+      const updated = prev.hierarchy.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        hierarchy: updated.length ? updated : [""],
+      };
+    });
   };
 
-  const updateHierarchyChange = (index, e) => {
+  const updateHierarchyChange = (index, value) => {
     setEditRow((prev) => ({
       ...prev,
-      hierarchy: prev.hierarchy.map((item, i) =>
-        i === index ? e.target.value : item
-      ),
+      hierarchy: prev.hierarchy.map((item, i) => (i === index ? value : item)),
     }));
   };
 
-  // Add a new hierarchy field in edit mode
   const addHierarchyFieldInEdit = () => {
     setEditRow((prev) => ({
       ...prev,
-      hierarchy: [...prev.hierarchy, ""],
+      hierarchy: [...(prev?.hierarchy || []), ""],
     }));
   };
 
-  // Remove a hierarchy field in edit mode
   const removeHierarchyFieldInEdit = (index) => {
-    setEditRow((prev) => ({
-      ...prev,
-      hierarchy: prev.hierarchy.filter((_, i) => i !== index),
-    }));
+    setEditRow((prev) => {
+      const updated = prev.hierarchy.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        hierarchy: updated.length ? updated : [""],
+      };
+    });
   };
+
+  const filteredData = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    if (!q) return data;
+
+    return data.filter((item) => {
+      const nameMatch = String(item?.name || "")
+        .toLowerCase()
+        .includes(q);
+
+      const hierarchyMatch = (item?.hierarchy || []).some((h) =>
+        String(h || "").toLowerCase().includes(q)
+      );
+
+      return nameMatch || hierarchyMatch;
+    });
+  }, [data, search]);
+
+  const totalHierarchyLevels = useMemo(() => {
+    return data.reduce((acc, item) => acc + (item?.hierarchy?.length || 0), 0);
+  }, [data]);
 
   return (
     <div className="actorTypeHierarchy-page">
-      <div className="actorTypeHierarchy-page-header">Actor Type Hierarchy</div>
-      <div className="actorTypeHierarchy-page-container">
-        <div className="actorTypeHierarchy-page-first-line">
-          <div className="actorTypeHierarchy-page-filter">
-            <input type="text" placeholder="Search By Name" />
-          </div>
-          <div className="actorTypeHierarchy-page-buttons">
-            <div
-              className="actorTypeHierarchy-page-add-btn"
-              onClick={() => setAddBox(true)}
-            >
-              <IoAddSharp />
-              Add New
-            </div>
+      <div className="page-topbar">
+        <div>
+          <h1>Actor Type Hierarchy</h1>
+          <p>Manage actor types and their hierarchy flow in one place.</p>
+        </div>
+
+        <button className="primary-btn" onClick={() => setAddBox(true)}>
+          <IoAddSharp />
+          Add New
+        </button>
+      </div>
+
+      <div className="stats-strip">
+        <div className="stat-card">
+          <div className="stat-label">Total Types</div>
+          <div className="stat-value">{data.length}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Hierarchy Levels</div>
+          <div className="stat-value">{totalHierarchyLevels}</div>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <div className="toolbar">
+          <div className="search-box">
+            <FaSearch />
+            <input
+              type="text"
+              placeholder="Search by type or hierarchy..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
-        <div className="actorTypeHierarchy-page-table-container">
+
+        <div className="table-shell">
           <table>
             <thead>
               <tr>
-                <th>S.No</th>
+                <th style={{ width: "80px" }}>S.No</th>
                 <th>Name</th>
                 <th>Hierarchy</th>
-                <th>Updated At</th>
-                <th>Action</th>
+                <th style={{ width: "140px" }}>Updated</th>
+                <th style={{ width: "150px" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {data.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>
-                    No data available
+                  <td colSpan="5">
+                    <div className="empty-state">
+                      <HiOutlineUserGroup size={40} />
+                      <h3>No actor hierarchy found</h3>
+                      <p>
+                        {search
+                          ? "Try a different search term."
+                          : "Start by adding your first actor type hierarchy."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                data.map((item, index) => {
+                filteredData.map((item, index) => {
                   const isExpanded = expand === item._id;
+                  const isEditing = editId === item._id;
 
                   return (
                     <React.Fragment key={item._id}>
-                      {editId === item._id ? (
-                        <>
-                          <tr>
-                            <td rowSpan={editRow.hierarchy.length + 1}>
-                              {index + 1}
-                            </td>
-                            <td rowSpan={editRow.hierarchy.length + 1}>
-                              <input
-                                name="name"
-                                value={editRow.name}
-                                onChange={(e) =>
-                                  setEditRow({
-                                    ...editRow,
-                                    name: e.target.value,
-                                  })
-                                }
-                              />
-                            </td>
-                            <td>
-                              <div className="hierarchy-edit-item">
-                                <input
-                                  type="text"
-                                  value={editRow.hierarchy[0] || ""}
-                                  onChange={(e) => updateHierarchyChange(0, e)}
-                                  placeholder="Enter hierarchy"
-                                />
-                                {editRow.hierarchy.length > 1 && (
-                                  <button
-                                    className="remove-hierarchy-btn"
-                                    onClick={() =>
-                                      removeHierarchyFieldInEdit(0)
+                      <tr className={isExpanded ? "row-expanded" : ""}>
+                        <td>{index + 1}</td>
+
+                        <td>
+                          {isEditing ? (
+                            <input
+                              className="table-input"
+                              name="name"
+                              value={editRow?.name || ""}
+                              onChange={(e) =>
+                                setEditRow((prev) => ({
+                                  ...prev,
+                                  name: e.target.value,
+                                }))
+                              }
+                              placeholder="Enter actor type name"
+                            />
+                          ) : (
+                            <div className="name-cell">
+                              <span className="name-title">{item.name}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        <td>
+                          {isEditing ? (
+                            <div className="hierarchy-edit-list">
+                              {(editRow?.hierarchy || []).map((hierarchy, i) => (
+                                <div className="hierarchy-edit-item" key={i}>
+                                  <input
+                                    className="table-input"
+                                    value={hierarchy}
+                                    onChange={(e) =>
+                                      updateHierarchyChange(i, e.target.value)
                                     }
-                                  >
-                                    <RiDeleteBin6Line />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                            <td rowSpan={editRow.hierarchy.length + 1}>
-                              {new Date(item.updatedAt).toISOString().split("T")[0]}
-                            </td>
-                            <td rowSpan={editRow.hierarchy.length + 1}>
-                              <FaSave
-                                color="#005bfe"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={editActorHierarchy}
-                              />
-                              <FaTimes
-                                color="#F21E1E"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => {
-                                  setEditId("");
-                                  setEditRow(null);
-                                }}
-                              />
-                            </td>
-                          </tr>
-                          {editRow.hierarchy.slice(1).map((hierarchy, i) => (
-                            <tr key={i}>
-                              <td className="hierarchy-edit-item">
-                                <input
-                                  value={hierarchy}
-                                  onChange={(e) =>
-                                    updateHierarchyChange(i + 1, e)
-                                  }
-                                />
+                                    placeholder={`Hierarchy ${i + 1}`}
+                                  />
+                                  {(editRow?.hierarchy || []).length > 1 && (
+                                    <button
+                                      type="button"
+                                      className="icon-btn danger"
+                                      onClick={() =>
+                                        removeHierarchyFieldInEdit(i)
+                                      }
+                                    >
+                                      <RiDeleteBin6Line />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+
+                              <button
+                                type="button"
+                                className="text-btn"
+                                onClick={addHierarchyFieldInEdit}
+                              >
+                                <IoAddSharp />
+                                Add Hierarchy Level
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="hierarchy-preview">
+                              {(item.hierarchy || [])
+                                .slice(0, isExpanded ? item.hierarchy.length : 3)
+                                .map((hierarchy, i) => (
+                                  <span className="hierarchy-chip" key={i}>
+                                    {hierarchy}
+                                  </span>
+                                ))}
+
+                              {(item.hierarchy || []).length > 3 && (
                                 <button
-                                  className="remove-hierarchy-btn"
+                                  className="expand-toggle"
                                   onClick={() =>
-                                    removeHierarchyFieldInEdit(i + 1)
+                                    setExpand(isExpanded ? "" : item._id)
                                   }
+                                >
+                                  {isExpanded ? (
+                                    <>
+                                      Show Less <FaChevronUp />
+                                    </>
+                                  ) : (
+                                    <>
+                                      +{item.hierarchy.length - 3} more{" "}
+                                      <FaChevronDown />
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        <td>{formatDate(item.updatedAt)}</td>
+
+                        <td>
+                          <div className="action-group">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  className="icon-btn success"
+                                  onClick={editActorHierarchy}
+                                  title="Save"
+                                >
+                                  <FaSave />
+                                </button>
+                                <button
+                                  className="icon-btn"
+                                  onClick={() => {
+                                    setEditId("");
+                                    setEditRow(null);
+                                  }}
+                                  title="Cancel"
+                                >
+                                  <FaTimes />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  className="icon-btn primary"
+                                  onClick={() => handleEditClick(item)}
+                                  title="Edit"
+                                >
+                                  <FaEdit />
+                                </button>
+                                <button
+                                  className="icon-btn danger"
+                                  onClick={() => setDeleteId(item._id)}
+                                  title="Delete"
                                 >
                                   <RiDeleteBin6Line />
                                 </button>
-                              </td>
-                            </tr>
-                          ))}
-                          <tr>
-                            <td className="hierarchy-actions">
-                              <button
-                                className="add-hierarchy-btn"
-                                onClick={addHierarchyFieldInEdit}
-                              >
-                                <IoAddSharp color="blue" size={22} /> Add
-                                Hierarchy Field
-                              </button>
-                            </td>
-                          </tr>
-                        </>
-                      ) : (
-                        <>
-                          <tr>
-                            <td>{index + 1}</td>
-                            <td>{item.name}</td>
-                            <td
-                              colSpan="1"
-                              className="expand-btn"
-                              onClick={() =>
-                                setExpand(isExpanded ? "" : item._id)
-                              }
-                            >
-                              {isExpanded ? (
-                                <button>
-                                  Collapse <FaChevronUp />
-                                </button>
-                              ) : (
-                                <button>
-                                  Expand <FaChevronDown />
-                                </button>
-                              )}
-                            </td>
-                            <td> {new Date(item.updatedAt).toISOString().split("T")[0]}</td>
-                            <td>
-                              <FaEdit
-                                color="#005bfe"
-                                style={{
-                                  cursor: "pointer",
-                                  marginRight: "10px",
-                                }}
-                                onClick={() => handleEditClick(item)}
-                              />
-                              <RiDeleteBin6Line
-                                color="#F21E1E"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => setDeleteId(item._id)}
-                              />
-                            </td>
-                          </tr>
-
-                          {/* Show hierarchy only when expanded */}
-                          {isExpanded &&
-                            item.hierarchy.map((hierarchy, i) => (
-                              <tr key={`${item._id}-hierarchy-${i}`}>
-                                <td colSpan="2"></td>
-                                {/* Empty columns to maintain alignment */}
-                                <td>{hierarchy}</td>
-                                <td colSpan="2"></td>
-                              </tr>
-                            ))}
-                        </>
-                      )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     </React.Fragment>
                   );
                 })
@@ -400,100 +483,113 @@ export default function ActorTypeHierarchy() {
           </table>
         </div>
       </div>
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
 
-      {/* Delete box */}
+      {(error || success) && (
+        <div className="toast-stack">
+          {error && <div className="toast error">{error}</div>}
+          {success && <div className="toast success">{success}</div>}
+        </div>
+      )}
+
       {deleteId !== null && (
-        <div className="delete-modal" onClick={() => setDeleteId(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="delete-modal-content">
-              <div className="delete-model-header">
-                Are you sure you want to delete this row?
-              </div>
-              <div className="delete-modal-buttons">
-                <button
-                  className="cancel-btn"
-                  onClick={() => setDeleteId(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => {
-                    deleteActorHierarchy();
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
+          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Actor Type</h3>
+              <button className="icon-btn" onClick={() => setDeleteId(null)}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p>
+                Are you sure you want to delete this actor type hierarchy? This
+                action cannot be undone.
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={() => setDeleteId(null)}>
+                Cancel
+              </button>
+              <button className="danger-btn" onClick={deleteActorHierarchy}>
+                Delete
+              </button>
             </div>
           </div>
         </div>
       )}
-      {/* Add box */}
+
       {addBox && (
-        <div className="actorTypeHierarchy-page-add-box">
-          <div className="actorTypeHierarchy-page-add-container">
-            <div className="actorTypeHierarchy-page-add-content">
-              <div className="actorTypeHierarchy-page-add-header">
-                Add Actor Type Hierarchy
+        <div className="modal-overlay" onClick={() => setAddBox(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Add Actor Type Hierarchy</h3>
+                <p>Create a new actor type and define its hierarchy levels.</p>
               </div>
-              <div className="actorTypeHierarchy-page-add-form">
-                <label htmlFor="name">Name</label>
+              <button className="icon-btn" onClick={() => setAddBox(false)}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body form-body">
+              <div className="form-group">
+                <label>Name</label>
                 <input
                   type="text"
                   name="name"
-                  placeholder="Enter Actor Type"
-                  value={ActorTypes.name}
+                  placeholder="Enter actor type"
+                  value={actorTypes.name}
                   onChange={handleChange}
-                  required
                 />
+              </div>
 
-                <label htmlFor="hierarchy">Hierarchy</label>
-                {ActorTypes.hierarchy.map((hierarchy, index) => (
-                  <div key={index} className="hierarchy-input">
-                    <input
-                      type="text"
-                      placeholder="Enter Hierarchy"
-                      value={hierarchy}
-                      onChange={(e) =>
-                        handleHierarchyChange(index, e.target.value)
-                      }
-                    />
-                    {index > 0 && (
-                      <button
-                        className="remove-hierarchy-btn"
-                        onClick={() => removeHierarchyField(index)}
-                      >
-                      <RiDeleteBin6Line/>
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <div className="form-group">
+                <label>Hierarchy Levels</label>
+
+                <div className="hierarchy-form-list">
+                  {actorTypes.hierarchy.map((hierarchy, index) => (
+                    <div key={index} className="hierarchy-edit-item">
+                      <input
+                        type="text"
+                        placeholder={`Enter hierarchy level ${index + 1}`}
+                        value={hierarchy}
+                        onChange={(e) =>
+                          handleHierarchyChange(index, e.target.value)
+                        }
+                      />
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          className="icon-btn danger"
+                          onClick={() => removeHierarchyField(index)}
+                        >
+                          <RiDeleteBin6Line />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
                 <button
-                  className="add-hierarchy-btn"
+                  type="button"
+                  className="text-btn"
                   onClick={addHierarchyField}
                 >
-                <IoAddSharp /> Add More Hierarchy
+                  <IoAddSharp />
+                  Add More Hierarchy
                 </button>
               </div>
+            </div>
 
-              <div className="actorTypeHierarchy-page-add-button">
-                <button
-                  className="actorTypeHierarchy-page-submit-btn"
-                  onClick={handleSubmit}
-                >
-                  Submit
-                </button>
-                <button
-                  className="actorTypeHierarchy-page-cancel-btn"
-                  onClick={() => setAddBox(false)}
-                >
-                  Cancel
-                </button>
-              </div>
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={() => setAddBox(false)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleSubmit}>
+                Submit
+              </button>
             </div>
           </div>
         </div>
