@@ -20,19 +20,18 @@ function Table({ data, onSort, handleSave, deleteRow }) {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [expandedRow, setExpandedRow] = useState(null);
-  const [focusedPath, setFocusedPath] = useState(null); // ✅ Track the focused field
-  const [addFieldModal, setAddFieldModal] = useState(null); // To store path where we're adding field
-  const [newFieldType, setNewFieldType] = useState("string"); // Type of new field
-  const [newFieldKey, setNewFieldKey] = useState(""); // Key for new field
-  const [newFieldValue, setNewFieldValue] = useState(""); // Value for new field
-  const [showNewField, setShowNewField] = useState(null); // Path of newly added field to highlight
+  const [focusedPath, setFocusedPath] = useState(null);
+  const [addFieldModal, setAddFieldModal] = useState(null);
+  const [newFieldType, setNewFieldType] = useState("string");
+  const [newFieldKey, setNewFieldKey] = useState("");
+  const [newFieldValue, setNewFieldValue] = useState("");
+  const [showNewField, setShowNewField] = useState(null);
 
   const headers = data.headers || [];
   const rows = data.data || [];
   const currentPage = data.currentPage || 1;
   const limit = 50;
 
-  // Field type options for adding new fields
   const fieldTypes = [
     { value: "string", label: "Text" },
     { value: "number", label: "Number" },
@@ -54,11 +53,9 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     return Array.isArray(targetObj);
   };
 
-  // Add the new field directly to editData
   const addNewField = () => {
     const isArray = isTargetArray();
 
-    // Only validate field name if adding to an object (not an array)
     if (!isArray && !newFieldKey.trim()) {
       alert("Field name cannot be empty");
       return;
@@ -68,7 +65,6 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     let value = newFieldValue;
     let newPath = addFieldModal.path;
 
-    // Convert value based on type
     switch (newFieldType) {
       case "number":
         value = Number(newFieldValue) || 0;
@@ -82,14 +78,14 @@ function Table({ data, onSort, handleSave, deleteRow }) {
       case "array":
         value = [];
         break;
+      default:
+        break;
     }
 
-    // Get the target object to modify
     const targetObj = addFieldModal.path
       ? getNestedValue(updatedData, addFieldModal.path)
       : updatedData;
 
-    // Add new field
     if (Array.isArray(targetObj)) {
       targetObj.push(value);
       newPath = `${addFieldModal.path}[${targetObj.length - 1}]`;
@@ -102,12 +98,87 @@ function Table({ data, onSort, handleSave, deleteRow }) {
 
     setEditData(updatedData);
     setAddFieldModal(null);
-    setShowNewField(newPath); // Track the newly added field to highlight
+    setShowNewField(newPath);
 
-    // Clear highlight after 3 seconds
     setTimeout(() => {
       setShowNewField(null);
     }, 3000);
+  };
+
+  const getNestedValue = (obj, path) => {
+    if (!obj || !path) return "N/A";
+
+    return path
+      .replace(/\[(\d+)\]/g, ".$1")
+      .split(".")
+      .reduce(
+        (acc, key) => (acc && acc[key] !== undefined ? acc[key] : "N/A"),
+        obj
+      );
+  };
+
+  const setNestedValue = (obj, path, value) => {
+    if (!obj || !path) return;
+
+    const keys = path.replace(/\[(\d+)\]/g, ".$1").split(".");
+    let temp = obj;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!temp[key] || typeof temp[key] !== "object") {
+        temp[key] = isNaN(keys[i + 1]) ? {} : [];
+      }
+      temp = temp[key];
+    }
+
+    temp[keys[keys.length - 1]] = value;
+  };
+
+  const formatHeader = (header) => {
+    return header
+      .split(".")
+      .pop()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const handleEdit = (row) => {
+    setEditId(row._id);
+    setEditData(JSON.parse(JSON.stringify(row)));
+  };
+
+  const handleSort = (header) => {
+    let direction = 1;
+    if (sortConfig.key === header && sortConfig.direction === 1) {
+      direction = -1;
+    }
+    setSortConfig({ key: header, direction });
+    onSort(header, direction);
+  };
+
+  const getStatusClass = (value) => {
+    const v = String(value || "").toLowerCase();
+    if (["active", "done", "verified"].includes(v)) return "success";
+    if (["inactive", "pending", "failed"].includes(v)) return "danger";
+    return "neutral";
+  };
+
+  const renderCellDisplay = (row, header) => {
+    const value = getNestedValue(row, header);
+
+    if (typeof value === "boolean") {
+      return (
+        <span className={`boolean-pill ${value ? "yes" : "no"}`}>
+          {value ? "Yes" : "No"}
+        </span>
+      );
+    }
+
+    if (header.toLowerCase() === "status") {
+      return <span className={`status-badge ${getStatusClass(value)}`}>{value}</span>;
+    }
+
+    return <span className="cell-text">{value}</span>;
   };
 
   const NestedCard = ({ title, data, path = "", hideTitle = false }) => {
@@ -130,6 +201,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
             )}
           </div>
         )}
+
         <div className="nested-details">
           {Array.isArray(data) ? (
             data.length > 0 ? (
@@ -155,6 +227,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                         </button>
                       )}
                     </div>
+
                     {Object.entries(item).map(([subKey, value]) => (
                       <NestedItem
                         key={subKey}
@@ -180,6 +253,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                       </button>
                     )}
                   </div>
+
                   <div className="array-list">
                     {data.map((item, index) => (
                       <NestedItem
@@ -213,7 +287,7 @@ function Table({ data, onSort, handleSave, deleteRow }) {
                 key={subKey}
                 label={formatHeader(subKey)}
                 value={value}
-                path={path ? `${path}.${subKey}` : subKey} // ✅ Generate correct nested path
+                path={path ? `${path}.${subKey}` : subKey}
                 hideTitle={true}
                 isNew={showNewField === (path ? `${path}.${subKey}` : subKey)}
               />
@@ -239,11 +313,12 @@ function Table({ data, onSort, handleSave, deleteRow }) {
         inputRef.current.focus();
         inputRef.current.selectionStart = inputRef.current.value.length;
       }
-    }, [focusedPath, value]);
+    }, [focusedPath, value, path]);
 
     return (
       <div className={`nested-item ${isNew ? "new-field" : ""}`}>
-        <span className="nested-label">{label}:</span>
+        {!hideTitle && <span className="nested-label">{label}</span>}
+
         <span className="nested-value">
           {typeof value === "object" && value !== null ? (
             <div className="nested-object-wrapper">
@@ -265,14 +340,13 @@ function Table({ data, onSort, handleSave, deleteRow }) {
             </div>
           ) : isEditing ? (
             typeof value === "boolean" ? (
-              // ✅ Boolean Select Dropdown
               <select
                 value={
                   getNestedValue(editData, path) === true ? "true" : "false"
                 }
                 onChange={(e) => {
                   const updatedData = JSON.parse(JSON.stringify(editData));
-                  setNestedValue(updatedData, path, e.target.value === "true"); // Convert back to boolean
+                  setNestedValue(updatedData, path, e.target.value === "true");
                   setEditData(updatedData);
                 }}
               >
@@ -293,11 +367,9 @@ function Table({ data, onSort, handleSave, deleteRow }) {
               />
             )
           ) : typeof value === "boolean" ? (
-            value ? (
-              "True"
-            ) : (
-              "False"
-            )
+            <span className={`boolean-pill ${value ? "yes" : "no"}`}>
+              {value ? "Yes" : "No"}
+            </span>
           ) : (
             value || "N/A"
           )}
@@ -306,413 +378,386 @@ function Table({ data, onSort, handleSave, deleteRow }) {
     );
   };
 
-  const getNestedValue = (obj, path) => {
-    if (!obj || !path) return "N/A";
-
-    return path
-      .replace(/\[(\d+)\]/g, ".$1") // Convert array index notation to dot notation
-      .split(".")
-      .reduce(
-        (acc, key) => (acc && acc[key] !== undefined ? acc[key] : "N/A"),
-        obj
-      );
-  };
-
-  const setNestedValue = (obj, path, value) => {
-    if (!obj || !path) return;
-
-    const keys = path.replace(/\[(\d+)\]/g, ".$1").split("."); // Convert array index notation to dot notation
-    let temp = obj;
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      if (!temp[key] || typeof temp[key] !== "object") {
-        temp[key] = isNaN(keys[i + 1]) ? {} : []; // Ensure object or array at each level
-      }
-      temp = temp[key];
-    }
-
-    temp[keys[keys.length - 1]] = value;
-  };
-
-  const formatHeader = (header) => {
-    return header
-      .split(".")
-      .pop()
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const handleEdit = (row) => {
-    setEditId(row._id);
-
-    let flattenedRow = JSON.parse(JSON.stringify(row)); // Deep clone to preserve all nested values
-
-    setEditData(flattenedRow);
-  };
-
-  const handleSort = (header) => {
-    let direction = 1;
-    if (sortConfig.key === header && sortConfig.direction === 1) {
-      direction = -1;
-    }
-    setSortConfig({ key: header, direction });
-    onSort(header, direction);
-  };
-
   return (
     <div className="table-component">
-      <table>
-        <thead>
-          <tr>
-            <th>SNo.</th>
-
-            {headers.map((header, index) =>
-              header !== "expand" ? (
-                <th
-                  key={index}
-                  onClick={() => handleSort(header)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {formatHeader(header)}
-                  {sortConfig.key === header ? (
-                    sortConfig.direction === 1 ? (
-                      <FaSortUp />
-                    ) : (
-                      <FaSortDown />
-                    )
-                  ) : (
-                    <FaSort />
-                  )}
-                </th>
-              ) : null
-            )}
-            {headers.includes("expand") && <th>Expand</th>}
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length > 0 ? (
-            rows.map((row, index) => (
-              <>
-                <tr key={index}>
-                  <td>{(currentPage - 1) * limit + index + 1}</td>
-
-                  {headers.map((header, idx) =>
-                    header !== "expand" ? (
-                      <td key={idx}>
-                   {editId === row._id ? (
-  header.toLowerCase() === "status" ? (
-    <select
-      value={getNestedValue(editData, header)}
-      onChange={(e) => {
-        const updatedData = { ...editData };
-        setNestedValue(updatedData, header, e.target.value);
-        setEditData(updatedData);
-      }}
-    >
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-    </select>
-  ) : header.toLowerCase() === "isavailable" ? (
-    <select
-      value={String(getNestedValue(editData, header))}
-      onChange={(e) => {
-        const updatedData = { ...editData };
-        // Convert string back to boolean before setting
-        const newValue = e.target.value === "true";
-        setNestedValue(updatedData, header, newValue);
-        setEditData(updatedData);
-      }}
-    >
-      <option value="true">Yes</option>
-      <option value="false">No</option>
-    </select>
-  ) : (
-    <input
-      type="text"
-      value={getNestedValue(editData, header)}
-      onChange={(e) => {
-        const updatedData = { ...editData };
-        setNestedValue(updatedData, header, e.target.value);
-        setEditData(updatedData);
-      }}
-    />
-  )
-) : (
-                          <span
-                            style={{
-                              color:
-                                header.toLowerCase() === "status"
-                                  ? ["active", "done"].includes(
-                                      getNestedValue(row, header).toLowerCase()
-                                    )
-                                    ? "green"
-                                    : ["inactive", "pending"].includes(
-                                        getNestedValue(
-                                          row,
-                                          header
-                                        ).toLowerCase()
-                                      )
-                                    ? "red"
-                                    : "black"
-                                  : "inherit",
-                            }}
-                          >
-                            {typeof getNestedValue(row, header) === "boolean"
-                              ? getNestedValue(row, header)
-                                ? "Yes"
-                                : "No"
-                              : getNestedValue(row, header)}
-                          </span>
-                        )}
-                      </td>
-                    ) : null
-                  )}
-                  {headers.includes("expand") && (
-                    <td className="expand-btn">
-                      <button
-                        onClick={() =>
-                          setExpandedRow(expandedRow === index ? null : index)
-                        }
-                      >
-                        {expandedRow === index ? (
-                          <>
-                            Expand
-                            <FaChevronUp />
-                          </>
-                        ) : (
-                          <>
-                            Expand
-                            <FaChevronDown />
-                          </>
-                        )}
-                      </button>
-                    </td>
-                  )}
-                  <td>
-                    {editId === row._id ? (
-                      <>
-                        <FaSave
-                          color="green"
-                          style={{ cursor: "pointer", marginRight: "10px" }}
-                          onClick={() => {
-                            handleSave(editData, row._id);
-                            setEditId(null); // Exit edit mode
-                          }}
-                        />
-                        <FaTimes
-                          color="red"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => {
-                            setEditId(null); // Exit edit mode without saving
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <FaEdit
-                          color="#005bfe"
-                          style={{ cursor: "pointer", marginRight: "10px" }}
-                          onClick={() => handleEdit(row)}
-                        />
-                        <RiDeleteBin6Line
-                          color="#F21E1E"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => setDeleteId(row._id)}
-                        />
-                      </>
-                    )}
-                  </td>
-                </tr>
-
-                {expandedRow === index && (
-                  <tr className="expanded-row">
-                    <td colSpan={headers.length + 3}>
-                      <div className="expanded-content">
-                        <motion.div
-                          initial={{ height: 0, opacity: 0, scaleY: 0.8 }}
-                          animate={{ height: "auto", opacity: 1, scaleY: 1 }}
-                          exit={{ height: 0, opacity: 0, scaleY: 0.8 }}
-                          transition={{
-                            duration: 0.4,
-                            ease: [0.25, 0.1, 0.25, 1],
-                          }}
-                          className="expanded-content"
-                        >
-                          {editId === row._id && (
-                            <div className="root-level-controls">
-                              <h4>Root Level Properties</h4>
-                              <button
-                                onClick={() => handleAddField("", "Root")}
-                                className="add-field-btn"
-                              >
-                                <FaPlus /> Add Field
-                              </button>
-                            </div>
-                          )}
-                          <div className="fields-container">
-                            {Object.entries(editId === row._id ? editData : row)
-                              .filter(
-                                ([key]) =>
-                                  !headers.includes(key) &&
-                                  ![
-                                    "_id",
-                                    "password",
-                                    "createdAt",
-                                    "updatedAt",
-                                    "__v",
-                                    "securityKey",
-                                  ].includes(key)
-                              ) // Exclude already visible columns
-                              .map(([key, value]) =>
-                                typeof value === "object" && value !== null ? (
-                                  <NestedCard
-                                    key={key}
-                                    title={formatHeader(key)}
-                                    data={value}
-                                    path={key}
-                                  />
-                                ) : (
-                                  <NestedItem
-                                    key={key}
-                                    label={formatHeader(key)}
-                                    value={value}
-                                    path={key}
-                                    isNew={showNewField === key}
-                                  />
-                                )
-                              )}
-                          </div>
-                        </motion.div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
-            ))
-          ) : (
+      <div className="table-scroll">
+        <table>
+          <thead>
             <tr>
-              <td
-                colSpan={headers.length + 2}
-                style={{
-                  textAlign: "center",
-                  color: "rgb(240 28 28)",
-                  fontWeight: "bold",
+              <th>S.No</th>
+
+              {headers.map((header, index) =>
+                header !== "expand" ? (
+                  <th
+                    key={index}
+                    onClick={() => handleSort(header)}
+                    className="sortable-header"
+                  >
+                    <span>{formatHeader(header)}</span>
+                    <span className="sort-icon">
+                      {sortConfig.key === header ? (
+                        sortConfig.direction === 1 ? (
+                          <FaSortUp />
+                        ) : (
+                          <FaSortDown />
+                        )
+                      ) : (
+                        <FaSort />
+                      )}
+                    </span>
+                  </th>
+                ) : null
+              )}
+
+              {headers.includes("expand") && <th>Details</th>}
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.length > 0 ? (
+              rows.map((row, index) => (
+                <FragmentRow
+                  key={row._id || index}
+                  row={row}
+                  index={index}
+                  headers={headers}
+                  editId={editId}
+                  editData={editData}
+                  setEditData={setEditData}
+                  setNestedValue={setNestedValue}
+                  getNestedValue={getNestedValue}
+                  handleEdit={handleEdit}
+                  handleSave={handleSave}
+                  setEditId={setEditId}
+                  setDeleteId={setDeleteId}
+                  expandedRow={expandedRow}
+                  setExpandedRow={setExpandedRow}
+                  currentPage={currentPage}
+                  limit={limit}
+                  renderCellDisplay={renderCellDisplay}
+                  formatHeader={formatHeader}
+                  NestedCard={NestedCard}
+                  NestedItem={NestedItem}
+                  showNewField={showNewField}
+                />
+              ))
+            ) : (
+              <tr>
+                <td colSpan={headers.length + 2}>
+                  <div className="table-empty-state">No records found</div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {deleteId !== null && (
+        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
+          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Row</h3>
+              <button className="icon-btn" onClick={() => setDeleteId(null)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              Are you sure you want to delete this row?
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={() => setDeleteId(null)}>
+                Cancel
+              </button>
+              <button
+                className="danger-btn"
+                onClick={() => {
+                  deleteRow(deleteId);
+                  setDeleteId(null);
                 }}
               >
-                No records found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-      {deleteId !== null && (
-        <div className="delete-modal" onClick={() => setDeleteId(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="delete-modal-content">
-              <div className="delete-model-header">
-                Are you sure you want to delete this row?
-              </div>
-              <div className="delete-modal-buttons">
-                <button
-                  className="cancel-btn"
-                  onClick={() => setDeleteId(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => {
-                    deleteRow(deleteId);
-                    setDeleteId(null);
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+                Delete
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {addFieldModal !== null && (
-        <div className="add-field-modal" onClick={() => setAddFieldModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="add-field-modal-content">
-              <div className="add-field-modal-header">
-                Add New Field to {addFieldModal.title || "Record"}
-                {isTargetArray() && (
-                  <span className="target-type"> (Array)</span>
-                )}
+        <div className="modal-overlay" onClick={() => setAddFieldModal(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Add New Field</h3>
+                <p>
+                  Add field to {addFieldModal.title || "Record"}
+                  {isTargetArray() ? " (Array)" : ""}
+                </p>
               </div>
-              <div className="add-field-modal-body">
-                {/* Only show field name input if not adding to an array */}
-                {!isTargetArray() && (
-                  <div className="field-group">
-                    <label>Field Name:</label>
-                    <input
-                      type="text"
-                      value={newFieldKey}
-                      onChange={(e) => setNewFieldKey(e.target.value)}
-                      placeholder="Enter field name"
-                    />
-                  </div>
-                )}
+              <button className="icon-btn" onClick={() => setAddFieldModal(null)}>
+                <FaTimes />
+              </button>
+            </div>
 
-                <div className="field-group">
-                  <label>Field Type:</label>
-                  <select
-                    value={newFieldType}
-                    onChange={(e) => setNewFieldType(e.target.value)}
-                  >
-                    {fieldTypes.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
+            <div className="modal-body form-body">
+              {!isTargetArray() && (
+                <div className="form-group">
+                  <label>Field Name</label>
+                  <input
+                    type="text"
+                    value={newFieldKey}
+                    onChange={(e) => setNewFieldKey(e.target.value)}
+                    placeholder="Enter field name"
+                  />
                 </div>
+              )}
 
-                {/* Only show value input for primitive types */}
-                {["string", "number", "boolean"].includes(newFieldType) && (
-                  <div className="field-group">
-                    <label>Field Value:</label>
-                    {newFieldType === "boolean" ? (
-                      <select
-                        value={newFieldValue}
-                        onChange={(e) => setNewFieldValue(e.target.value)}
-                      >
-                        <option value="true">True</option>
-                        <option value="false">False</option>
-                      </select>
-                    ) : (
-                      <input
-                        type={newFieldType === "number" ? "number" : "text"}
-                        value={newFieldValue}
-                        onChange={(e) => setNewFieldValue(e.target.value)}
-                        placeholder={`Enter ${newFieldType} value`}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="add-field-modal-buttons">
-                <button
-                  className="cancel-btn"
-                  onClick={() => setAddFieldModal(null)}
+              <div className="form-group">
+                <label>Field Type</label>
+                <select
+                  value={newFieldType}
+                  onChange={(e) => setNewFieldType(e.target.value)}
                 >
-                  Cancel
-                </button>
-                <button className="add-btn" onClick={addNewField}>
-                  Add Field
-                </button>
+                  {fieldTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {["string", "number", "boolean"].includes(newFieldType) && (
+                <div className="form-group">
+                  <label>Field Value</label>
+                  {newFieldType === "boolean" ? (
+                    <select
+                      value={newFieldValue}
+                      onChange={(e) => setNewFieldValue(e.target.value)}
+                    >
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
+                  ) : (
+                    <input
+                      type={newFieldType === "number" ? "number" : "text"}
+                      value={newFieldValue}
+                      onChange={(e) => setNewFieldValue(e.target.value)}
+                      placeholder={`Enter ${newFieldType} value`}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={() => setAddFieldModal(null)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={addNewField}>
+                Add Field
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function FragmentRow({
+  row,
+  index,
+  headers,
+  editId,
+  editData,
+  setEditData,
+  setNestedValue,
+  getNestedValue,
+  handleEdit,
+  handleSave,
+  setEditId,
+  setDeleteId,
+  expandedRow,
+  setExpandedRow,
+  currentPage,
+  limit,
+  renderCellDisplay,
+  formatHeader,
+  NestedCard,
+  NestedItem,
+  showNewField,
+}) {
+  const isEditing = editId === row._id;
+  const isExpanded = expandedRow === index;
+
+  return (
+    <>
+      <tr className={isExpanded ? "row-expanded" : ""}>
+        <td>{(currentPage - 1) * limit + index + 1}</td>
+
+        {headers.map((header, idx) =>
+          header !== "expand" ? (
+            <td key={idx}>
+              {isEditing ? (
+                header.toLowerCase() === "status" ? (
+                  <select
+                    value={getNestedValue(editData, header)}
+                    onChange={(e) => {
+                      const updatedData = { ...editData };
+                      setNestedValue(updatedData, header, e.target.value);
+                      setEditData(updatedData);
+                    }}
+                  >
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                ) : header.toLowerCase() === "isavailable" ? (
+                  <select
+                    value={String(getNestedValue(editData, header))}
+                    onChange={(e) => {
+                      const updatedData = { ...editData };
+                      const newValue = e.target.value === "true";
+                      setNestedValue(updatedData, header, newValue);
+                      setEditData(updatedData);
+                    }}
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={getNestedValue(editData, header)}
+                    onChange={(e) => {
+                      const updatedData = { ...editData };
+                      setNestedValue(updatedData, header, e.target.value);
+                      setEditData(updatedData);
+                    }}
+                  />
+                )
+              ) : (
+                renderCellDisplay(row, header)
+              )}
+            </td>
+          ) : null
+        )}
+
+        {headers.includes("expand") && (
+          <td className="expand-cell">
+            <button
+              className="expand-toggle-btn"
+              onClick={() => setExpandedRow(isExpanded ? null : index)}
+            >
+              {isExpanded ? (
+                <>
+                  Hide <FaChevronUp />
+                </>
+              ) : (
+                <>
+                  View <FaChevronDown />
+                </>
+              )}
+            </button>
+          </td>
+        )}
+
+        <td>
+          <div className="action-group">
+            {isEditing ? (
+              <>
+                <button
+                  className="icon-btn success"
+                  onClick={() => {
+                    handleSave(editData, row._id);
+                    setEditId(null);
+                  }}
+                  title="Save"
+                >
+                  <FaSave />
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={() => setEditId(null)}
+                  title="Cancel"
+                >
+                  <FaTimes />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="icon-btn primary"
+                  onClick={() => handleEdit(row)}
+                  title="Edit"
+                >
+                  <FaEdit />
+                </button>
+                <button
+                  className="icon-btn danger"
+                  onClick={() => setDeleteId(row._id)}
+                  title="Delete"
+                >
+                  <RiDeleteBin6Line />
+                </button>
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+
+      {isExpanded && (
+        <tr className="expanded-row">
+          <td colSpan={headers.length + 3}>
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22 }}
+              className="expanded-content"
+            >
+              {isEditing && (
+                <div className="root-level-controls">
+                  <h4>Additional Properties</h4>
+                </div>
+              )}
+
+              <div className="fields-container">
+                {Object.entries(isEditing ? editData : row)
+                  .filter(
+                    ([key]) =>
+                      !headers.includes(key) &&
+                      ![
+                        "_id",
+                        "password",
+                        "createdAt",
+                        "updatedAt",
+                        "__v",
+                        "securityKey",
+                      ].includes(key)
+                  )
+                  .map(([key, value]) =>
+                    typeof value === "object" && value !== null ? (
+                      <NestedCard
+                        key={key}
+                        title={formatHeader(key)}
+                        data={value}
+                        path={key}
+                      />
+                    ) : (
+                      <NestedItem
+                        key={key}
+                        label={formatHeader(key)}
+                        value={value}
+                        path={key}
+                        isNew={showNewField === key}
+                      />
+                    )
+                  )}
+              </div>
+            </motion.div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

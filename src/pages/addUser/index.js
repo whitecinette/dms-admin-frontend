@@ -1,7 +1,13 @@
 import "./style.scss";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
 import { IoAddSharp } from "react-icons/io5";
-import { FaDownload, FaFileUpload, FaUserCog } from "react-icons/fa";
+import {
+  FaDownload,
+  FaFileUpload,
+  FaUserCog,
+  FaSearch,
+  FaTimes,
+} from "react-icons/fa";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import config from "../../config.js";
@@ -17,11 +23,28 @@ export default function AddUser() {
   const [success, setSuccess] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [status, setStatus] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
   const [totalRecords, setTotalRecords] = useState(0);
   const [addBox, setAddBox] = useState(false);
-  const [addData, setAddData] = useState({});
+  const [addData, setAddData] = useState({
+    code: "",
+    name: "",
+    role: "",
+    position: "",
+    status: "",
+    parent_code: "",
+  });
+
   const role = localStorage.getItem("role");
+
+  const showSuccess = (message) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(""), 3000);
+  };
 
   const getActorCodes = async (sort = "createdAt", order) => {
     try {
@@ -29,7 +52,6 @@ export default function AddUser() {
         headers: {
           Authorization: localStorage.getItem("authToken"),
         },
-
         params: {
           page: currentPage,
           limit: 50,
@@ -39,6 +61,7 @@ export default function AddUser() {
           status: status,
         },
       });
+
       if (res.data?.data?.length > 0) {
         res.data.headers = Object.keys(res.data.data[0]).filter(
           (key) => !["_id", "createdAt", "updatedAt", "__v"].includes(key)
@@ -46,23 +69,15 @@ export default function AddUser() {
       } else {
         res.data.headers = [];
       }
+
       setUser(res.data);
-      setTotalRecords(res.data.totalRecords);
+      setTotalRecords(res.data.totalRecords || 0);
     } catch (error) {
       setUser({});
       console.log(error);
-      // setError(
-      //   error?.response?.data?.message ||
-      //     error?.message ||
-      //     "Something went wrong. Please try again."
-      // );
-      // setTimeout(() => {
-      //   setError("");
-      // }, 3000);
     }
   };
 
-  //delete addUsers
   const deleteActorCode = async (id) => {
     try {
       await axios.delete(`${backendUrl}/delete/actorcode/${id}`, {
@@ -70,17 +85,15 @@ export default function AddUser() {
           Authorization: localStorage.getItem("authToken"),
         },
       });
+      showSuccess("User deleted successfully");
       getActorCodes();
     } catch (error) {
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
@@ -91,63 +104,47 @@ export default function AddUser() {
           Authorization: localStorage.getItem("authToken"),
         },
       });
+      showSuccess("User updated successfully");
       getActorCodes();
     } catch (error) {
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
-  //register all user
   const handleRegisterClick = async () => {
     try {
       const res = await axios.put(
         `${backendUrl}/admin/register-update-from-actor-codes`
       );
-      setSuccess(res.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+      showSuccess(res.data.message || "All users registered successfully");
     } catch (error) {
       console.error(error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
-  //verify all user
   const handleVerifyClick = async () => {
     try {
       const res = await axios.put(
         `${backendUrl}/activate-all-users-in-all-cases`
       );
-      setSuccess(res.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+      showSuccess(res.data.message || "All users verified successfully");
     } catch (error) {
       console.error(error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
@@ -155,9 +152,6 @@ export default function AddUser() {
     const file = event.target.files[0];
     if (!file) return;
 
-    setSelectedFile(file);
-
-    // Prepare FormData
     const formData = new FormData();
     formData.append("file", file);
 
@@ -172,53 +166,46 @@ export default function AddUser() {
           },
         }
       );
+
       getActorCodes();
-      setSuccess(response.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+      showSuccess(response.data.message || "CSV uploaded successfully");
+      event.target.value = "";
     } catch (error) {
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
   const addActorCode = async () => {
     try {
-      const response = await axios.post(
-        `${backendUrl}/add-actorcode`,
-        addData,
-        {
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      setAddData({});
+      await axios.post(`${backendUrl}/add-actorcode`, addData, {
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+
+      setAddData({
+        code: "",
+        name: "",
+        role: "",
+        position: "",
+        status: "",
+        parent_code: "",
+      });
       setAddBox(false);
       getActorCodes();
-      setSuccess(response.data.message);
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
+      showSuccess("User added successfully");
     } catch (error) {
-      setAddBox(false);
       console.log("err:", error);
-      setError(
+      showError(
         error?.response?.data?.message ||
           error?.message ||
           "Something went wrong. Please try again."
       );
-      setTimeout(() => {
-        setError("");
-      }, 3000);
     }
   };
 
@@ -234,82 +221,111 @@ export default function AddUser() {
     getActorCodes();
   }, [currentPage, search, status]);
 
-  const totalPages = Math.ceil(totalRecords / 50);
-  // Handle Previous Page
+  const totalPages = Math.max(1, Math.ceil(totalRecords / 50));
+
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
     }
   };
 
-  // Handle Next Page
   const nextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
     }
   };
+
   return (
     <div className="addUser-page">
-      <div className="addUser-page-header">Add User</div>
-      <div className="addUser-page-container">
-        <div className="addUser-page-first-line">
-          <div className="addUser-page-filter">
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => {
-                setCurrentPage(1);
-                setSearch(e.target.value);
-              }}
-            />
-            <select
-              value={status}
-              onChange={(e) => {
-                setCurrentPage(1);
-                setStatus(e.target.value);
-              }}
-            >
-              <option value="">Status</option>
+      <div className="page-topbar">
+        <div>
+          <h1>Add User</h1>
+          <p>
+            Manage actor codes, add users manually, bulk upload CSV, and run
+            register or verify actions.
+          </p>
+        </div>
+      </div>
 
-              <option className="green" value="active">
-                Active
-              </option>
-              <option className="red" value="inactive">
-                Inactive
-              </option>
-            </select>
-          </div>
-          <div className="addUser-page-buttons">
-            <div className="addUser-add-btn" onClick={() => setAddBox(true)}>
-              <IoAddSharp />
-              Add New
-            </div>
-            <div className="Register-use-btn" onClick={handleRegisterClick}>
-              <FaUserCog />
-              Register All User
-            </div>
-            <div className="verify-use-btn" onClick={handleVerifyClick}>
-              <GoVerified />
-              Verify All User
-            </div>
-            <div className="addUser-upload-btn">
-              <label htmlFor="file-upload" className="browse-btn">
-                <FaFileUpload />
-                Upload Bulk CSV
-              </label>
+      <div className="stats-strip">
+        <div className="stat-card">
+          <div className="stat-label">Total Records</div>
+          <div className="stat-value">{totalRecords}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Current Page</div>
+          <div className="stat-value">{currentPage}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Status Filter</div>
+          <div className="stat-value small">{status || "All"}</div>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <div className="toolbar">
+          <div className="toolbar-left">
+            <div className="search-box">
+              <FaSearch />
               <input
-                type="file"
-                id="file-upload"
-                hidden
-                onChange={handleFileChange}
+                type="text"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setSearch(e.target.value);
+                }}
               />
             </div>
-            <div
-              className="addUser-download-btn"
+
+            <div className="field-group compact">
+              <label>Status</label>
+              <select
+                value={status}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setStatus(e.target.value);
+                }}
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="toolbar-actions">
+            <button className="primary-btn" onClick={() => setAddBox(true)}>
+              <IoAddSharp />
+              Add New
+            </button>
+
+            <button className="neutral-btn" onClick={handleRegisterClick}>
+              <FaUserCog />
+              Register All User
+            </button>
+ 
+            <button className="violet-btn" onClick={handleVerifyClick}>
+              <GoVerified />
+              Verify All User
+            </button>
+
+            <label className="secondary-btn file-upload-btn" htmlFor="file-upload">
+              <FaFileUpload />
+              Upload Bulk CSV
+            </label>
+            <input
+              type="file"
+              id="file-upload"
+              hidden
+              onChange={handleFileChange}
+            />
+
+            <button
+              className="accent-btn"
               onClick={() =>
                 downloadCSVTemplate(
-                  user.headers.filter(
+                  (user.headers || []).filter(
                     (key) =>
                       !["_id", "createdAt", "updatedAt", "__v"].includes(key)
                   )
@@ -318,120 +334,160 @@ export default function AddUser() {
             >
               <FaDownload />
               Download CSV Format
-            </div>
+            </button>
           </div>
         </div>
-        <Table
-          data={user}
-          onSort={getActorCodes}
-          handleSave={editActorCode}
-          deleteRow={deleteActorCode}
-        />
 
-        {/* Pagination */}
-        <div className="pagination">
-          <button
-            onClick={prevPage}
-            className="page-btn"
-            disabled={currentPage === 1}
-          >
-            &lt;
-          </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={nextPage}
-            className="page-btn"
-            disabled={currentPage === totalPages}
-          >
-            &gt;
-          </button>
+        <div className="table-wrap">
+          <Table
+            data={user}
+            onSort={getActorCodes}
+            handleSave={editActorCode}
+            deleteRow={deleteActorCode}
+          />
+        </div>
+
+        <div className="pagination-bar">
+          <div className="pagination-info">
+            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+          </div>
+
+          <div className="pagination-actions">
+            <button
+              onClick={prevPage}
+              className="page-btn"
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <button
+              onClick={nextPage}
+              className="page-btn"
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+
+      {(error || success) && (
+        <div className="toast-stack">
+          {error && <div className="toast error">{error}</div>}
+          {success && <div className="toast success">{success}</div>}
+        </div>
+      )}
+
       {addBox && (
-        <div className="addUser-add-box"  onClick={() => setAddBox(false)}>
-          <div className="addUser-add-container" onClick={(e)=> e.stopPropagation()}>
-            <div className="addUser-add-content">
-              <div className="addUser-add-header">Add addUser</div>
-              <div className="addUser-add-form">
-                <input
-                  type="text"
-                  name="code"
-                  placeholder="Code"
-                  value={addData.code}
-                  onChange={handleChange}
-                  required
-                />
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Name"
-                  value={addData.name}
-                  onChange={handleChange}
-                  required
-                />
-                <select
-                  name="role"
-                  value={addData.role}
-                  onChange={handleChange}
-                >
-                  {role === "super_admin" ? (
-                    <>
-                      <option value="">Select Role</option>
-                      <option value="admin">Admin</option>                      
-                      <option value="employee">Employee</option>
-                      <option value="dealer">Dealer</option>
-                      <option value="mdd">MDD</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="">Select Role</option>
-                      <option value="employee">Employee</option>
-                      <option value="dealer">Dealer</option>
-                      <option value="mdd">MDD</option>
-                    </>
-                  )}
-                </select>
-                <input
-                  type="text"
-                  name="position"
-                  placeholder="Position"
-                  value={addData.position}
-                  onChange={handleChange}
-                  required
-                />
-                <select
-                  name="status"
-                  value={addData.status}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <input
-                  type="text"
-                  name="parent_code"
-                  placeholder="Parent Code"
-                  value={addData.parent_code}
-                  onChange={handleChange}
-                  required
-                />
+        <div className="modal-overlay" onClick={() => setAddBox(false)}>
+          <div
+            className="modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <h3>Add User</h3>
+                <p>Enter the actor code details to create a new user record.</p>
               </div>
-              <div className="addUser-add-button">
-                <button className="addUser-submit-btn" onClick={addActorCode}>
-                  Submit
-                </button>
-                <button
-                  className="addUser-cancel-btn"
-                  onClick={() => setAddBox(false)}
-                >
-                  Cancel
-                </button>
+              <button className="icon-btn" onClick={() => setAddBox(false)}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body form-body">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Code</label>
+                  <input
+                    type="text"
+                    name="code"
+                    placeholder="Enter code"
+                    value={addData.code}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Enter name"
+                    value={addData.name}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Role</label>
+                  <select
+                    name="role"
+                    value={addData.role}
+                    onChange={handleChange}
+                  >
+                    {role === "super_admin" ? (
+                      <>
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                        <option value="dealer">Dealer</option>
+                        <option value="mdd">MDD</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="">Select Role</option>
+                        <option value="employee">Employee</option>
+                        <option value="dealer">Dealer</option>
+                        <option value="mdd">MDD</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Position</label>
+                  <input
+                    type="text"
+                    name="position"
+                    placeholder="Enter position"
+                    value={addData.position}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={addData.status}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Parent Code</label>
+                  <input
+                    type="text"
+                    name="parent_code"
+                    placeholder="Enter parent code"
+                    value={addData.parent_code}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="secondary-plain-btn" onClick={() => setAddBox(false)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={addActorCode}>
+                Submit
+              </button>
             </div>
           </div>
         </div>

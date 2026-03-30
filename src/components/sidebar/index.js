@@ -240,8 +240,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         { name: "Hierarchy", to: "/hierarchy", icon: <TbHierarchy3 /> },
         { name: "Actor Type Hierarchy", to: "/actorTypeHierarchy", icon: <TbHierarchy3 /> },
         { name: "Add User", to: "/addUser", icon: <FaFileAlt /> },
-        { name: "Alpha Messages", to: "/alphaMessages", icon: <FaFileAlt /> },
-        { name: "MDD Wise Targets", to: "/mdd-wise-targets", icon: <MdOutlineTrackChanges /> },
+        // { name: "Alpha Messages", to: "/alphaMessages", icon: <FaFileAlt /> },
+        // { name: "MDD Wise Targets", to: "/mdd-wise-targets", icon: <MdOutlineTrackChanges /> },
       ],
     },
 
@@ -256,11 +256,13 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
     //     ]
     //   : []),
     { name: "Earth", to: "/earth", icon: <FcGlobe size={20} /> },
-    {
-      name: "Dealer Hierarchy",
-      to: "/dealer-hierarchy",
-      icon: <RiNodeTree size={20} />,
-    },
+
+    //new failed model
+    // {
+    //   name: "Dealer Hierarchy",
+    //   to: "/dealer-hierarchy",
+    //   icon: <RiNodeTree size={20} />,
+    // },
       {
       name: "Upload Combined",
       to: "/combined-upload",

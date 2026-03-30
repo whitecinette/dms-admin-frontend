@@ -345,7 +345,7 @@ function DataPolice() {
       <div className="container">
         <div className="data-police-header">
           <div>
-            <h2>Data Manager</h2>
+            <h3>Data Manager</h3>
             <p>
               Manage sync tools, validations, flags, and bulk master uploads.
             </p>

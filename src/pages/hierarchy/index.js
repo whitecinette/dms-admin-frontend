@@ -1,53 +1,39 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import config from "../../config.js";
 import axios from "axios";
 import "./style.scss";
 import downloadCSVTemplate from "../../components/downloadCSVTemplate";
-import { FaDownload, FaFileUpload } from "react-icons/fa";
-import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import {
+  FaDownload,
+  FaFileUpload,
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaSearch,
+} from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import { HiOutlineTableCells } from "react-icons/hi2";
 import CustomAlert from "../../components/CustomAlert";
 import HierarchyUploadPopup from "./UploadPopup/index.js";
 
 const backendUrl = config.backend_url;
+const limit = 50;
 
 function Hierarchy() {
   const [firmList, setFirmList] = useState([]);
   const [firm, setFirm] = useState("");
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hierarchy, setHierarchy] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [editID, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [deleteId, setDeleteId] = useState(null);
-  const limit = 50;
   const [alert, setAlert] = useState(null);
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
-  const handleUpload = async (selectedFirm, file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("hierarchy_name", selectedFirm);
-
-    const response = await axios.post(
-      `${backendUrl}/hierarchy-entries/upload`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: localStorage.getItem("authToken"),
-        },
-      }
-    );
-
-    if (response.data.success) {
-      setAlert({
-        type: "success",
-        message: "File uploaded successfully",
-      });
-      getHierarchy();
-      setShowUploadPopup(false);
-    }
+  const showAlert = (type, message) => {
+    setAlert({ type, message });
   };
 
   const getAllActorTypes = async () => {
@@ -55,17 +41,21 @@ function Hierarchy() {
       const res = await axios.get(
         `${backendUrl}/actorTypesHierarchy/get-all-by-admin`
       );
-      setFirmList(res.data.data);
-      if (res.data.data.length > 0) {
-        setFirm(res.data.data[0].name);
+      const firms = res?.data?.data || [];
+      setFirmList(firms);
+
+      if (firms.length > 0) {
+        setFirm(firms[0].name);
       }
     } catch (error) {
       console.log(error);
+      showAlert("error", "Failed to fetch hierarchy types");
     }
   };
 
   const getHierarchy = async () => {
     if (!firm) return;
+
     try {
       const res = await axios.get(
         `${backendUrl}/hierarchy-entries/get-hierarchy-entries-for-admin`,
@@ -73,16 +63,49 @@ function Hierarchy() {
           params: { page: currentPage, limit, hierarchy_name: firm },
         }
       );
-      setHierarchy(res.data.data || []);
-      setTotalRecords(res.data.totalRecords);
+
+      setHierarchy(res?.data?.data || []);
+      setTotalRecords(res?.data?.totalRecords || 0);
     } catch (error) {
       console.log(error);
+      showAlert("error", "Failed to fetch hierarchy entries");
+    }
+  };
+
+  const handleUpload = async (selectedFirm, file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("hierarchy_name", selectedFirm);
+
+      const response = await axios.post(
+        `${backendUrl}/hierarchy-entries/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
+      if (response?.data?.success) {
+        showAlert("success", "File uploaded successfully");
+        getHierarchy();
+        setShowUploadPopup(false);
+      }
+    } catch (error) {
+      console.log(error);
+      showAlert(
+        "error",
+        error?.response?.data?.message || "Failed to upload file"
+      );
     }
   };
 
   const handleEdit = (row) => {
     setEditId(row._id);
-    setEditData(row);
+    setEditData({ ...row });
   };
 
   const handleSave = async () => {
@@ -96,10 +119,17 @@ function Hierarchy() {
           },
         }
       );
-      getHierarchy();
+
+      showAlert("success", "Row updated successfully");
       setEditId(null);
+      setEditData({});
+      getHierarchy();
     } catch (error) {
       console.log(error);
+      showAlert(
+        "error",
+        error?.response?.data?.message || "Failed to update row"
+      );
     }
   };
 
@@ -113,25 +143,16 @@ function Hierarchy() {
           },
         }
       );
+
       setDeleteId(null);
+      showAlert("success", "Row deleted successfully");
       getHierarchy();
     } catch (error) {
       console.log(error);
-    }
-  };
-
-  const totalPages = Math.ceil(totalRecords / limit);
-  // Handle Previous Page
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  // Handle Next Page
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
+      showAlert(
+        "error",
+        error?.response?.data?.message || "Failed to delete row"
+      );
     }
   };
 
@@ -143,6 +164,37 @@ function Hierarchy() {
     getHierarchy();
   }, [firm, currentPage]);
 
+  const excludedKeys = ["_id", "hierarchy_name", "__v", "createdAt", "updatedAt"];
+
+  const tableColumns = useMemo(() => {
+    if (!hierarchy.length) return [];
+    return Object.keys(hierarchy[0]).filter((key) => !excludedKeys.includes(key));
+  }, [hierarchy]);
+
+  const filteredHierarchy = useMemo(() => {
+    if (!search.trim()) return hierarchy;
+
+    const q = search.toLowerCase().trim();
+
+    return hierarchy.filter((row) =>
+      tableColumns.some((key) =>
+        String(row[key] ?? "")
+          .toLowerCase()
+          .includes(q)
+      )
+    );
+  }, [hierarchy, search, tableColumns]);
+
+  const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
+
+  const prevPage = () => {
+    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  };
+
   return (
     <div className="hierarchy-page">
       {alert && (
@@ -152,12 +204,34 @@ function Hierarchy() {
           onClose={() => setAlert(null)}
         />
       )}
-      <div className="hierarchy-page-header">Hierarchy</div>
-      <div className="hierarchy-page-container">
-        <div className="hierarchy-page-first-line">
-          <div className="hierarchy-page-filter">
-            <div className="firm-filter">
-              <label>Firm:</label>
+
+      <div className="page-topbar">
+        <div>
+          <h1>Hierarchy</h1>
+          <p>Manage uploaded hierarchy entries, edit records, and handle bulk imports.</p>
+        </div>
+      </div>
+
+      <div className="stats-strip">
+        <div className="stat-card">
+          <div className="stat-label">Selected Type</div>
+          <div className="stat-value small">{firm || "-"}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total Records</div>
+          <div className="stat-value">{totalRecords}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Current Page</div>
+          <div className="stat-value">{currentPage}</div>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <div className="toolbar">
+          <div className="toolbar-left">
+            <div className="field-group compact">
+              <label>Hierarchy Type</label>
               <select
                 value={firm || ""}
                 onChange={(e) => {
@@ -172,64 +246,74 @@ function Hierarchy() {
                 ))}
               </select>
             </div>
+
+            <div className="search-box">
+              <FaSearch />
+              <input
+                type="text"
+                placeholder="Search visible rows..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="hierarchy-page-buttons">
+
+          <div className="toolbar-actions">
             <button
-              className="hierarchy-upload-btn"
+              className="secondary-btn"
               onClick={() => setShowUploadPopup(true)}
             >
               <FaFileUpload />
               Upload Bulk CSV
             </button>
-            <div
-              className="hierarchy-download-btn"
+
+            <button
+              className="accent-btn"
               onClick={() => downloadCSVTemplate(["hierarchy_name"])}
             >
               <FaDownload />
               Download CSV Format
-            </div>
+            </button>
           </div>
         </div>
-        <div className="hierarchy-page-table-container">
+
+        <div className="table-shell">
           <table>
             <thead>
               <tr>
-                <th>S.No</th>
-                {hierarchy.length > 0 &&
-                  Object.keys(hierarchy[0])
-                    .filter(
-                      (key) =>
-                        ![
-                          "_id",
-                          "hierarchy_name",
-                          "__v",
-                          "createdAt",
-                          "updatedAt",
-                        ].includes(key)
-                    )
-                    .map((key) => <th key={key}>{key}</th>)}
-                <th>Actions</th>
+                <th style={{ width: "90px" }}>S.No</th>
+                {tableColumns.map((key) => (
+                  <th key={key}>{key.replaceAll("_", " ")}</th>
+                ))}
+                <th style={{ width: "140px" }}>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {hierarchy.map((row, index) => (
-                <tr key={index}>
-                  <td>{(currentPage - 1) * limit + index + 1}</td>
-                  {Object.keys(row)
-                    .filter(
-                      (key) =>
-                        ![
-                          "_id",
-                          "hierarchy_name",
-                          "__v",
-                          "createdAt",
-                          "updatedAt",
-                        ].includes(key)
-                    )
-                    .map((key) => (
+              {filteredHierarchy.length === 0 ? (
+                <tr>
+                  <td colSpan={tableColumns.length + 2}>
+                    <div className="empty-state">
+                      <HiOutlineTableCells size={42} />
+                      <h3>No hierarchy data found</h3>
+                      <p>
+                        {search
+                          ? "Try another search term."
+                          : "No records available for the selected hierarchy type."}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredHierarchy.map((row, index) => (
+                  <tr key={row._id || index}>
+                    <td>{(currentPage - 1) * limit + index + 1}</td>
+
+                    {tableColumns.map((key) => (
                       <td key={key}>
                         {editID === row._id ? (
                           <input
+                            className="table-input"
                             type="text"
                             value={editData[key] || ""}
                             onChange={(e) =>
@@ -240,92 +324,113 @@ function Hierarchy() {
                             }
                           />
                         ) : (
-                          row[key]
+                          <span className="cell-text">{row[key] || "-"}</span>
                         )}
                       </td>
                     ))}
-                  <td>
-                    {editID === row._id ? (
-                      <>
-                        <FaSave
-                          color="green"
-                          style={{ cursor: "pointer", marginRight: "10px" }}
-                          onClick={() => {
-                            handleSave();
-                            setEditId(null);
-                          }}
-                        />
-                        <FaTimes
-                          color="red"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => setEditId(null)}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <FaEdit
-                          color="#005bfe"
-                          style={{ cursor: "pointer", marginRight: "10px" }}
-                          onClick={() => handleEdit(row)}
-                        />
-                        <RiDeleteBin6Line
-                          color="#F21E1E"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => setDeleteId(row._id)}
-                        />
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+
+                    <td>
+                      <div className="action-group">
+                        {editID === row._id ? (
+                          <>
+                            <button
+                              className="icon-btn success"
+                              onClick={handleSave}
+                              title="Save"
+                            >
+                              <FaSave />
+                            </button>
+                            <button
+                              className="icon-btn"
+                              onClick={() => {
+                                setEditId(null);
+                                setEditData({});
+                              }}
+                              title="Cancel"
+                            >
+                              <FaTimes />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="icon-btn primary"
+                              onClick={() => handleEdit(row)}
+                              title="Edit"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              className="icon-btn danger"
+                              onClick={() => setDeleteId(row._id)}
+                              title="Delete"
+                            >
+                              <RiDeleteBin6Line />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-      {/* Pagination */}
-      <div className="pagination">
-        <button
-          onClick={prevPage}
-          className="page-btn"
-          disabled={currentPage === 1}
-        >
-          &lt;
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={nextPage}
-          className="page-btn"
-          disabled={currentPage === totalPages}
-        >
-          &gt;
-        </button>
+
+        <div className="pagination-bar">
+          <div className="pagination-info">
+            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+          </div>
+
+          <div className="pagination-actions">
+            <button
+              onClick={prevPage}
+              className="page-btn"
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <button
+              onClick={nextPage}
+              className="page-btn"
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteId !== null && (
-        <div className="delete-modal" onClick={() => setDeleteId(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="delete-modal-content">
-              <div className="delete-model-header">
-                Are you sure you want to delete this row?
-              </div>
-              <div className="delete-modal-buttons">
-                <button
-                  className="cancel-btn"
-                  onClick={() => setDeleteId(null)}
-                >
-                  Cancel
-                </button>
-                <button className="delete-btn" onClick={deleteRow}>
-                  Delete
-                </button>
-              </div>
+        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
+          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Row</h3>
+              <button className="icon-btn" onClick={() => setDeleteId(null)}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p>
+                Are you sure you want to delete this hierarchy entry? This action
+                cannot be undone.
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={() => setDeleteId(null)}>
+                Cancel
+              </button>
+              <button className="danger-btn" onClick={deleteRow}>
+                Delete
+              </button>
             </div>
           </div>
         </div>
       )}
+
       {showUploadPopup && (
         <HierarchyUploadPopup
           firms={firmList}
