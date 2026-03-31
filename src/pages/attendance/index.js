@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import config from "../../config.js";
-import DonutChart from "../../components/DonutChart";
 import { Link, useNavigate } from "react-router-dom";
 import "./style.scss";
 
@@ -10,15 +9,15 @@ const backendUrl = config.backend_url;
 const Attendance = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  const [counts, setCounts] = useState([]);
+  const [counts, setCounts] = useState({});
   const [dateToFetch, setDateToFetch] = useState("");
   const [employee, setEmployee] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [latestAttendance, setLatestAttendance] = useState({});
+  const [latestAttendance, setLatestAttendance] = useState([]);
   const [firmList, setFirmList] = useState([]);
-  const [firm, setFirm] = useState({});
+  const [firm, setFirm] = useState("");
   const [sliderValue, setSliderValue] = useState("All");
   const limit = 50;
 
@@ -27,7 +26,7 @@ const Attendance = () => {
       const res = await axios.get(
         `${backendUrl}/actorTypesHierarchy/get-all-by-admin`
       );
-      setFirmList(res.data.data);
+      setFirmList(res.data.data || []);
     } catch (error) {
       console.log(error);
     }
@@ -39,7 +38,6 @@ const Attendance = () => {
     return date.toISOString().split("T")[0];
   };
 
-  // Fetch attendance data
   const fetchAttendance = async (attempt = 0) => {
     if (attempt > 3) {
       setError("No attendance records found for the last two days.");
@@ -48,6 +46,7 @@ const Attendance = () => {
 
     const selectedDate = getDateDaysAgo(attempt);
     setDateToFetch(selectedDate);
+
     const apiUrl = `${backendUrl}/get-attendance-by-date/${selectedDate},`;
 
     try {
@@ -56,10 +55,9 @@ const Attendance = () => {
           Authorization: localStorage.getItem("authToken"),
         },
       });
-      console.log(response);
 
-      if (response.data.attendanceCount !== null) {
-        setCounts(response.data.attendanceCount);
+      if (response?.data?.attendanceCount !== null) {
+        setCounts(response.data.attendanceCount || {});
       } else {
         fetchAttendance(attempt + 1);
       }
@@ -69,27 +67,22 @@ const Attendance = () => {
     }
   };
 
-  // fetch latest attendance
   const getLatestAttendance = async () => {
     try {
-      const res = await axios.get(
-        `${backendUrl}/get-latest-attendance-by-date`,
-        {
-          params: {
-            date: new Date(),
-          },
-          headers: {
-            Authorization: localStorage.getItem("authToken"),
-          },
-        }
-      );
-      setLatestAttendance(res.data.data);
+      const res = await axios.get(`${backendUrl}/get-latest-attendance-by-date`, {
+        params: {
+          date: new Date(),
+        },
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+      setLatestAttendance(res?.data?.data || []);
     } catch (error) {
       console.log(error);
     }
   };
 
-  // Fetch employee data
   const getAllEmployee = async () => {
     try {
       const res = await axios.get(`${backendUrl}/get-emp-for-hr`, {
@@ -101,8 +94,8 @@ const Attendance = () => {
           role: sliderValue === "All" ? ["employee", "admin"] : sliderValue,
         },
       });
-      setEmployee(res.data.data || []);
-      setTotalRecords(res.data.totalRecords);
+      setEmployee(res?.data?.data || []);
+      setTotalRecords(res?.data?.totalRecords || 0);
     } catch (error) {
       console.log(error);
     }
@@ -116,35 +109,64 @@ const Attendance = () => {
 
   useEffect(() => {
     getLatestAttendance();
-    setInterval(() => {
+
+    const interval = setInterval(() => {
       getLatestAttendance();
     }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
-  useEffect(() => {
-    console.log(counts);
-  });
 
-  const chartData = [
+  const presentCount = (counts?.present || 0) + (counts?.pending || 0);
+  const absentCount = counts?.absent || 0;
+  const leaveCount = counts?.leave || 0;
+  const halfDayCount = counts?.halfDay || 0;
+
+  const totalAttendance =
+    presentCount + absentCount + leaveCount + halfDayCount;
+
+  const safePercent = (value) =>
+    totalAttendance > 0 ? ((value / totalAttendance) * 100).toFixed(1) : "0.0";
+
+  const attendanceStats = [
     {
-      name: "Present",
-      value: (counts.present || 0) + (counts.pending || 0),
-      color: "#2ecc71",
-    }, // Bright Green
-    { name: "Absent", value: counts.absent, color: "#e74c3c" }, // Vibrant Red
-    { name: "Leave", value: counts.leave, color: "#f39c12" }, // Warm Orange
-    { name: "Half Day", value: counts.halfDay, color: "#3498db" }, // Bright Blue
-  ]; // Remove items with count 0
+      key: "present",
+      label: "Present",
+      value: presentCount,
+      percent: safePercent(presentCount),
+      className: "present",
+      helper: "On duty / punched in",
+    },
+    {
+      key: "absent",
+      label: "Absent",
+      value: absentCount,
+      percent: safePercent(absentCount),
+      className: "absent",
+      helper: "Not marked present",
+    },
+    {
+      key: "leave",
+      label: "Leave",
+      value: leaveCount,
+      percent: safePercent(leaveCount),
+      className: "leave",
+      helper: "Approved leave",
+    },
+    {
+      key: "halfday",
+      label: "Half Day",
+      value: halfDayCount,
+      percent: safePercent(halfDayCount),
+      className: "halfday",
+      helper: "Partial working day",
+    },
+  ];
 
-  // const chartData = [
-  //    { name: "Present", value: 100, color: "#2ecc71" },
-  //    { name: "Absent", value: 40, color: "#e74c3c" },
-  //    { name: "Leave", value: 3, color: "#f39c12" },
-  //    { name: "Half Day", value: 5, color: "#3498db" },
-  // ];
+  const highestStatValue = Math.max(...attendanceStats.map((item) => item.value), 1);
 
-  const totalPages = Math.ceil(totalRecords / 50);
+  const totalPages = Math.ceil(totalRecords / limit) || 1;
 
-  // ✅ Handle Pagination
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -156,40 +178,137 @@ const Attendance = () => {
       setCurrentPage((prev) => prev + 1);
     }
   };
+
   return (
     <div className="attendance-page">
-      {/* <div className="attendance-header">Attendance</div> */}
+      <div className="page-title-row">
+        <div>
+          <h2 className="page-title">Attendance Dashboard</h2>
+          <p className="page-subtitle">
+            Clean overview of attendance, activity and employee records
+          </p>
+        </div>
+      </div>
+
       <div className="attendance-page-container">
         <div className="attendance-page-firstLine">
-          {/* Chart Section */}
           <div className="attendance-page-chart">
-            <div className="attendance-page-chart-header">
-              Attendance Overview
+            <div className="attendance-summary-header">
+              <div>
+                <div className="attendance-page-chart-header">
+                  Attendance Overview
+                </div>
+                <div className="attendance-page-chart-date">
+                  Showing data for {dateToFetch || "latest available day"}
+                </div>
+              </div>
+
+              <div className="attendance-total-pill">
+                Total Employees: {totalAttendance}
+              </div>
             </div>
 
-            {counts ? (
+            {error ? (
+              <div className="no-data-box">{error}</div>
+            ) : (
               <>
-                <div className="attendance-page-chart-date">{dateToFetch}</div>
-                <div className="attendance-page-donutChart">
-                  <DonutChart data={chartData} />
+                <div className="attendance-stat-grid">
+                  {attendanceStats.map((item) => (
+                    <div
+                      key={item.key}
+                      className={`attendance-stat-card ${item.className}`}
+                    >
+                      <div className="stat-card-top">
+                        <span className={`stat-dot ${item.className}`}></span>
+                        <span className="stat-label">{item.label}</span>
+                      </div>
+
+                      <div className="stat-value">{item.value}</div>
+                      <div className="stat-subtext">{item.percent}% of total</div>
+                      <div className="stat-helper">{item.helper}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="attendance-composition-card">
+                  <div className="section-title">Attendance Composition</div>
+
+                  <div className="attendance-stacked-bar">
+                    {attendanceStats.map((item) => (
+                      <div
+                        key={item.key}
+                        className={`stack-segment ${item.className}`}
+                        style={{ width: `${item.percent}%` }}
+                        title={`${item.label}: ${item.value}`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="attendance-legend">
+                    {attendanceStats.map((item) => (
+                      <div key={item.key} className="legend-item">
+                        <span className={`legend-dot ${item.className}`}></span>
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="attendance-bar-list">
+                  <div className="section-title">Status Comparison</div>
+
+                  {attendanceStats.map((item) => {
+                    const relativeWidth =
+                      highestStatValue > 0
+                        ? (item.value / highestStatValue) * 100
+                        : 0;
+
+                    return (
+                      <div key={item.key} className="bar-row">
+                        <div className="bar-row-top">
+                          <span>{item.label}</span>
+                          <strong>
+                            {item.value} <small>({item.percent}%)</small>
+                          </strong>
+                        </div>
+                        <div className="bar-track">
+                          <div
+                            className={`bar-fill ${item.className}`}
+                            style={{ width: `${relativeWidth}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
-            ) : (
-              <div>No Previous Data</div>
             )}
           </div>
 
-          {/* Recent Activities Section */}
           <div className="attendance-recent-activities">
-            <div className="recent-activities-header">Recent Activities</div>
+            <div className="recent-activities-header-row">
+              <div>
+                <div className="recent-activities-header">Recent Activities</div>
+                <div className="recent-activities-subtitle">
+                  Latest attendance movement
+                </div>
+              </div>
+
+              <Link to="/attendance/allAttendance" className="show-more-link">
+                Show more
+              </Link>
+            </div>
+
             <div className="recent-activities-first-line">
               <div className="recent-activity-date">
                 {new Date().toLocaleDateString()}
               </div>
-              <div className="recent-activity-show-more">
-                <Link to={"/attendance/allAttendance"}>Show more</Link>
+              <div className="recent-activity-count">
+                {latestAttendance?.length || 0} records
               </div>
             </div>
+
             <div className="recent-activities-content">
               <table>
                 <thead>
@@ -202,17 +321,27 @@ const Attendance = () => {
                 <tbody>
                   {latestAttendance.length > 0 ? (
                     latestAttendance
-                      .flat() // Flatten the array in case of nested structures
-                      .slice(0, 6) // Take only the first 4 records
+                      .flat()
+                      .slice(0, 6)
                       .map((record, index) => (
                         <tr key={record._id || index}>
-                          <td>{record.name}</td>
+                          <td>{record.name || "N/A"}</td>
                           <td>
                             {record.punchIn
                               ? new Date(record.punchIn).toLocaleTimeString()
                               : "N/A"}
                           </td>
-                          <td>{record.status}</td>
+                          <td>
+                            <span
+                              className={`status-badge ${String(
+                                record.status || ""
+                              )
+                                .toLowerCase()
+                                .replace(/\s+/g, "")}`}
+                            >
+                              {record.status || "Unknown"}
+                            </span>
+                          </td>
                         </tr>
                       ))
                   ) : (
@@ -229,32 +358,49 @@ const Attendance = () => {
         </div>
 
         <div className="attendance-table-container">
-          <div className="slider-container">
-            <div
-              className={`slider-button ${
-                sliderValue === "All" ? "active" : ""
-              }`}
-              onClick={() => setSliderValue("All")}
-            >
-              All
+          <div className="attendance-table-topbar">
+            <div className="table-title-wrap">
+              <div className="table-main-title">Employee Directory</div>
+              <div className="table-subtitle">
+                Browse employee attendance details
+              </div>
             </div>
-            <div
-              className={`slider-button ${
-                sliderValue === "employee" ? "active" : ""
-              }`}
-              onClick={() => setSliderValue("employee")}
-            >
-              Employee
-            </div>
-            <div
-              className={`slider-button ${
-                sliderValue === "admin" ? "active" : ""
-              }`}
-              onClick={() => setSliderValue("admin")}
-            >
-              Admin
+
+            <div className="slider-container">
+              <div
+                className={`slider-button ${sliderValue === "All" ? "active" : ""}`}
+                onClick={() => {
+                  setCurrentPage(1);
+                  setSliderValue("All");
+                }}
+              >
+                All
+              </div>
+              <div
+                className={`slider-button ${
+                  sliderValue === "employee" ? "active" : ""
+                }`}
+                onClick={() => {
+                  setCurrentPage(1);
+                  setSliderValue("employee");
+                }}
+              >
+                Employee
+              </div>
+              <div
+                className={`slider-button ${
+                  sliderValue === "admin" ? "active" : ""
+                }`}
+                onClick={() => {
+                  setCurrentPage(1);
+                  setSliderValue("admin");
+                }}
+              >
+                Admin
+              </div>
             </div>
           </div>
+
           <div className="attendance-table-filter">
             <div className="search-filter">
               <input
@@ -267,18 +413,19 @@ const Attendance = () => {
                 placeholder="Search employee..."
               />
             </div>
+
             <div className="firm-filter">
               <label>Firm:</label>
               <select
-                value={firm || ""} // Ensure it's a string
+                value={firm || ""}
                 onChange={(e) => {
                   setCurrentPage(1);
-                  setFirm(e.target.value); // Store firm ID as a string
+                  setFirm(e.target.value);
                 }}
               >
                 <option value="">Select Firm</option>
                 {firmList.length > 0 &&
-                  firmList.map((item, index) => (
+                  firmList.map((item) => (
                     <option key={item._id} value={item._id}>
                       {item.name}
                     </option>
@@ -286,6 +433,7 @@ const Attendance = () => {
               </select>
             </div>
           </div>
+
           <div className="table-scroll">
             <table>
               <thead>
@@ -299,26 +447,23 @@ const Attendance = () => {
               </thead>
               <tbody>
                 {employee.length > 0 ? (
-                  employee.map(
-                    (
-                      item,
-                      index // ✅ Fixed incorrect map usage
-                    ) => (
-                      <tr key={index}>
-                        <td>{(currentPage - 1) * limit + index + 1}</td>
-                        <td>{item.code}</td>
-                        <td>{item.name}</td>
-                        <td>{item.position}</td>
-                        <td className="view-button">
-                          <button
-                            onClick={() => navigate(`/attendance/${item.code}`)}
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )
+                  employee.map((item, index) => (
+                    <tr key={item._id || index}>
+                      <td>{(currentPage - 1) * limit + index + 1}</td>
+                      <td>{item.code}</td>
+                      <td>{item.name}</td>
+                      <td>
+                        <span className="position-pill">{item.position}</span>
+                      </td>
+                      <td className="view-button">
+                        <button
+                          onClick={() => navigate(`/attendance/${item.code}`)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
                     <td colSpan="5" style={{ textAlign: "center" }}>
@@ -331,7 +476,7 @@ const Attendance = () => {
           </div>
         </div>
       </div>
-      {/* ✅ Pagination */}
+
       <div className="pagination">
         <button
           onClick={prevPage}
@@ -340,9 +485,11 @@ const Attendance = () => {
         >
           &lt;
         </button>
+
         <span>
           Page {currentPage} of {totalPages}
         </span>
+
         <button
           onClick={nextPage}
           className="page-btn"
