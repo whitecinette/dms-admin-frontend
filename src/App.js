@@ -55,6 +55,9 @@ import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
 import DumpSyncUpload from "./pages/dumpSync";
 import TopSellingSelf from "./pages/SalesReportV2/topSellingSelf";
 import SessionsPage from "./pages/sessions";
+import UserDirectoryPage from "./pages/userDirectoryPage";
+
+
 
 
 
@@ -143,6 +146,7 @@ function App() {
             <Route path="/sync-dump-data" element={<DumpSyncUpload /> } />
             <Route path="/self/top-selling" element={<TopSellingSelf /> } />
             <Route path="/sessions" element={<SessionsPage /> } />
+            <Route path="/user-directory" element={<UserDirectoryPage /> } />
 
             
           </Route>

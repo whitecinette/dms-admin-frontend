@@ -130,6 +130,16 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       ]
     : []),
 
+      ...(role === "super_admin"
+    ? [
+        {
+          name: "User Directory",
+          to: "/user-directory",
+          icon: <MdDevices size={20} />,
+        },
+      ]
+    : []),
+
     // { name: "GFK", to: "/", icon: <GoGraph size={20} /> },
     {
       name: "HR",
