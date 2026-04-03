@@ -180,7 +180,7 @@ export default function ExtractionStatusOverview() {
     setSubordinates(cleaned);
 
     if (selectedRoles.length === 0) {
-      const def = cleaned.includes("tse") ? ["tse"] : cleaned.slice(0, 1);
+      const def = cleaned.includes("asm") ? ["asm"] : cleaned.slice(0, 1);
       setSelectedRoles(def);
     }
   };
@@ -190,7 +190,7 @@ export default function ExtractionStatusOverview() {
       setIsLoading(true);
 
       const body = {
-        roles: selectedRoles.length ? selectedRoles : ["tse"],
+        roles: selectedRoles.length ? selectedRoles : ["asm"],
         startDate: toInputDate(startDate),
         endDate: toInputDate(endDate),
         topOutlet: topOutletOnly,
