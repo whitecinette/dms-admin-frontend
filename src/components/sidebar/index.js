@@ -283,11 +283,15 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       to: "/product-master",
       icon: <RiPriceTag3Line size={20} />,
     },
-    {
-      name: "Data Manager",
-      to: "/data-police",
-      icon: <RiShieldCheckLine size={20} />,
-    },
+    ...(role === "super_admin"
+      ? [
+          {
+            name: "Data Manager",
+            to: "/data-police",
+            icon: <RiShieldCheckLine size={20} />,
+          },
+        ]
+      : []),
     {
         name: "Sync Params",
         to: "/sync-dump-data",

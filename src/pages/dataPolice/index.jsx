@@ -6,6 +6,9 @@ import "./style.scss";
 const backendUrl = config.backend_url;
 
 function DataPolice() {
+  const role = localStorage.getItem("role");
+  const isSuperAdmin = role === "super_admin";
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("");
@@ -24,6 +27,15 @@ function DataPolice() {
   const [downloadYear, setDownloadYear] = useState(today.getFullYear());
   const [isDownloadingMarketSales, setIsDownloadingMarketSales] =
     useState(false);
+  const [duplicateMonth, setDuplicateMonth] = useState(today.getMonth() + 1);
+  const [duplicateYear, setDuplicateYear] = useState(today.getFullYear());
+  const [dealerCodesInput, setDealerCodesInput] = useState("");
+  const [isRunningDuplicateDryRun, setIsRunningDuplicateDryRun] =
+    useState(false);
+  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
+  const [duplicateDryRunResult, setDuplicateDryRunResult] = useState(null);
+  const [duplicateCleanupResult, setDuplicateCleanupResult] = useState(null);
+  const [showDuplicateResultModal, setShowDuplicateResultModal] = useState(false);
 
   const [isRecalculatingSegments, setIsRecalculatingSegments] = useState(false);
   const [segmentRecalcResult, setSegmentRecalcResult] = useState(null);
@@ -56,6 +68,18 @@ function DataPolice() {
     setStartDate(firstDay.toISOString().split("T")[0]);
     setEndDate(todayDate.toISOString().split("T")[0]);
   }, []);
+
+  useEffect(() => {
+    setDuplicateDryRunResult(null);
+    setDuplicateCleanupResult(null);
+    setShowDuplicateResultModal(false);
+  }, [duplicateMonth, duplicateYear, dealerCodesInput]);
+
+  const getDealerCodesPayload = () =>
+    dealerCodesInput
+      .split(/[\n,]+/)
+      .map((code) => code.trim())
+      .filter(Boolean);
 
   const downloadMarketSalesData = async () => {
     setIsDownloadingMarketSales(true);
@@ -146,6 +170,87 @@ function DataPolice() {
     }
 
     setLoading(false);
+  };
+
+  const runDuplicateDryRun = async () => {
+    setIsRunningDuplicateDryRun(true);
+    setError("");
+    setDuplicateCleanupResult(null);
+
+    try {
+      const res = await fetch(
+        `${backendUrl}/police/extraction-duplicates/dry-run`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            month: Number(duplicateMonth),
+            year: Number(duplicateYear),
+            dealerCodes: getDealerCodesPayload(),
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Failed to run duplicate dry run");
+        return;
+      }
+
+      setDuplicateDryRunResult(data);
+      setShowDuplicateResultModal(true);
+    } catch (err) {
+      console.error("Error in duplicate dry run:", err);
+      setError("Network error");
+    } finally {
+      setIsRunningDuplicateDryRun(false);
+    }
+  };
+
+  const cleanupDuplicates = async () => {
+    const confirmed = window.confirm(
+      "Delete duplicate extraction copies for the selected month and dealer codes? One record per duplicate group will be kept."
+    );
+
+    if (!confirmed) return;
+
+    setIsCleaningDuplicates(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${backendUrl}/police/extraction-duplicates/cleanup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          month: Number(duplicateMonth),
+          year: Number(duplicateYear),
+          dealerCodes: getDealerCodesPayload(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Failed to clean duplicate records");
+        return;
+      }
+
+      setDuplicateCleanupResult(data);
+      setDuplicateDryRunResult(data);
+      setShowDuplicateResultModal(true);
+    } catch (err) {
+      console.error("Error cleaning extraction duplicates:", err);
+      setError("Network error");
+    } finally {
+      setIsCleaningDuplicates(false);
+    }
   };
 
   const fetchExcludedData = async () => {
@@ -340,6 +445,19 @@ function DataPolice() {
     );
   };
 
+  if (!isSuperAdmin) {
+    return (
+      <div className="data-police-page">
+        <div className="container">
+          <div className="tool-card restricted-card">
+            <h3>Data Manager</h3>
+            <p>This page is available only to super admins.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="data-police-page">
       <div className="container">
@@ -406,6 +524,75 @@ function DataPolice() {
                 ? "Downloading..."
                 : "Download Market Sales"}
             </button>
+          </div>
+        </div>
+
+        <div className="tool-card feature-card duplicate-cleanup-card">
+          <div className="tool-card-top">
+            <h3>Extraction Duplicate Cleanup</h3>
+            <span className="pill danger-pill">Super Admin Only</span>
+          </div>
+
+          <p>
+            Scan extraction records by `createdAt` month and optional dealer codes,
+            preview duplicate groups, and delete only the extra copies while keeping
+            one record per group.
+          </p>
+
+          <div className="duplicate-cleanup-controls">
+            <select
+              value={duplicateMonth}
+              onChange={(e) => setDuplicateMonth(Number(e.target.value))}
+            >
+              {monthOptions.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={duplicateYear}
+              onChange={(e) => setDuplicateYear(Number(e.target.value))}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            <button
+              className="secondary-feature-btn"
+              onClick={runDuplicateDryRun}
+              disabled={isRunningDuplicateDryRun}
+            >
+              {isRunningDuplicateDryRun ? "Running Dry Run..." : "Run Dry Run"}
+            </button>
+
+            <button
+              className="danger-feature-btn"
+              onClick={cleanupDuplicates}
+              disabled={
+                isCleaningDuplicates ||
+                !duplicateDryRunResult?.stats?.duplicateCopyCount
+              }
+            >
+              {isCleaningDuplicates ? "Deleting..." : "Delete Duplicate Copies"}
+            </button>
+          </div>
+
+          <textarea
+            className="dealer-codes-input"
+            value={dealerCodesInput}
+            onChange={(e) => setDealerCodesInput(e.target.value)}
+            placeholder={`Optional dealer codes. Paste comma-separated or one per line, for example:\nRAJD8361\nRAJD9001`}
+          />
+
+          <div className="helper-text">
+            Leave dealer codes empty to scan the full selected month. Duplicate rule:
+            same date, uploaded by, dealer, brand, product code, product name,
+            segment, price, quantity, and amount.
           </div>
         </div>
 
@@ -576,6 +763,137 @@ function DataPolice() {
           setError("");
         }}
       />
+
+      {showDuplicateResultModal && duplicateDryRunResult && (
+        <div
+          className="duplicate-result-modal-overlay"
+          onClick={() => setShowDuplicateResultModal(false)}
+        >
+          <div
+            className="duplicate-result-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="duplicate-result-modal-header">
+              <div>
+                <h2>Duplicate Cleanup Preview</h2>
+                <p>
+                  Review the stats and sample duplicate groups for{" "}
+                  {duplicateDryRunResult.month}/{duplicateDryRunResult.year}.
+                </p>
+              </div>
+
+              <button
+                className="duplicate-result-modal-close"
+                onClick={() => setShowDuplicateResultModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="duplicate-result-modal-body">
+              <div className="duplicate-stats-grid">
+                <div className="flag-card">
+                  <div>
+                    <strong>Total Scanned:</strong>{" "}
+                    {duplicateDryRunResult.stats?.totalRecordsScanned || 0}
+                  </div>
+                  <div>
+                    <strong>Duplicate Groups:</strong>{" "}
+                    {duplicateDryRunResult.stats?.duplicateGroupCount || 0}
+                  </div>
+                  <div>
+                    <strong>Duplicate Records:</strong>{" "}
+                    {duplicateDryRunResult.stats?.duplicateRecordCount || 0}
+                  </div>
+                  <div>
+                    <strong>Copies To Delete:</strong>{" "}
+                    {duplicateDryRunResult.stats?.duplicateCopyCount || 0}
+                  </div>
+                  <div>
+                    <strong>Records To Keep:</strong>{" "}
+                    {duplicateDryRunResult.stats?.recordsToKeep ||
+                      duplicateDryRunResult.stats?.recordsKept ||
+                      0}
+                  </div>
+                  <div>
+                    <strong>Message:</strong> {duplicateDryRunResult.message || "-"}
+                  </div>
+                </div>
+
+                {duplicateCleanupResult && (
+                  <div className="flag-card">
+                    <div>
+                      <strong>Deleted Count:</strong>{" "}
+                      {duplicateCleanupResult.stats?.deletedCount || 0}
+                    </div>
+                    <div>
+                      <strong>Month:</strong> {duplicateCleanupResult.month}/
+                      {duplicateCleanupResult.year}
+                    </div>
+                    <div>
+                      <strong>Dealer Filter Count:</strong>{" "}
+                      {duplicateCleanupResult.dealerCodes?.length || 0}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {duplicateDryRunResult.sampleGroups?.length > 0 ? (
+                <div className="duplicate-result-table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Uploaded By</th>
+                        <th>Dealer</th>
+                        <th>Brand</th>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Segment</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Total Rows</th>
+                        <th>Keep</th>
+                        <th>Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {duplicateDryRunResult.sampleGroups.map((group, i) => (
+                        <tr key={group.key || i}>
+                          <td>{i + 1}</td>
+                          <td>{group.sample?.date || "-"}</td>
+                          <td>{group.sample?.uploaded_by || "-"}</td>
+                          <td>{group.sample?.dealer || "-"}</td>
+                          <td>{group.sample?.brand || "-"}</td>
+                          <td>{group.sample?.product_code || "-"}</td>
+                          <td>{group.sample?.product_name || "-"}</td>
+                          <td>{group.sample?.segment || "-"}</td>
+                          <td>{group.sample?.price ?? "-"}</td>
+                          <td>{group.sample?.quantity ?? "-"}</td>
+                          <td>{group.sample?.amount ?? "-"}</td>
+                          <td>{group.totalRecords || 0}</td>
+                          <td>{group.keepRecordId || "-"}</td>
+                          <td>
+                            {group.duplicateRecordIds?.join(", ") ||
+                              group.deletedRecordIds?.join(", ") ||
+                              "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flag-card">
+                  <strong>No duplicate groups found for this filter set.</strong>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
