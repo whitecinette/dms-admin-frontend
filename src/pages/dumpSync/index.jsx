@@ -10,6 +10,20 @@ const backendUrl = config.backend_url;
 // ✅ Your dump-sync endpoints (add more here later)
 const DUMP_APIS = [
   {
+    key: "samsung_product_tags",
+    title: "Samsung Product Tags Sync",
+    subtitle: "Adds missing tags to existing Samsung products by product code.",
+    endpoint: "/dump-sync/samsung-products/tags/upload",
+    accept: [".csv"],
+    hint: "CSV only. Required headers: code, tag, Tag... Every Tag column becomes a separate tag.",
+    templateHeaders: ["code", "tag", "Tag"],
+    templateRows: [
+      ["SM-X236BZAA", "Tab", ""],
+      ["SM-A366EZKK", "Innovative 5G", "5G"],
+      ["SM-A176BZAL", "Innovative 5G", "5G"],
+    ],
+  },
+  {
     key: "samsung_products",
     title: "Samsung Dump → Product Master",
     subtitle: "Creates only missing products (brand+samsung, product_code).",
@@ -53,6 +67,23 @@ function DumpSyncUpload() {
 
   const fileRef = useRef();
 
+  const downloadTemplate = () => {
+    if (!selectedApi?.templateHeaders?.length) return;
+
+    const csv = Papa.unparse({
+      fields: selectedApi.templateHeaders,
+      data: selectedApi.templateRows || [],
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${selectedApi.key}-format.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // =============================
   // PREVIEW PARSERS (xlsx/csv)
   // =============================
@@ -76,10 +107,18 @@ function DumpSyncUpload() {
   const handleFile = async (f) => {
     if (!f) return;
 
+    const name = (f.name || "").toLowerCase();
+    const allowedExt = selectedApi.accept || [];
+    const isAllowed = allowedExt.some((ext) => name.endsWith(ext.toLowerCase()));
+
+    if (!isAllowed) {
+      alert(`Invalid file type. Allowed: ${allowedExt.join(", ")}`);
+      return;
+    }
+
     setResult(null);
     setFile(f);
 
-    const name = (f.name || "").toLowerCase();
     try {
       let table = null;
 
@@ -185,13 +224,28 @@ function DumpSyncUpload() {
         </div>
 
         <div className="dumpsync-result__grid">
-        {selectedApiKey === "samsung_products" ? (
+        {selectedApiKey === "samsung_product_tags" ? (
+            <>
+            <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Valid Rows</div><div className="kpi__value">{result.validRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Unique Codes</div><div className="kpi__value">{result.uniqueCodesInFile ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Changed</div><div className="kpi__value">{result.changed ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Updated</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Unchanged</div><div className="kpi__value">{result.unchanged ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Inactive In List</div><div className="kpi__value">{result.inactiveInList ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Not In DB</div><div className="kpi__value">{result.notFoundInDb ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">New Tags Added</div><div className="kpi__value">{result.totalNewTagsAdded ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Invalid Rows</div><div className="kpi__value">{result.invalidRows ?? "-"}</div></div>
+            </>
+        ) : selectedApiKey === "samsung_products" ? (
             <>
             <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Unique Products</div><div className="kpi__value">{result.uniqueProductsInFile ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Existing In DB</div><div className="kpi__value">{result.existingInDb ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">New To Insert</div><div className="kpi__value">{result.toInsert ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Price/Segment Updates</div><div className="kpi__value">{result.toUpdate ?? result.updated ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Inserted</div><div className="kpi__value">{result.inserted ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Updated</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Skipped</div><div className="kpi__value">{result.skipped ?? "-"}</div></div>
             </>
         ) : selectedApiKey === "mdd_dealer_sync" ? (
@@ -214,6 +268,115 @@ function DumpSyncUpload() {
             </>
           ) : null}
         </div>
+
+        {Array.isArray(result.sampleChangedProducts) && result.sampleChangedProducts.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Sample Changed Products</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["code", "product_name", "model_code", "existingTags", "addedTags", "finalTags", "status"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.sampleChangedProducts.slice(0, 10).map((product, index) => (
+                    <tr key={index}>
+                      <td>{product.code}</td>
+                      <td>{product.product_name}</td>
+                      <td>{product.model_code}</td>
+                      <td>{Array.isArray(product.existingTags) ? product.existingTags.join(", ") : ""}</td>
+                      <td>{Array.isArray(product.addedTags) ? product.addedTags.join(", ") : ""}</td>
+                      <td>{Array.isArray(product.finalTags) ? product.finalTags.join(", ") : ""}</td>
+                      <td>{product.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="dumpsync-muted">Dry run shows exactly which tags will be added.</div>
+          </div>
+        )}
+
+        {Array.isArray(result.notFoundProducts) && result.notFoundProducts.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Products Not Found In DB</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["code", "rowNumbers"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.notFoundProducts.slice(0, 15).map((product, index) => (
+                    <tr key={index}>
+                      <td>{product.code}</td>
+                      <td>{Array.isArray(product.rowNumbers) ? product.rowNumbers.join(", ") : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {Array.isArray(result.inactiveProducts) && result.inactiveProducts.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Inactive Products In Upload</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["code", "product_name", "status", "rowNumbers"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.inactiveProducts.slice(0, 15).map((product, index) => (
+                    <tr key={index}>
+                      <td>{product.code}</td>
+                      <td>{product.product_name}</td>
+                      <td>{product.status}</td>
+                      <td>{Array.isArray(product.rowNumbers) ? product.rowNumbers.join(", ") : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {Array.isArray(result.skippedRows) && result.skippedRows.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Skipped Rows</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["rowNumber", "code", "reason"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.skippedRows.slice(0, 15).map((row, index) => (
+                    <tr key={index}>
+                      <td>{row.rowNumber}</td>
+                      <td>{row.code || ""}</td>
+                      <td>{row.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {Array.isArray(result.sampleNewProducts) && result.sampleNewProducts.length > 0 && (
           <div className="dumpsync-result__sample">
@@ -257,6 +420,35 @@ function DumpSyncUpload() {
             <div className="dumpsync-muted">
               Tip: Turn off Dry Run to actually insert.
             </div>
+          </div>
+        )}
+
+        {Array.isArray(result.sampleUpdates) && result.sampleUpdates.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Sample Price / Segment Updates</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["product_code", "oldPrice", "newPrice", "oldSegment", "newSegment"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.sampleUpdates.slice(0, 10).map((item, i) => (
+                    <tr key={i}>
+                      <td>{item.product_code}</td>
+                      <td>{item.oldPrice}</td>
+                      <td>{item.newPrice}</td>
+                      <td>{item.oldSegment}</td>
+                      <td>{item.newSegment}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="dumpsync-muted">Dry run shows which existing products will get price and segment changes.</div>
           </div>
         )}
 
@@ -356,7 +548,7 @@ function DumpSyncUpload() {
         <div className="dumpsync-steps">
           <div className="dumpsync-steps__title">Steps</div>
           <ul>
-            <li>Upload .xlsx / .xls / .csv file as allowed by the selected sync type.</li>
+            <li>Upload only the file type allowed by the selected sync type.</li>
             <li>Do not rename headers.</li>
             <li>Dry Run shows what will be inserted or synced.</li>
             <li>Turn Dry Run OFF to apply actual changes.</li>
@@ -450,6 +642,16 @@ function DumpSyncUpload() {
 
         {/* Actions */}
         <div className="dumpsync-actions">
+          {selectedApi.templateHeaders?.length ? (
+            <button
+              className="btn btn-secondary"
+              onClick={downloadTemplate}
+              disabled={loading}
+            >
+              Download Format
+            </button>
+          ) : null}
+
           <button
             className="btn btn-primary"
             onClick={uploadDump}

@@ -250,6 +250,16 @@
   }
 }
 
+.btn-secondary {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
 .btn-ghost {
   background: #fff;
   border-color: #e5e7eb;
