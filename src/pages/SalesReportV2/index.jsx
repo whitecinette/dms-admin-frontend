@@ -6,6 +6,7 @@ import axios from "axios";
 import { FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
+
 const DEALER_FILTER_TYPES = [
   { key: "zone", label: "Zone" },
   { key: "district", label: "District" },
@@ -13,16 +14,19 @@ const DEALER_FILTER_TYPES = [
   { key: "category", label: "Category" },
   { key: "top_outlet", label: "Top Outlet" },
 ];
+
 const PRODUCT_FILTER_TYPES = [{ key: "product_tag", label: "Product Tags" }];
+
 const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "so", "dealer"];
 const FLOW_NAME = "default_sales_flow";
-const TAG_OPTION_TYPES = ["product_tag", "tag", "tags"];
+
 const DETAIL_ENDPOINT_CANDIDATES = [
   "/reports/dashboard-summary/drilldown",
   "/reports/dashboard-summary/details",
   "/reports/dashboard-summary-detail",
   "/reports/dashboard-summary",
 ];
+
 const TAG_GROUP_REPORT_TYPES = [
   "activation",
   "tertiary",
@@ -238,6 +242,7 @@ function SalesReportV2() {
   const [endDate, setEndDate] = useState("");
   const [compactMode, setCompactMode] = useState(true);
   const [actorPositions, setActorPositions] = useState([]);
+
   const [filterValues, setFilterValues] = useState({
     zone: [],
     district: [],
@@ -245,6 +250,7 @@ function SalesReportV2() {
     category: [],
     top_outlet: [],
   });
+
   const [actorOptionsMap, setActorOptionsMap] = useState({});
   const [selectedActorFilters, setSelectedActorFilters] = useState({});
   const [selectedDealerFilters, setSelectedDealerFilters] = useState({
@@ -256,12 +262,16 @@ function SalesReportV2() {
   });
   const [tagOptions, setTagOptions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+
   const [brand, setBrand] = useState("");
   const [segment, setSegment] = useState("");
+
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState("zone");
   const [searchText, setSearchText] = useState("");
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(false);
+
+
   const [detailModal, setDetailModal] = useState({
     open: false,
     title: "",
@@ -271,6 +281,7 @@ function SalesReportV2() {
     loading: false,
     error: "",
   });
+
   const defaultDealerFilterValues = useMemo(
     () => ({
       zone: [],
@@ -281,24 +292,29 @@ function SalesReportV2() {
     }),
     []
   );
+
   const panelRef = useRef(null);
-  const filterRequestCacheRef = useRef({});
+
   const authHeaders = useMemo(
     () => ({
       Authorization: localStorage.getItem("authToken"),
     }),
     []
   );
+
   const tagFilterSnapshot = useMemo(
     () => JSON.stringify(selectedTags),
     [selectedTags]
   );
+
   const actorPositionOrder = useMemo(
     () => actorPositions.map((item) => item.value).filter(Boolean),
     [actorPositions]
   );
 
-  // data (existing)
+  // ===============================
+  // DATA
+  // ===============================
   const [activation, setActivation] = useState(null);
   const [tertiary, setTertiary] = useState(null);
   const [secondary, setSecondary] = useState(null);
@@ -307,19 +323,19 @@ function SalesReportV2() {
   const [priceSegmentSplit40k, setPriceSegmentSplit40k] = useState(null);
   const [tagGroupedReports, setTagGroupedReports] = useState({});
 
-  // ✅ NEW: YTD pace report data
   const [activationValueYtd, setActivationValueYtd] = useState(null);
   const [activationVolYtd, setActivationVolYtd] = useState(null);
   const [tertiaryValueYtd, setTertiaryValueYtd] = useState(null);
   const [tertiaryVolYtd, setTertiaryVolYtd] = useState(null);
 
-    // ✅ NEW: YTD actual report data
   const [activationValueYtdActual, setActivationValueYtdActual] = useState(null);
   const [activationVolYtdActual, setActivationVolYtdActual] = useState(null);
   const [tertiaryValueYtdActual, setTertiaryValueYtdActual] = useState(null);
   const [tertiaryVolYtdActual, setTertiaryVolYtdActual] = useState(null);
 
-  // loaders (existing)
+  // ===============================
+  // LOADERS
+  // ===============================
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
   const [loadingSecondary, setLoadingSecondary] = useState(false);
@@ -328,14 +344,12 @@ function SalesReportV2() {
   const [loadingPriceSegmentSplit40k, setLoadingPriceSegmentSplit40k] =
     useState(false);
 
-  // ✅ NEW: YTD loaders
   const [loadingActivationValueYtd, setLoadingActivationValueYtd] =
     useState(false);
   const [loadingActivationVolYtd, setLoadingActivationVolYtd] = useState(false);
   const [loadingTertiaryValueYtd, setLoadingTertiaryValueYtd] = useState(false);
   const [loadingTertiaryVolYtd, setLoadingTertiaryVolYtd] = useState(false);
 
-    // ✅ NEW: YTD actual loaders
   const [loadingActivationValueYtdActual, setLoadingActivationValueYtdActual] =
     useState(false);
   const [loadingActivationVolYtdActual, setLoadingActivationVolYtdActual] =
@@ -391,6 +405,9 @@ function SalesReportV2() {
     return `${Number(num).toFixed(2)}%`;
   };
 
+  // ===============================
+  // FILTER PAYLOAD HELPERS
+  // ===============================
   const buildSubordinateFilters = (
     source = selectedActorFilters,
     { upToPosition = null } = {}
@@ -436,29 +453,38 @@ function SalesReportV2() {
     return filters;
   };
 
-  const fetchFilterValues = async (type, position = "", extraParams = {}) => {
+  // ===============================
+  // NEW DROPDOWN API
+  // ===============================
+  const fetchDropdownOptions = async ({
+    targetType,
+    targetKey,
+    subordinates = {},
+    dealer = {},
+    productTags = {},
+  }) => {
     try {
-      const params = {
-        type,
+      const body = {
         flow_name: FLOW_NAME,
+        target_type: targetType,
+        target_key: targetKey,
+        subordinates,
+        dealer,
+        product_tags: productTags,
       };
 
-      if (position) params.position = position;
-      if (extraParams.subordinate_filters) {
-        params.subordinate_filters = JSON.stringify(extraParams.subordinate_filters);
-      }
-      if (extraParams.dealer_filters) {
-        params.dealer_filters = JSON.stringify(extraParams.dealer_filters);
-      }
+      const res = await axios.post(
+        `${backendUrl}/filters/dropdown-options`,
+        body,
+        { headers: authHeaders }
+      );
 
-      const res = await axios.get(`${backendUrl}/filter-values`, {
-        params,
-        headers: authHeaders,
-      });
-
-      return res.data.values || [];
+      return res.data?.values || [];
     } catch (error) {
-      console.error(`Error fetching filter values for ${type}:`, error);
+      console.error(
+        `Error fetching dropdown options for ${targetType}/${targetKey}:`,
+        error
+      );
       return [];
     }
   };
@@ -476,120 +502,76 @@ function SalesReportV2() {
   };
 
   const fetchTagOptions = async () => {
-    for (const type of TAG_OPTION_TYPES) {
-      const values = await fetchFilterValues(type, "", {
-        subordinate_filters: buildSubordinateFilters(),
-        dealer_filters: buildDealerFiltersPayload(),
-      });
-
-      const normalized = values.map(normalizeFilterOption).filter(Boolean);
-      if (normalized.length) {
-        setTagOptions(normalized);
-        return normalized;
-      }
-    }
-
-    try {
-      const res = await axios.get(`${backendUrl}/product/get-all-products-for-admin`, {
-        headers: authHeaders,
-      });
-
-      const products = res.data?.products || res.data?.data || [];
-      const uniqueTags = Array.from(
-        new Set(
-          products.flatMap((product) =>
-            Array.isArray(product?.tags) ? product.tags.filter(Boolean) : []
-          )
-        )
-      ).sort((a, b) => a.localeCompare(b));
-
-      const normalized = uniqueTags.map((tag) => ({ label: tag, value: tag }));
-      setTagOptions(normalized);
-      return normalized;
-    } catch (error) {
-      console.error("Error fetching product tags:", error);
-      setTagOptions([]);
-      return [];
-    }
-  };
-
-  const getTabRequestSignature = (tabKey) => {
-    if (isActorTab(tabKey)) {
-      return JSON.stringify({
-        tabKey,
-        subordinate_filters: buildSubordinateFilters(selectedActorFilters, {
-          upToPosition: tabKey,
-        }),
-        dealer_filters: buildDealerFiltersPayload(),
-      });
-    }
-
-    if (isProductTagTab(tabKey)) {
-      return JSON.stringify({
-        tabKey,
-        subordinate_filters: buildSubordinateFilters(),
-        dealer_filters: buildDealerFiltersPayload(),
-      });
-    }
-
-    return JSON.stringify({
-      tabKey,
-      subordinate_filters: buildSubordinateFilters(),
-      dealer_filters: buildDealerFiltersPayload(selectedDealerFilters, {
-        excludeType: tabKey,
-      }),
+    const values = await fetchDropdownOptions({
+      targetType: "product_tag",
+      targetKey: "product_tag",
+      subordinates: buildSubordinateFilters(),
+      dealer: buildDealerFiltersPayload(),
+      productTags: {
+        product_tag: selectedTags.map((item) => item.value).filter(Boolean),
+      },
     });
+
+    const normalized = values.map(normalizeFilterOption).filter(Boolean);
+    setTagOptions(normalized);
+    return normalized;
   };
 
-  const loadFilterOptionsForTab = async (tabKey, { force = false } = {}) => {
+  const loadFilterOptionsForTab = async (tabKey) => {
     if (!tabKey) return;
 
-    const requestSignature = getTabRequestSignature(tabKey);
-    if (!force && filterRequestCacheRef.current[tabKey] === requestSignature) {
-      return;
-    }
-
     setLoadingFilterOptions(true);
+
     try {
       if (isActorTab(tabKey)) {
-        const values = await fetchFilterValues("actor", tabKey, {
-          subordinate_filters: buildSubordinateFilters(selectedActorFilters, {
+        const values = await fetchDropdownOptions({
+          targetType: "subordinate",
+          targetKey: tabKey,
+          subordinates: buildSubordinateFilters(selectedActorFilters, {
             upToPosition: tabKey,
           }),
-          dealer_filters: buildDealerFiltersPayload(),
+          dealer: buildDealerFiltersPayload(),
+          productTags: {
+            product_tag: selectedTags.map((item) => item.value).filter(Boolean),
+          },
         });
 
         setActorOptionsMap((old) => ({
           ...old,
           [tabKey]: values,
         }));
-        filterRequestCacheRef.current[tabKey] = requestSignature;
         return;
       }
 
       if (isProductTagTab(tabKey)) {
         await fetchTagOptions();
-        filterRequestCacheRef.current[tabKey] = requestSignature;
         return;
       }
 
-      const values = await fetchFilterValues(tabKey, "", {
-        subordinate_filters: buildSubordinateFilters(),
-        dealer_filters: buildDealerFiltersPayload(selectedDealerFilters, {
+      const values = await fetchDropdownOptions({
+        targetType: "dealer",
+        targetKey: tabKey,
+        subordinates: buildSubordinateFilters(),
+        dealer: buildDealerFiltersPayload(selectedDealerFilters, {
           excludeType: tabKey,
         }),
+        productTags: {
+          product_tag: selectedTags.map((item) => item.value).filter(Boolean),
+        },
       });
 
       setFilterValues((old) => ({
         ...old,
         [tabKey]: values,
       }));
-      filterRequestCacheRef.current[tabKey] = requestSignature;
     } finally {
       setLoadingFilterOptions(false);
     }
   };
 
+  // ===============================
+  // FILTER STATE HELPERS
+  // ===============================
   const totalSelectedFiltersCount = useMemo(() => {
     const actorCount = Object.values(selectedActorFilters).reduce(
       (sum, arr) => sum + (arr?.length || 0),
@@ -601,10 +583,12 @@ function SalesReportV2() {
     );
     return actorCount + dealerCount + selectedTags.length;
   }, [selectedActorFilters, selectedDealerFilters, selectedTags.length]);
+
   const actorFilterSnapshot = useMemo(
     () => JSON.stringify(selectedActorFilters),
     [selectedActorFilters]
   );
+
   const dealerFilterSnapshot = useMemo(
     () => JSON.stringify(selectedDealerFilters),
     [selectedDealerFilters]
@@ -651,6 +635,7 @@ function SalesReportV2() {
       setSelectedActorFilters((old) => {
         const prev = old[type] || [];
         const exists = prev.some((x) => x.code === item.code);
+
         const next = {
           ...old,
           [type]: exists ? prev.filter((x) => x.code !== item.code) : [...prev, item],
@@ -665,6 +650,16 @@ function SalesReportV2() {
         return next;
       });
 
+      setActorOptionsMap((old) => {
+        const next = { ...old };
+        if (positionIndex !== -1) {
+          orderedPositions.slice(positionIndex + 1).forEach((position) => {
+            delete next[position];
+          });
+        }
+        return next;
+      });
+
       return;
     }
 
@@ -675,6 +670,8 @@ function SalesReportV2() {
           ? old.filter((x) => x.value !== item.value)
           : [...old, normalizeFilterOption(item)];
       });
+
+      setTagOptions([]);
       return;
     }
 
@@ -692,6 +689,8 @@ function SalesReportV2() {
           ? prev.filter((x) => x.value !== item.value)
           : [...prev, item],
     }));
+
+    setFilterValues(defaultDealerFilterValues);
   };
 
   const removeSelection = (type, item) => {
@@ -742,9 +741,9 @@ function SalesReportV2() {
     setSelectedActorFilters({});
     setSelectedDealerFilters(defaultDealerFilterValues);
     setSelectedTags([]);
-    filterRequestCacheRef.current = {};
     setActorOptionsMap({});
     setFilterValues(defaultDealerFilterValues);
+    setTagOptions([]);
     setSearchText("");
     setActiveFilterTab(actorPositions[0]?.value || "zone");
     setFilterPanelOpen(false);
@@ -906,29 +905,9 @@ function SalesReportV2() {
   // ===============================
   // FETCH HELPERS
   // ===============================
-  const setAllLoadingFalse = () => {
-    setLoadingActivation(false);
-    setLoadingTertiary(false);
-    setLoadingSecondary(false);
-    setLoadingWod(false);
-    setLoadingPriceSegment(false);
-    setLoadingPriceSegmentSplit40k(false);
-
-    // ✅ YTD
-    setLoadingActivationValueYtd(false);
-    setLoadingActivationVolYtd(false);
-    setLoadingTertiaryValueYtd(false);
-    setLoadingTertiaryVolYtd(false);
-
-        // ✅ YTD Actual
-    setLoadingActivationValueYtdActual(false);
-    setLoadingActivationVolYtdActual(false);
-    setLoadingTertiaryValueYtdActual(false);
-    setLoadingTertiaryVolYtdActual(false);
-  };
-
   const getRequestBody = (report_type, extras = {}) => {
     const selectedTagValues = selectedTags.map((item) => item.value).filter(Boolean);
+
     const body = {
       flow_name: FLOW_NAME,
       filters: {
@@ -991,167 +970,172 @@ function SalesReportV2() {
     return result?.[report_type] || result?.data || null;
   };
 
-  // ===============================
-  // FETCH DASHBOARD (multi-call, simultaneous)
-  // ===============================
-  const fetchDashboard = async () => {
-    // clear old data
-    setActivation(null);
-    setTertiary(null);
-    setSecondary(null);
-    setWodTables(null);
-    setPriceSegmentTables(null);
-    setPriceSegmentSplit40k(null);
-    setTagGroupedReports({});
+/////////////////////NEW TWO PART REPORTS /////////////////////////
 
-    // ✅ clear YTD
-    setActivationValueYtd(null);
-    setActivationVolYtd(null);
-    setTertiaryValueYtd(null);
-    setTertiaryVolYtd(null);
+const fetchCoreReports = async () => {
+  setLoadingActivation(true);
+  setLoadingTertiary(true);
+  setLoadingSecondary(true);
+  setLoadingWod(true);
+  setLoadingPriceSegment(true);
+  setLoadingPriceSegmentSplit40k(true);
 
-    setActivationValueYtdActual(null);
-    setActivationVolYtdActual(null);
-    setTertiaryValueYtdActual(null);
-    setTertiaryVolYtdActual(null);
-
-    // turn on all loaders
-    setLoadingActivation(true);
-    setLoadingTertiary(true);
-    setLoadingSecondary(true);
-    setLoadingWod(true);
-    setLoadingPriceSegment(true);
-    setLoadingPriceSegmentSplit40k(true);
-
-    // ✅ YTD loaders
-    setLoadingActivationValueYtd(true);
-    setLoadingActivationVolYtd(true);
-    setLoadingTertiaryValueYtd(true);
-    setLoadingTertiaryVolYtd(true);
-
-    setLoadingActivationValueYtdActual(true);
-    setLoadingActivationVolYtdActual(true);
-    setLoadingTertiaryValueYtdActual(true);
-    setLoadingTertiaryVolYtdActual(true);
-
-    const tasks = [
-      // existing
-      postReport("activation")
-        .then((r) => setActivation(r.activation || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingActivation(false)),
-
-      postReport("tertiary")
-        .then((r) => setTertiary(r.tertiary || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingTertiary(false)),
-
-      postReport("secondary")
-        .then((r) => setSecondary(r.secondary || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingSecondary(false)),
-
-      postReport("wod")
-        .then((r) => setWodTables(r.wod || r.wodTables || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingWod(false)),
-
-      postReport("price_segment")
-        .then((r) =>
-          setPriceSegmentTables(
-            r.price_segment || r.priceSegmentTables || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingPriceSegment(false)),
-
-      postReport("price_segment_40k")
-        .then((r) =>
-          setPriceSegmentSplit40k(
-            r.price_segment_40k || r.priceSegmentTables40k || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingPriceSegmentSplit40k(false)),
-
-      // ✅ NEW: YTD pace reports
-      postReport("activation_value_ytd")
-        .then((r) => setActivationValueYtd(r.activation_value_ytd || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingActivationValueYtd(false)),
-
-      postReport("activation_vol_ytd")
-        .then((r) => setActivationVolYtd(r.activation_vol_ytd || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingActivationVolYtd(false)),
-
-      postReport("tertiary_value_ytd")
-        .then((r) => setTertiaryValueYtd(r.tertiary_value_ytd || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingTertiaryValueYtd(false)),
-
-      postReport("tertiary_vol_ytd")
-        .then((r) => setTertiaryVolYtd(r.tertiary_vol_ytd || r.data || null))
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingTertiaryVolYtd(false)),
-
-              // ✅ NEW: YTD actual reports
-      postReport("activation_value_ytd_actual")
-        .then((r) =>
-          setActivationValueYtdActual(
-            r.activation_value_ytd_actual || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingActivationValueYtdActual(false)),
-
-      postReport("activation_vol_ytd_actual")
-        .then((r) =>
-          setActivationVolYtdActual(
-            r.activation_vol_ytd_actual || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingActivationVolYtdActual(false)),
-
-      postReport("tertiary_value_ytd_actual")
-        .then((r) =>
-          setTertiaryValueYtdActual(
-            r.tertiary_value_ytd_actual || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingTertiaryValueYtdActual(false)),
-
-      postReport("tertiary_vol_ytd_actual")
-        .then((r) =>
-          setTertiaryVolYtdActual(
-            r.tertiary_vol_ytd_actual || r.data || null
-          )
-        )
-        .catch((e) => alert(e.message))
-        .finally(() => setLoadingTertiaryVolYtdActual(false)),
-    ];
-
-    TAG_GROUP_REPORT_TYPES.forEach((reportType) => {
-      tasks.push(
-        postGroupedTagReport(reportType)
-          .then((groupedData) =>
-            setTagGroupedReports((old) => ({
-              ...old,
-              [reportType]: groupedData,
-            }))
-          )
-          .catch((error) => {
-            console.error(`Failed to fetch grouped tag report for ${reportType}:`, error);
-          })
-      );
+  try {
+    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("authToken"),
+      },
+      body: JSON.stringify({
+        ...getRequestBody("batch"),
+        report_types: [
+          "activation",
+          "tertiary",
+          "secondary",
+          "wod",
+        ],
+      }),
     });
 
-    await Promise.allSettled(tasks);
-  };
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Core fetch failed");
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const data = result.data || {};
+
+    setActivation(data.activation || null);
+    setTertiary(data.tertiary || null);
+    setSecondary(data.secondary || null);
+    setWodTables(data.wod || null);
+
+    setTagGroupedReports((old) => ({
+      ...old,
+      ...(data.tag_grouped || {}),
+    }));
+  } catch (error) {
+    console.error("Core fetch error:", error);
+  } finally {
+    setLoadingActivation(false);
+    setLoadingTertiary(false);
+    setLoadingSecondary(false);
+    setLoadingWod(false);
+
+  }
+};
+
+const fetchYtdReports = async () => {
+  setLoadingActivationValueYtd(true);
+  setLoadingActivationVolYtd(true);
+  setLoadingTertiaryValueYtd(true);
+  setLoadingTertiaryVolYtd(true);
+
+  setLoadingActivationValueYtdActual(true);
+  setLoadingActivationVolYtdActual(true);
+  setLoadingTertiaryValueYtdActual(true);
+  setLoadingTertiaryVolYtdActual(true);
+
+  try {
+    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("authToken"),
+      },
+      body: JSON.stringify({
+        ...getRequestBody("batch"),
+        report_types: [
+          "activation_value_ytd",
+          "activation_vol_ytd",
+          "tertiary_value_ytd",
+          "tertiary_vol_ytd",
+          "activation_value_ytd_actual",
+          "activation_vol_ytd_actual",
+          "tertiary_value_ytd_actual",
+          "tertiary_vol_ytd_actual",
+        ],
+      }),
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "YTD fetch failed");
+
+    const data = result.data || {};
+
+    setActivationValueYtd(data.activation_value_ytd || null);
+    setActivationVolYtd(data.activation_vol_ytd || null);
+    setTertiaryValueYtd(data.tertiary_value_ytd || null);
+    setTertiaryVolYtd(data.tertiary_vol_ytd || null);
+
+    setActivationValueYtdActual(data.activation_value_ytd_actual || null);
+    setActivationVolYtdActual(data.activation_vol_ytd_actual || null);
+    setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
+    setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
+
+    setTagGroupedReports((old) => ({
+      ...old,
+      ...(data.tag_grouped || {}),
+    }));
+  } catch (error) {
+    console.error("YTD fetch error:", error);
+  } finally {
+    setLoadingActivationValueYtd(false);
+    setLoadingActivationVolYtd(false);
+    setLoadingTertiaryValueYtd(false);
+    setLoadingTertiaryVolYtd(false);
+
+    setLoadingActivationValueYtdActual(false);
+    setLoadingActivationVolYtdActual(false);
+    setLoadingTertiaryValueYtdActual(false);
+    setLoadingTertiaryVolYtdActual(false);
+  }
+};
+
+const fetchPriceSegmentReports = async () => {
+
+
+  try {
+    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("authToken"),
+      },
+      body: JSON.stringify({
+        ...getRequestBody("batch"),
+        report_types: [
+          "price_segment",
+          "price_segment_40k",
+        ],
+      }),
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Price segment fetch failed");
+
+    const data = result.data || {};
+
+    setPriceSegmentTables(data.price_segment || null);
+    setPriceSegmentSplit40k(data.price_segment_40k || null);
+
+    setTagGroupedReports((old) => ({
+      ...old,
+      ...(data.tag_grouped || {}),
+    }));
+  } catch (error) {
+    console.error("Price segment fetch error:", error);
+  } finally {
+    setLoadingPriceSegment(false);
+    setLoadingPriceSegmentSplit40k(false);
+  }
+};
+
+
+
+/////////////////////NEW TWO PART REPORTS /////////////////////////
+
+  // ===============================
+  // EFFECTS
+  // ===============================
   useEffect(() => {
     fetchGroupingOptions();
   }, []);
@@ -1161,33 +1145,20 @@ function SalesReportV2() {
 
     const actorTabSet = new Set(actorPositions.map((item) => item.value));
     const availableStaticTabs = [...DEALER_FILTER_TYPES, ...PRODUCT_FILTER_TYPES];
-    if (!actorTabSet.has(activeFilterTab) && !availableStaticTabs.some((item) => item.key === activeFilterTab)) {
+
+    if (
+      !actorTabSet.has(activeFilterTab) &&
+      !availableStaticTabs.some((item) => item.key === activeFilterTab)
+    ) {
       setActiveFilterTab(actorPositions[0]?.value || "zone");
     }
   }, [actorPositions, activeFilterTab]);
 
   useEffect(() => {
-    filterRequestCacheRef.current = {};
-    setActorOptionsMap({});
-    setFilterValues(defaultDealerFilterValues);
-  }, [actorFilterSnapshot, dealerFilterSnapshot, tagFilterSnapshot, defaultDealerFilterValues]);
-
-  useEffect(() => {
     if (!filterPanelOpen || !activeFilterTab) return;
-
     loadFilterOptionsForTab(activeFilterTab);
-  }, [
-    filterPanelOpen,
-    activeFilterTab,
-    actorFilterSnapshot,
-    dealerFilterSnapshot,
-    tagFilterSnapshot,
-    actorPositions.length,
-  ]);
+  }, [filterPanelOpen, activeFilterTab]);
 
-  useEffect(() => {
-    fetchTagOptions();
-  }, []);
 
   useEffect(() => {
     const onClickOutside = (event) => {
@@ -1200,21 +1171,18 @@ function SalesReportV2() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [filterPanelOpen]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchDashboard();
-  }, [
-    startDate,
-    endDate,
-    brand,
-    segment,
-    actorFilterSnapshot,
-    dealerFilterSnapshot,
-    tagFilterSnapshot,
-  ]);
+    useEffect(() => {
+      if (!actorPositions.length) return;
+      fetchCoreReports(); // fast load first
+      fetchYtdReports(); 
+      fetchPriceSegmentReports();
+    }, [actorPositions]);
+
+
+
 
   // ===============================
-  // GENERIC TABLE CONTENT RENDERER
+  // TABLE RENDER HELPERS
   // ===============================
   const renderInlineTagRows = (
     groupedReport,
@@ -1229,6 +1197,7 @@ function SalesReportV2() {
   ) => {
     const { rowLabel, metricColumns: groupedMetricColumns, rows: tagRows } =
       normalizeGroupedTagRows(groupedReport);
+
     if (!tagRows.length) return null;
 
     const resolvedColumns = metricColumns.length ? metricColumns : groupedMetricColumns;
@@ -1349,9 +1318,6 @@ function SalesReportV2() {
     );
   };
 
-  // ===============================
-  // ✅ YTD TABLE CONTENT RENDERER
-  // ===============================
   const renderYtdTableContent = (
     report,
     { isCurrency = false, reportType = "ytd", reportTitle = "YTD Tag Volume" } = {}
@@ -1424,243 +1390,231 @@ function SalesReportV2() {
   const renderTagAwareReportContent = (
     reportData,
     { reportType, reportTitle, renderPrimary } = {}
-  ) =>
-    renderPrimary?.(reportData, { reportType, reportTitle }) || null;
+  ) => renderPrimary?.(reportData, { reportType, reportTitle }) || null;
 
   // ===============================
   // WOD TABLES CONTENT
   // ===============================
+  const WOD_FIXED_COLUMNS = ["MTD", "LMTD", "FTD", "G/D%", "Exp.Ach"];
 
-
-  // ===============================
-  // wod heatmap and wod
-  // ===============================
-
-
-const WOD_FIXED_COLUMNS = ["MTD", "LMTD", "FTD", "G/D%", "Exp.Ach"];
-
-const isNumeric = (val) => {
-  return val !== null && val !== undefined && val !== "" && !Number.isNaN(Number(val));
-};
-
-const getComparableColumns = (columns) => {
-  return columns.filter((col) => col !== "G/D%" && col !== "Exp.Ach");
-};
-
-const getRowScaleStats = (rowData, columns) => {
-  const comparableCols = getComparableColumns(columns);
-
-  const values = comparableCols
-    .map((col) => Number(rowData?.[col]))
-    .filter((v) => !Number.isNaN(v));
-
-  if (!values.length) return { min: 0, max: 0 };
-
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values),
+  const isNumeric = (val) => {
+    return val !== null && val !== undefined && val !== "" && !Number.isNaN(Number(val));
   };
-};
 
-const getNeutralIntensityStyle = (value, stats) => {
-  if (!isNumeric(value)) return {};
+  const getComparableColumns = (columns) => {
+    return columns.filter((col) => col !== "G/D%" && col !== "Exp.Ach");
+  };
 
-  const num = Number(value);
-  const { min, max } = stats;
+  const getRowScaleStats = (rowData, columns) => {
+    const comparableCols = getComparableColumns(columns);
 
-  if (max === min) {
+    const values = comparableCols
+      .map((col) => Number(rowData?.[col]))
+      .filter((v) => !Number.isNaN(v));
+
+    if (!values.length) return { min: 0, max: 0 };
+
     return {
-      background: "#fbfcfe",
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  };
+
+  const getNeutralIntensityStyle = (value, stats) => {
+    if (!isNumeric(value)) return {};
+
+    const num = Number(value);
+    const { min, max } = stats;
+
+    if (max === min) {
+      return {
+        background: "#fbfcfe",
+        fontWeight: 500,
+      };
+    }
+
+    const ratio = (num - min) / (max - min);
+    const alpha = 0.03 + ratio * 0.08;
+
+    return {
+      background: `linear-gradient(180deg, rgba(99, 102, 241, ${alpha}) 0%, rgba(99, 102, 241, ${alpha * 0.75}) 100%)`,
+      boxShadow: ratio > 0.55 ? "inset 0 0 0 1px rgba(99,102,241,0.08)" : "none",
+      fontWeight: ratio > 0.7 ? 600 : 500,
+      color: "#374151",
+    };
+  };
+
+  const getGrowthStyle = (value) => {
+    if (!isNumeric(value)) return {};
+
+    const num = Number(value);
+
+    if (num > 0) {
+      return {
+        background: "rgba(34, 197, 94, 0.08)",
+        color: "#166534",
+        fontWeight: 700,
+      };
+    }
+
+    if (num < 0) {
+      return {
+        background: "rgba(239, 68, 68, 0.08)",
+        color: "#b42318",
+        fontWeight: 700,
+      };
+    }
+
+    return {
+      background: "#f8fafc",
+      color: "#475467",
+      fontWeight: 600,
+    };
+  };
+
+  const getExpAchStyle = () => {
+    return {
+      background: "#fcfcfd",
+      color: "#667085",
       fontWeight: 500,
     };
-  }
-
-  const ratio = (num - min) / (max - min);
-
-  // very subtle neutral indigo/gray tint
-  const alpha = 0.03 + ratio * 0.08;
-
-  return {
-    background: `linear-gradient(180deg, rgba(99, 102, 241, ${alpha}) 0%, rgba(99, 102, 241, ${alpha * 0.75}) 100%)`,
-    boxShadow: ratio > 0.55 ? "inset 0 0 0 1px rgba(99,102,241,0.08)" : "none",
-    fontWeight: ratio > 0.7 ? 600 : 500,
-    color: "#374151",
   };
-};
 
-const getGrowthStyle = (value) => {
-  if (!isNumeric(value)) return {};
+  const getCellStyle = (value, col, rowData, columns) => {
+    if (!isNumeric(value)) return {};
 
-  const num = Number(value);
+    if (col === "G/D%") return getGrowthStyle(value);
+    if (col === "Exp.Ach") return getExpAchStyle();
 
-  if (num > 0) {
-    return {
-      background: "rgba(34, 197, 94, 0.08)",
-      color: "#166534",
-      fontWeight: 700,
-    };
-  }
-
-  if (num < 0) {
-    return {
-      background: "rgba(239, 68, 68, 0.08)",
-      color: "#b42318",
-      fontWeight: 700,
-    };
-  }
-
-  return {
-    background: "#f8fafc",
-    color: "#475467",
-    fontWeight: 600,
+    const stats = getRowScaleStats(rowData, columns);
+    return getNeutralIntensityStyle(value, stats);
   };
-};
 
-const getExpAchStyle = () => {
-  return {
-    background: "#fcfcfd",
-    color: "#667085",
-    fontWeight: 500,
+  const renderWodRow = (label, rowData, columns, rowKey) => {
+    return (
+      <tr key={rowKey}>
+        <td className="metric-title sticky-col">{label}</td>
+        {columns.map((col) => (
+          <td
+            key={col}
+            className={`wod-value-cell ${col === "G/D%" ? "is-growth" : ""} ${
+              col === "Exp.Ach" ? "is-exp" : ""
+            }`}
+            style={getCellStyle(rowData?.[col], col, rowData, columns)}
+          >
+            {formatValue(rowData?.[col])}
+          </td>
+        ))}
+      </tr>
+    );
   };
-};
 
-const getCellStyle = (value, col, rowData, columns) => {
-  if (!isNumeric(value)) return {};
+  const renderWodTablesContent = (
+    reportData = wodTables,
+    { reportType = "wod" } = {}
+  ) => {
+    if (!reportData) return null;
 
-  if (col === "G/D%") return getGrowthStyle(value);
-  if (col === "Exp.Ach") return getExpAchStyle();
+    const sellIn = reportData.sellInWOD || {};
+    const sellOut = reportData.sellOutWOD || {};
+    const columns = Object.keys(sellIn);
+    const groupedWod = tagGroupedReports[reportType] || {};
 
-  const stats = getRowScaleStats(rowData, columns);
-  return getNeutralIntensityStyle(value, stats);
-};
+    return (
+      <div className="wod-section">
+        <div className="sub-report-block">
+          <div className="sub-report-heading">WOD Summary</div>
+          <div className="report-table-wrapper">
+            <table className="report-table wod-report-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col">Metric</th>
+                  {columns.map((col) => (
+                    <th key={col}>{col}</th>
+                  ))}
+                </tr>
+              </thead>
 
-const renderWodRow = (label, rowData, columns, rowKey) => {
-  return (
-    <tr key={rowKey}>
-      <td className="metric-title sticky-col">{label}</td>
-      {columns.map((col) => (
-        <td
-          key={col}
-          className={`wod-value-cell ${col === "G/D%" ? "is-growth" : ""} ${col === "Exp.Ach" ? "is-exp" : ""}`}
-          style={getCellStyle(rowData?.[col], col, rowData, columns)}
-        >
-          {formatValue(rowData?.[col])}
-        </td>
-      ))}
-    </tr>
-  );
-};
-
-const renderWodTablesContent = (
-  reportData = wodTables,
-  { reportType = "wod" } = {}
-) => {
-  if (!reportData) return null;
-
-  const sellIn = reportData.sellInWOD || {};
-  const sellOut = reportData.sellOutWOD || {};
-  const columns = Object.keys(sellIn);
-  const groupedWod = tagGroupedReports[reportType] || {};
-
-  return (
-    <div className="wod-section">
-      <div className="sub-report-block">
-        <div className="sub-report-heading">WOD Summary</div>
-        <div className="report-table-wrapper">
-          <table className="report-table wod-report-table">
-            <thead>
-              <tr>
-                <th className="sticky-col">Metric</th>
-                {columns.map((col) => (
-                  <th key={col}>{col}</th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {renderWodRow("Sell-In WOD", sellIn, columns, "sell-in")}
-              {renderInlineTagRows(groupedWod.sellInWOD, {
-                reportType,
-                reportTitle: "Sell-In WOD",
-                metricColumns: columns,
-                firstColumnLabel: "Tag WOD",
-                sourceKey: "sellInWOD",
-                formatCell: (value, column) =>
-                  String(column).includes("%")
-                    ? formatPercent(value)
-                    : formatValue(value, false),
-              })}
-              {renderWodRow("Sell-Out WOD", sellOut, columns, "sell-out")}
-              {renderInlineTagRows(groupedWod.sellOutWOD, {
-                reportType,
-                reportTitle: "Sell-Out WOD",
-                metricColumns: columns,
-                firstColumnLabel: "Tag WOD",
-                sourceKey: "sellOutWOD",
-                formatCell: (value, column) =>
-                  String(column).includes("%")
-                    ? formatPercent(value)
-                    : formatValue(value, false),
-              })}
-            </tbody>
-          </table>
+              <tbody>
+                {renderWodRow("Sell-In WOD", sellIn, columns, "sell-in")}
+                {renderInlineTagRows(groupedWod.sellInWOD, {
+                  reportType,
+                  reportTitle: "Sell-In WOD",
+                  metricColumns: columns,
+                  firstColumnLabel: "Tag WOD",
+                  sourceKey: "sellInWOD",
+                  formatCell: (value, column) =>
+                    String(column).includes("%")
+                      ? formatPercent(value)
+                      : formatValue(value, false),
+                })}
+                {renderWodRow("Sell-Out WOD", sellOut, columns, "sell-out")}
+                {renderInlineTagRows(groupedWod.sellOutWOD, {
+                  reportType,
+                  reportTitle: "Sell-Out WOD",
+                  metricColumns: columns,
+                  firstColumnLabel: "Tag WOD",
+                  sourceKey: "sellOutWOD",
+                  formatCell: (value, column) =>
+                    String(column).includes("%")
+                      ? formatPercent(value)
+                      : formatValue(value, false),
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {reportData.sellInBreakdown?.length > 0 && (
+          <div className="sub-report-block">
+            <div className="sub-report-heading">Sell-In WOD Breakdown</div>
+            <div className="report-table-wrapper">
+              <table className="report-table wod-report-table">
+                <thead>
+                  <tr>
+                    <th className="sticky-col">Metric</th>
+                    {columns.map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {reportData.sellInBreakdown.map((row, idx) =>
+                    renderWodRow(row.label, row.data || {}, columns, `sellin-breakdown-${idx}`)
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {reportData.sellOutBreakdown?.length > 0 && (
+          <div className="sub-report-block">
+            <div className="sub-report-heading">Sell-Out WOD Breakdown</div>
+            <div className="report-table-wrapper">
+              <table className="report-table wod-report-table">
+                <thead>
+                  <tr>
+                    <th className="sticky-col">Metric</th>
+                    {columns.map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {reportData.sellOutBreakdown.map((row, idx) =>
+                    renderWodRow(row.label, row.data || {}, columns, `sellout-breakdown-${idx}`)
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
-
-      {reportData.sellInBreakdown?.length > 0 && (
-        <div className="sub-report-block">
-          <div className="sub-report-heading">Sell-In WOD Breakdown</div>
-          <div className="report-table-wrapper">
-            <table className="report-table wod-report-table">
-              <thead>
-                <tr>
-                  <th className="sticky-col">Metric</th>
-                  {columns.map((col) => (
-                    <th key={col}>{col}</th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {reportData.sellInBreakdown.map((row, idx) =>
-                  renderWodRow(row.label, row.data || {}, columns, `sellin-breakdown-${idx}`)
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {reportData.sellOutBreakdown?.length > 0 && (
-        <div className="sub-report-block">
-          <div className="sub-report-heading">Sell-Out WOD Breakdown</div>
-          <div className="report-table-wrapper">
-            <table className="report-table wod-report-table">
-              <thead>
-                <tr>
-                  <th className="sticky-col">Metric</th>
-                  {columns.map((col) => (
-                    <th key={col}>{col}</th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {reportData.sellOutBreakdown.map((row, idx) =>
-                  renderWodRow(row.label, row.data || {}, columns, `sellout-breakdown-${idx}`)
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-  // ===============================
-  // wod heatmap and wod
-  // ===============================
+    );
+  };
 
   return (
     <div className="sales-report-page">
@@ -1691,9 +1645,17 @@ const renderWodTablesContent = (
               )}
             </button>
 
-            <button type="button" onClick={fetchDashboard}>
-              Refresh
-            </button>
+              <button
+                type="button"
+                className="primary-action"
+                onClick={() => {
+                  fetchCoreReports();
+                  fetchYtdReports();
+                  fetchPriceSegmentReports();
+                }}
+              >
+                Fetch Reports
+              </button>
 
             <button
               type="button"
@@ -1869,30 +1831,30 @@ const renderWodTablesContent = (
                   ) : (
                     <div className="sales-option-grid">
                       {filteredCurrentOptions.length > 0 ? (
-                      filteredCurrentOptions.map((item) => {
-                        const isSelected = currentTabSelected.some((selected) =>
-                          isActorTab(activeFilterTab)
-                            ? selected.code === item.code
-                            : selected.value === item.value
-                        );
+                        filteredCurrentOptions.map((item) => {
+                          const isSelected = currentTabSelected.some((selected) =>
+                            isActorTab(activeFilterTab)
+                              ? selected.code === item.code
+                              : selected.value === item.value
+                          );
 
-                        return (
-                          <button
-                            type="button"
-                            key={item.code || `${activeFilterTab}-${String(item.value)}`}
-                            className={`sales-option-pill ${isSelected ? "selected" : ""}`}
-                            onClick={() => toggleSelection(activeFilterTab, item)}
-                          >
-                            <span>{item.label || item.name || item.value}</span>
-                            {isActorTab(activeFilterTab) && item.code && (
-                              <small>{item.code}</small>
-                            )}
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="sales-option-empty">No options found</div>
-                    )}
+                          return (
+                            <button
+                              type="button"
+                              key={item.code || `${activeFilterTab}-${String(item.value)}`}
+                              className={`sales-option-pill ${isSelected ? "selected" : ""}`}
+                              onClick={() => toggleSelection(activeFilterTab, item)}
+                            >
+                              <span>{item.label || item.name || item.value}</span>
+                              {isActorTab(activeFilterTab) && item.code && (
+                                <small>{item.code}</small>
+                              )}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="sales-option-empty">No options found</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2266,8 +2228,6 @@ const renderWodTablesContent = (
             </div>
           </div>
         )}
-
-
       </div>
     </div>
   );
