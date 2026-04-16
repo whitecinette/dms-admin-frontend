@@ -15,8 +15,6 @@ const DEALER_FILTER_TYPES = [
   { key: "top_outlet", label: "Top Outlet" },
 ];
 
-const PRODUCT_FILTER_TYPES = [{ key: "product_tag", label: "Product Tags" }];
-
 const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "so", "dealer"];
 const FLOW_NAME = "default_sales_flow";
 
@@ -26,21 +24,6 @@ const DETAIL_ENDPOINT_CANDIDATES = [
   "/reports/dashboard-summary-detail",
   "/reports/dashboard-summary",
 ];
-
-const TAG_GROUP_REPORT_TYPES = [
-  "activation",
-  "tertiary",
-  "secondary",
-  "wod",
-  "activation_vol_ytd",
-  "activation_vol_ytd_actual",
-  "tertiary_vol_ytd",
-  "tertiary_vol_ytd_actual",
-];
-
-/** ===============================
- *  SHIMMER / SKELETON COMPONENTS
- *  =============================== */
 
 const ShimmerBlock = ({ height = 14, width = "100%", style = {} }) => (
   <div
@@ -52,25 +35,6 @@ const ShimmerBlock = ({ height = 14, width = "100%", style = {} }) => (
       ...style,
     }}
   />
-);
-
-const BlockRow = ({ items = 4 }) => (
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: `repeat(${items}, minmax(120px, 1fr))`,
-      gap: 12,
-    }}
-  >
-    {Array.from({ length: items }).map((_, i) => (
-      <ShimmerBlock
-        key={i}
-        height={18}
-        width={`${60 + (i * 10) % 35}%`}
-        style={{ borderRadius: 10 }}
-      />
-    ))}
-  </div>
 );
 
 const SectionLoader = ({ title, tone = "blue" }) => (
@@ -170,7 +134,6 @@ const OptionShimmerGrid = ({ count = 6 }) => (
 );
 
 const isActorTab = (tabKey) => ACTOR_POSITION_KEYS.includes(tabKey);
-const isProductTagTab = (tabKey) => tabKey === "product_tag";
 
 const normalizeFilterOption = (item) => {
   if (!item) return null;
@@ -260,8 +223,6 @@ function SalesReportV2() {
     category: [],
     top_outlet: [],
   });
-  const [tagOptions, setTagOptions] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
 
   const [brand, setBrand] = useState("");
   const [segment, setSegment] = useState("");
@@ -270,7 +231,6 @@ function SalesReportV2() {
   const [activeFilterTab, setActiveFilterTab] = useState("zone");
   const [searchText, setSearchText] = useState("");
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(false);
-
 
   const [detailModal, setDetailModal] = useState({
     open: false,
@@ -302,19 +262,11 @@ function SalesReportV2() {
     []
   );
 
-  const tagFilterSnapshot = useMemo(
-    () => JSON.stringify(selectedTags),
-    [selectedTags]
-  );
-
   const actorPositionOrder = useMemo(
     () => actorPositions.map((item) => item.value).filter(Boolean),
     [actorPositions]
   );
 
-  // ===============================
-  // DATA
-  // ===============================
   const [activation, setActivation] = useState(null);
   const [tertiary, setTertiary] = useState(null);
   const [secondary, setSecondary] = useState(null);
@@ -333,9 +285,6 @@ function SalesReportV2() {
   const [tertiaryValueYtdActual, setTertiaryValueYtdActual] = useState(null);
   const [tertiaryVolYtdActual, setTertiaryVolYtdActual] = useState(null);
 
-  // ===============================
-  // LOADERS
-  // ===============================
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
   const [loadingSecondary, setLoadingSecondary] = useState(false);
@@ -359,9 +308,6 @@ function SalesReportV2() {
   const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
     useState(false);
 
-  // ===============================
-  // FORMATTERS
-  // ===============================
   const formatCompact = (num, isCurrency = false) => {
     if (num === null || num === undefined || isNaN(num)) return "-";
 
@@ -405,9 +351,6 @@ function SalesReportV2() {
     return `${Number(num).toFixed(2)}%`;
   };
 
-  // ===============================
-  // FILTER PAYLOAD HELPERS
-  // ===============================
   const buildSubordinateFilters = (
     source = selectedActorFilters,
     { upToPosition = null } = {}
@@ -453,15 +396,11 @@ function SalesReportV2() {
     return filters;
   };
 
-  // ===============================
-  // NEW DROPDOWN API
-  // ===============================
   const fetchDropdownOptions = async ({
     targetType,
     targetKey,
     subordinates = {},
     dealer = {},
-    productTags = {},
   }) => {
     try {
       const body = {
@@ -470,7 +409,7 @@ function SalesReportV2() {
         target_key: targetKey,
         subordinates,
         dealer,
-        product_tags: productTags,
+        product_tags: {},
       };
 
       const res = await axios.post(
@@ -501,22 +440,6 @@ function SalesReportV2() {
     }
   };
 
-  const fetchTagOptions = async () => {
-    const values = await fetchDropdownOptions({
-      targetType: "product_tag",
-      targetKey: "product_tag",
-      subordinates: buildSubordinateFilters(),
-      dealer: buildDealerFiltersPayload(),
-      productTags: {
-        product_tag: selectedTags.map((item) => item.value).filter(Boolean),
-      },
-    });
-
-    const normalized = values.map(normalizeFilterOption).filter(Boolean);
-    setTagOptions(normalized);
-    return normalized;
-  };
-
   const loadFilterOptionsForTab = async (tabKey) => {
     if (!tabKey) return;
 
@@ -531,20 +454,12 @@ function SalesReportV2() {
             upToPosition: tabKey,
           }),
           dealer: buildDealerFiltersPayload(),
-          productTags: {
-            product_tag: selectedTags.map((item) => item.value).filter(Boolean),
-          },
         });
 
         setActorOptionsMap((old) => ({
           ...old,
           [tabKey]: values,
         }));
-        return;
-      }
-
-      if (isProductTagTab(tabKey)) {
-        await fetchTagOptions();
         return;
       }
 
@@ -555,9 +470,6 @@ function SalesReportV2() {
         dealer: buildDealerFiltersPayload(selectedDealerFilters, {
           excludeType: tabKey,
         }),
-        productTags: {
-          product_tag: selectedTags.map((item) => item.value).filter(Boolean),
-        },
       });
 
       setFilterValues((old) => ({
@@ -569,9 +481,6 @@ function SalesReportV2() {
     }
   };
 
-  // ===============================
-  // FILTER STATE HELPERS
-  // ===============================
   const totalSelectedFiltersCount = useMemo(() => {
     const actorCount = Object.values(selectedActorFilters).reduce(
       (sum, arr) => sum + (arr?.length || 0),
@@ -581,38 +490,22 @@ function SalesReportV2() {
       (sum, arr) => sum + (arr?.length || 0),
       0
     );
-    return actorCount + dealerCount + selectedTags.length;
-  }, [selectedActorFilters, selectedDealerFilters, selectedTags.length]);
-
-  const actorFilterSnapshot = useMemo(
-    () => JSON.stringify(selectedActorFilters),
-    [selectedActorFilters]
-  );
-
-  const dealerFilterSnapshot = useMemo(
-    () => JSON.stringify(selectedDealerFilters),
-    [selectedDealerFilters]
-  );
+    return actorCount + dealerCount;
+  }, [selectedActorFilters, selectedDealerFilters]);
 
   const currentTabOptions = useMemo(() => {
     if (isActorTab(activeFilterTab)) {
       return actorOptionsMap[activeFilterTab] || [];
     }
-    if (isProductTagTab(activeFilterTab)) {
-      return tagOptions;
-    }
     return filterValues[activeFilterTab] || [];
-  }, [activeFilterTab, actorOptionsMap, filterValues, tagOptions]);
+  }, [activeFilterTab, actorOptionsMap, filterValues]);
 
   const currentTabSelected = useMemo(() => {
     if (isActorTab(activeFilterTab)) {
       return selectedActorFilters[activeFilterTab] || [];
     }
-    if (isProductTagTab(activeFilterTab)) {
-      return selectedTags;
-    }
     return selectedDealerFilters[activeFilterTab] || [];
-  }, [activeFilterTab, selectedActorFilters, selectedDealerFilters, selectedTags]);
+  }, [activeFilterTab, selectedActorFilters, selectedDealerFilters]);
 
   const filteredCurrentOptions = useMemo(() => {
     const q = searchText.trim().toLowerCase();
@@ -663,18 +556,6 @@ function SalesReportV2() {
       return;
     }
 
-    if (isProductTagTab(type)) {
-      setSelectedTags((old) => {
-        const exists = old.some((x) => x.value === item.value);
-        return exists
-          ? old.filter((x) => x.value !== item.value)
-          : [...old, normalizeFilterOption(item)];
-      });
-
-      setTagOptions([]);
-      return;
-    }
-
     const prev = selectedDealerFilters[type] || [];
     const exists = prev.some((x) => x.value === item.value);
 
@@ -702,11 +583,6 @@ function SalesReportV2() {
       return;
     }
 
-    if (isProductTagTab(type)) {
-      setSelectedTags((old) => old.filter((x) => x.value !== item.value));
-      return;
-    }
-
     setSelectedDealerFilters((old) => ({
       ...old,
       [type]: (old[type] || []).filter((x) => x.value !== item.value),
@@ -719,11 +595,6 @@ function SalesReportV2() {
         ...old,
         [activeFilterTab]: [],
       }));
-      return;
-    }
-
-    if (isProductTagTab(activeFilterTab)) {
-      setSelectedTags([]);
       return;
     }
 
@@ -740,10 +611,8 @@ function SalesReportV2() {
     setSegment("");
     setSelectedActorFilters({});
     setSelectedDealerFilters(defaultDealerFilterValues);
-    setSelectedTags([]);
     setActorOptionsMap({});
     setFilterValues(defaultDealerFilterValues);
-    setTagOptions([]);
     setSearchText("");
     setActiveFilterTab(actorPositions[0]?.value || "zone");
     setFilterPanelOpen(false);
@@ -752,8 +621,6 @@ function SalesReportV2() {
   const renderChips = (type) => {
     const selected = isActorTab(type)
       ? selectedActorFilters[type] || []
-      : isProductTagTab(type)
-      ? selectedTags
       : selectedDealerFilters[type] || [];
 
     if (!selected.length) return null;
@@ -840,6 +707,37 @@ function SalesReportV2() {
     return { columns: [], rows: [] };
   };
 
+  const getRequestBody = (report_type, extras = {}) => {
+    const body = {
+      flow_name: FLOW_NAME,
+      filters: {
+        report_type,
+        ...(brand ? { brand } : {}),
+        ...(segment ? { segment } : {}),
+      },
+      subordinate_filters: buildSubordinateFilters(),
+      dealer_filters: buildDealerFiltersPayload(),
+      ...(brand ? { brand } : {}),
+      ...(segment ? { segment } : {}),
+    };
+
+    if (startDate && endDate) {
+      body.start_date = startDate;
+      body.end_date = endDate;
+    }
+
+    const mergedFilters = {
+      ...body.filters,
+      ...(extras.filters || {}),
+    };
+
+    return {
+      ...body,
+      ...extras,
+      filters: mergedFilters,
+    };
+  };
+
   const openTagDetailModal = async ({ reportType, reportTitle, row, metricColumns = [] }) => {
     const sourceKey = row.__sourceKey || "";
 
@@ -902,246 +800,160 @@ function SalesReportV2() {
     }));
   };
 
-  // ===============================
-  // FETCH HELPERS
-  // ===============================
-  const getRequestBody = (report_type, extras = {}) => {
-    const selectedTagValues = selectedTags.map((item) => item.value).filter(Boolean);
+  const fetchCoreReports = async () => {
+    setLoadingActivation(true);
+    setLoadingTertiary(true);
+    setLoadingSecondary(true);
+    setLoadingWod(true);
+    setLoadingPriceSegment(true);
+    setLoadingPriceSegmentSplit40k(true);
 
-    const body = {
-      flow_name: FLOW_NAME,
-      filters: {
-        report_type,
-        ...(brand ? { brand } : {}),
-        ...(segment ? { segment } : {}),
-        ...(selectedTagValues.length ? { tags: selectedTagValues } : {}),
-      },
-      subordinate_filters: buildSubordinateFilters(),
-      dealer_filters: buildDealerFiltersPayload(),
-      ...(brand ? { brand } : {}),
-      ...(segment ? { segment } : {}),
-      ...(selectedTagValues.length
-        ? {
-            tags: selectedTagValues,
-            product_tags: selectedTagValues,
-          }
-        : {}),
-    };
+    try {
+      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          ...getRequestBody("batch"),
+          report_types: [
+            "activation",
+            "tertiary",
+            "secondary",
+            "wod",
+          ],
+        }),
+      });
 
-    if (startDate && endDate) {
-      body.start_date = startDate;
-      body.end_date = endDate;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Core fetch failed");
+
+      const data = result.data || {};
+
+      setActivation(data.activation || null);
+      setTertiary(data.tertiary || null);
+      setSecondary(data.secondary || null);
+      setWodTables(data.wod || null);
+
+      setTagGroupedReports((old) => ({
+        ...old,
+        ...(data.tag_grouped || {}),
+      }));
+    } catch (error) {
+      console.error("Core fetch error:", error);
+    } finally {
+      setLoadingActivation(false);
+      setLoadingTertiary(false);
+      setLoadingSecondary(false);
+      setLoadingWod(false);
     }
-
-    const mergedFilters = {
-      ...body.filters,
-      ...(extras.filters || {}),
-    };
-
-    return {
-      ...body,
-      ...extras,
-      filters: mergedFilters,
-    };
   };
 
-  const postReport = async (report_type, extras = {}) => {
-    const res = await fetch(`${backendUrl}/reports/dashboard-summary`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("authToken"),
-      },
-      body: JSON.stringify(getRequestBody(report_type, extras)),
-    });
+  const fetchYtdReports = async () => {
+    setLoadingActivationValueYtd(true);
+    setLoadingActivationVolYtd(true);
+    setLoadingTertiaryValueYtd(true);
+    setLoadingTertiaryVolYtd(true);
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Error fetching report");
-    return result;
+    setLoadingActivationValueYtdActual(true);
+    setLoadingActivationVolYtdActual(true);
+    setLoadingTertiaryValueYtdActual(true);
+    setLoadingTertiaryVolYtdActual(true);
+
+    try {
+      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          ...getRequestBody("batch"),
+          report_types: [
+            "activation_value_ytd",
+            "activation_vol_ytd",
+            "tertiary_value_ytd",
+            "tertiary_vol_ytd",
+            "activation_value_ytd_actual",
+            "activation_vol_ytd_actual",
+            "tertiary_value_ytd_actual",
+            "tertiary_vol_ytd_actual",
+          ],
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "YTD fetch failed");
+
+      const data = result.data || {};
+
+      setActivationValueYtd(data.activation_value_ytd || null);
+      setActivationVolYtd(data.activation_vol_ytd || null);
+      setTertiaryValueYtd(data.tertiary_value_ytd || null);
+      setTertiaryVolYtd(data.tertiary_vol_ytd || null);
+
+      setActivationValueYtdActual(data.activation_value_ytd_actual || null);
+      setActivationVolYtdActual(data.activation_vol_ytd_actual || null);
+      setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
+      setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
+
+      setTagGroupedReports((old) => ({
+        ...old,
+        ...(data.tag_grouped || {}),
+      }));
+    } catch (error) {
+      console.error("YTD fetch error:", error);
+    } finally {
+      setLoadingActivationValueYtd(false);
+      setLoadingActivationVolYtd(false);
+      setLoadingTertiaryValueYtd(false);
+      setLoadingTertiaryVolYtd(false);
+
+      setLoadingActivationValueYtdActual(false);
+      setLoadingActivationVolYtdActual(false);
+      setLoadingTertiaryValueYtdActual(false);
+      setLoadingTertiaryVolYtdActual(false);
+    }
   };
 
-  const postGroupedTagReport = async (report_type) => {
-    const result = await postReport(report_type, {
-      filters: {
-        group_by: "tag",
-      },
-    });
+  const fetchPriceSegmentReports = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          ...getRequestBody("batch"),
+          report_types: [
+            "price_segment",
+            "price_segment_40k",
+          ],
+        }),
+      });
 
-    return result?.[report_type] || result?.data || null;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Price segment fetch failed");
+
+      const data = result.data || {};
+
+      setPriceSegmentTables(data.price_segment || null);
+      setPriceSegmentSplit40k(data.price_segment_40k || null);
+
+      setTagGroupedReports((old) => ({
+        ...old,
+        ...(data.tag_grouped || {}),
+      }));
+    } catch (error) {
+      console.error("Price segment fetch error:", error);
+    } finally {
+      setLoadingPriceSegment(false);
+      setLoadingPriceSegmentSplit40k(false);
+    }
   };
 
-/////////////////////NEW TWO PART REPORTS /////////////////////////
-
-const fetchCoreReports = async () => {
-  setLoadingActivation(true);
-  setLoadingTertiary(true);
-  setLoadingSecondary(true);
-  setLoadingWod(true);
-  setLoadingPriceSegment(true);
-  setLoadingPriceSegmentSplit40k(true);
-
-  try {
-    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("authToken"),
-      },
-      body: JSON.stringify({
-        ...getRequestBody("batch"),
-        report_types: [
-          "activation",
-          "tertiary",
-          "secondary",
-          "wod",
-        ],
-      }),
-    });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Core fetch failed");
-
-    const data = result.data || {};
-
-    console.log("CORE BATCH DATA", data);
-    console.log("CORE TAG GROUPED", data.tag_grouped);
-    console.log("ACTIVATION TAG GROUPED", data.tag_grouped?.activation);
-    console.log("TERTIARY TAG GROUPED", data.tag_grouped?.tertiary);
-    console.log("SECONDARY TAG GROUPED", data.tag_grouped?.secondary);
-
-    setActivation(data.activation || null);
-    setTertiary(data.tertiary || null);
-    setSecondary(data.secondary || null);
-    setWodTables(data.wod || null);
-
-    setTagGroupedReports((old) => ({
-      ...old,
-      ...(data.tag_grouped || {}),
-    }));
-  } catch (error) {
-    console.error("Core fetch error:", error);
-  } finally {
-    setLoadingActivation(false);
-    setLoadingTertiary(false);
-    setLoadingSecondary(false);
-    setLoadingWod(false);
-
-  }
-};
-
-const fetchYtdReports = async () => {
-  setLoadingActivationValueYtd(true);
-  setLoadingActivationVolYtd(true);
-  setLoadingTertiaryValueYtd(true);
-  setLoadingTertiaryVolYtd(true);
-
-  setLoadingActivationValueYtdActual(true);
-  setLoadingActivationVolYtdActual(true);
-  setLoadingTertiaryValueYtdActual(true);
-  setLoadingTertiaryVolYtdActual(true);
-
-  try {
-    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("authToken"),
-      },
-      body: JSON.stringify({
-        ...getRequestBody("batch"),
-        report_types: [
-          "activation_value_ytd",
-          "activation_vol_ytd",
-          "tertiary_value_ytd",
-          "tertiary_vol_ytd",
-          "activation_value_ytd_actual",
-          "activation_vol_ytd_actual",
-          "tertiary_value_ytd_actual",
-          "tertiary_vol_ytd_actual",
-        ],
-      }),
-    });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "YTD fetch failed");
-
-    const data = result.data || {};
-
-    setActivationValueYtd(data.activation_value_ytd || null);
-    setActivationVolYtd(data.activation_vol_ytd || null);
-    setTertiaryValueYtd(data.tertiary_value_ytd || null);
-    setTertiaryVolYtd(data.tertiary_vol_ytd || null);
-
-    setActivationValueYtdActual(data.activation_value_ytd_actual || null);
-    setActivationVolYtdActual(data.activation_vol_ytd_actual || null);
-    setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
-    setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
-
-    setTagGroupedReports((old) => ({
-      ...old,
-      ...(data.tag_grouped || {}),
-    }));
-  } catch (error) {
-    console.error("YTD fetch error:", error);
-  } finally {
-    setLoadingActivationValueYtd(false);
-    setLoadingActivationVolYtd(false);
-    setLoadingTertiaryValueYtd(false);
-    setLoadingTertiaryVolYtd(false);
-
-    setLoadingActivationValueYtdActual(false);
-    setLoadingActivationVolYtdActual(false);
-    setLoadingTertiaryValueYtdActual(false);
-    setLoadingTertiaryVolYtdActual(false);
-  }
-};
-
-const fetchPriceSegmentReports = async () => {
-
-
-  try {
-    const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("authToken"),
-      },
-      body: JSON.stringify({
-        ...getRequestBody("batch"),
-        report_types: [
-          "price_segment",
-          "price_segment_40k",
-        ],
-      }),
-    });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Price segment fetch failed");
-
-    const data = result.data || {};
-
-    setPriceSegmentTables(data.price_segment || null);
-    setPriceSegmentSplit40k(data.price_segment_40k || null);
-
-    setTagGroupedReports((old) => ({
-      ...old,
-      ...(data.tag_grouped || {}),
-    }));
-  } catch (error) {
-    console.error("Price segment fetch error:", error);
-  } finally {
-    setLoadingPriceSegment(false);
-    setLoadingPriceSegmentSplit40k(false);
-  }
-};
-
-
-
-/////////////////////NEW TWO PART REPORTS /////////////////////////
-
-  // ===============================
-  // EFFECTS
-  // ===============================
   useEffect(() => {
     fetchGroupingOptions();
   }, []);
@@ -1150,7 +962,7 @@ const fetchPriceSegmentReports = async () => {
     if (!actorPositions.length) return;
 
     const actorTabSet = new Set(actorPositions.map((item) => item.value));
-    const availableStaticTabs = [...DEALER_FILTER_TYPES, ...PRODUCT_FILTER_TYPES];
+    const availableStaticTabs = [...DEALER_FILTER_TYPES];
 
     if (
       !actorTabSet.has(activeFilterTab) &&
@@ -1165,7 +977,6 @@ const fetchPriceSegmentReports = async () => {
     loadFilterOptionsForTab(activeFilterTab);
   }, [filterPanelOpen, activeFilterTab]);
 
-
   useEffect(() => {
     const onClickOutside = (event) => {
       if (filterPanelOpen && panelRef.current && !panelRef.current.contains(event.target)) {
@@ -1177,34 +988,28 @@ const fetchPriceSegmentReports = async () => {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [filterPanelOpen]);
 
-    useEffect(() => {
-      if (!actorPositions.length) return;
-      fetchCoreReports(); // fast load first
-      fetchYtdReports(); 
-      fetchPriceSegmentReports();
-    }, [actorPositions]);
+  useEffect(() => {
+    if (!actorPositions.length) return;
+    fetchCoreReports();
+    fetchYtdReports();
+    fetchPriceSegmentReports();
+  }, [actorPositions]);
 
-    useEffect(() => {
-      if (!filterPanelOpen) return;
+  useEffect(() => {
+    if (!filterPanelOpen) return;
 
-      const originalBodyOverflow = document.body.style.overflow;
-      const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
 
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
-      return () => {
-        document.body.style.overflow = originalBodyOverflow;
-        document.documentElement.style.overflow = originalHtmlOverflow;
-      };
-    }, [filterPanelOpen]);
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [filterPanelOpen]);
 
-
-
-
-  // ===============================
-  // TABLE RENDER HELPERS
-  // ===============================
   const renderInlineTagRows = (
     groupedReport,
     {
@@ -1412,11 +1217,6 @@ const fetchPriceSegmentReports = async () => {
     reportData,
     { reportType, reportTitle, renderPrimary } = {}
   ) => renderPrimary?.(reportData, { reportType, reportTitle }) || null;
-
-  // ===============================
-  // WOD TABLES CONTENT
-  // ===============================
-  const WOD_FIXED_COLUMNS = ["MTD", "LMTD", "FTD", "G/D%", "Exp.Ach"];
 
   const isNumeric = (val) => {
     return val !== null && val !== undefined && val !== "" && !Number.isNaN(Number(val));
@@ -1666,17 +1466,17 @@ const fetchPriceSegmentReports = async () => {
               )}
             </button>
 
-              <button
-                type="button"
-                className="primary-action"
-                onClick={() => {
-                  fetchCoreReports();
-                  fetchYtdReports();
-                  fetchPriceSegmentReports();
-                }}
-              >
-                Fetch Reports
-              </button>
+            <button
+              type="button"
+              className="primary-action"
+              onClick={() => {
+                fetchCoreReports();
+                fetchYtdReports();
+                fetchPriceSegmentReports();
+              }}
+            >
+              Fetch Reports
+            </button>
 
             <button
               type="button"
@@ -1738,7 +1538,6 @@ const fetchPriceSegmentReports = async () => {
             {segment && (
               <FilterChip onClick={() => setSegment("")}>Segment: {segment}</FilterChip>
             )}
-            {renderChips("product_tag")}
             {Object.keys(selectedActorFilters).map((type) => renderChips(type))}
             {Object.keys(selectedDealerFilters).map((type) => renderChips(type))}
             {!brand && !segment && totalSelectedFiltersCount === 0 && (
@@ -1799,21 +1598,6 @@ const fetchPriceSegmentReports = async () => {
                       )}
                     </button>
                   ))}
-
-                  {PRODUCT_FILTER_TYPES.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      className={activeFilterTab === item.key ? "active" : ""}
-                      onClick={() => {
-                        setActiveFilterTab(item.key);
-                        setSearchText("");
-                      }}
-                    >
-                      {item.label}
-                      {selectedTags.length > 0 && <span>{selectedTags.length}</span>}
-                    </button>
-                  ))}
                 </div>
 
                 <div className="sales-filter-content">
@@ -1821,14 +1605,11 @@ const fetchPriceSegmentReports = async () => {
                     <div>
                       <h4>
                         {actorPositions.find((p) => p.value === activeFilterTab)?.label ||
-                          PRODUCT_FILTER_TYPES.find((item) => item.key === activeFilterTab)?.label ||
                           DEALER_FILTER_TYPES.find((d) => d.key === activeFilterTab)?.label ||
                           "Filters"}
                       </h4>
                       <small>
-                        {isProductTagTab(activeFilterTab)
-                          ? "Select tags to narrow the grouped tag rows across every report."
-                          : "Actor filters drill down automatically as you move deeper in the hierarchy"}
+                        Actor filters drill down automatically as you move deeper in the hierarchy
                       </small>
                     </div>
 
