@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import config from "../../config";
 import CsvUploadModal from "./CsvUploadModal";
 import "./style.scss";
+import BeatMappingSyncModal from "./BeatMappingSyncModal";
 
 const backendUrl = config.backend_url;
 
@@ -21,6 +22,7 @@ function DataPolice() {
   const [flagsData, setFlagsData] = useState(null);
 
   const [showUserCsvModal, setShowUserCsvModal] = useState(false);
+  const [showBeatSyncModal, setShowBeatSyncModal] = useState(false);
 
   const today = new Date();
   const [downloadMonth, setDownloadMonth] = useState(today.getMonth() + 1);
@@ -614,6 +616,23 @@ function DataPolice() {
             </button>
           </div>
 
+          <div className="tool-card feature-card">
+            <div className="tool-card-top">
+              <h3>Beat Mapping Dealer Sync</h3>
+              <span className="pill">Schedule Repair</span>
+            </div>
+            <p>
+              Update dealer info inside beat mapping schedules using User master data with
+              date range, actor code, and dry run support.
+            </p>
+            <button
+              className="feature-btn"
+              onClick={() => setShowBeatSyncModal(true)}
+            >
+              Open Sync Tool
+            </button>
+          </div>
+
           <div className="tool-card">
             <div className="button-group">
               <button onClick={fetchUnmappedProducts}>Unmapped Products</button>
@@ -762,6 +781,12 @@ function DataPolice() {
         onSuccess={() => {
           setError("");
         }}
+      />
+      
+      <BeatMappingSyncModal
+        open={showBeatSyncModal}
+        onClose={() => setShowBeatSyncModal(false)}
+        backendUrl={backendUrl}
       />
 
       {showDuplicateResultModal && duplicateDryRunResult && (

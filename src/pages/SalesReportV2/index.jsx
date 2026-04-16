@@ -1003,6 +1003,12 @@ const fetchCoreReports = async () => {
 
     const data = result.data || {};
 
+    console.log("CORE BATCH DATA", data);
+    console.log("CORE TAG GROUPED", data.tag_grouped);
+    console.log("ACTIVATION TAG GROUPED", data.tag_grouped?.activation);
+    console.log("TERTIARY TAG GROUPED", data.tag_grouped?.tertiary);
+    console.log("SECONDARY TAG GROUPED", data.tag_grouped?.secondary);
+
     setActivation(data.activation || null);
     setTertiary(data.tertiary || null);
     setSecondary(data.secondary || null);
