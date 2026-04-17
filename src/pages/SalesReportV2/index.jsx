@@ -817,6 +817,7 @@ function SalesReportV2() {
         },
         body: JSON.stringify({
           ...getRequestBody("batch"),
+          include_tag_grouped: true,
           report_types: [
             "activation",
             "tertiary",
@@ -870,6 +871,7 @@ function SalesReportV2() {
         },
         body: JSON.stringify({
           ...getRequestBody("batch"),
+          include_tag_grouped: false,
           report_types: [
             "activation_value_ytd",
             "activation_vol_ytd",
@@ -927,6 +929,7 @@ function SalesReportV2() {
         },
         body: JSON.stringify({
           ...getRequestBody("batch"),
+          include_tag_grouped: false,
           report_types: [
             "price_segment",
             "price_segment_40k",
