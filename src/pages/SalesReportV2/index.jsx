@@ -308,6 +308,8 @@ function SalesReportV2() {
   const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
     useState(false);
 
+  const [loadingYtdTagRows, setLoadingYtdTagRows] = useState(false);
+
   const formatCompact = (num, isCurrency = false) => {
     if (num === null || num === undefined || isNaN(num)) return "-";
 
@@ -871,7 +873,7 @@ function SalesReportV2() {
         },
         body: JSON.stringify({
           ...getRequestBody("batch"),
-          include_tag_grouped: false,
+          include_tag_grouped: false, // 🚀 fast initial load
           report_types: [
             "activation_value_ytd",
             "activation_vol_ytd",
@@ -900,10 +902,13 @@ function SalesReportV2() {
       setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
       setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
 
-      setTagGroupedReports((old) => ({
-        ...old,
-        ...(data.tag_grouped || {}),
-      }));
+      // ❌ DO NOT merge tag_grouped here (intentionally skipped)
+
+      // ✅ Fetch tag rows AFTER base data loads
+      setTimeout(() => {
+        fetchYtdTagGroupedReports();
+      }, 0);
+
     } catch (error) {
       console.error("YTD fetch error:", error);
     } finally {
@@ -916,6 +921,44 @@ function SalesReportV2() {
       setLoadingActivationVolYtdActual(false);
       setLoadingTertiaryValueYtdActual(false);
       setLoadingTertiaryVolYtdActual(false);
+    }
+  };
+
+  const fetchYtdTagGroupedReports = async () => {
+    setLoadingYtdTagRows(true);
+
+    try {
+      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          ...getRequestBody("batch"),
+          include_tag_grouped: true,
+          report_types: [
+            "activation_vol_ytd",
+            "tertiary_vol_ytd",
+            "activation_vol_ytd_actual",
+            "tertiary_vol_ytd_actual",
+          ],
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "YTD tag fetch failed");
+
+      const data = result.data || {};
+
+      setTagGroupedReports((old) => ({
+        ...old,
+        ...(data.tag_grouped || {}),
+      }));
+    } catch (error) {
+      console.error("YTD tag-grouped fetch error:", error);
+    } finally {
+      setLoadingYtdTagRows(false);
     }
   };
 
@@ -1063,6 +1106,27 @@ function SalesReportV2() {
     });
   };
 
+  const renderTagRowShimmer = (columns = []) => {
+    return Array.from({ length: 4 }).map((_, index) => (
+      <tr key={`tag-shimmer-${index}`} className="tag-inline-row shimmer-row">
+        <td className="metric-title">
+          <div className="tag-cell">
+            <ShimmerBlock height={12} width="60px" />
+            <small>
+              <ShimmerBlock height={8} width="40px" />
+            </small>
+          </div>
+        </td>
+
+        {columns.map((col, i) => (
+          <td key={i}>
+            <ShimmerBlock height={12} width="50px" />
+          </td>
+        ))}
+      </tr>
+    ));
+  };
+
   const renderTableContent = (
     reportData,
     { reportType = "dashboard", reportTitle = "Tag Volume" } = {}
@@ -1155,6 +1219,13 @@ function SalesReportV2() {
 
     const { columns, rows } = report;
 
+    const supportsYtdTagRows = [
+      "activation_vol_ytd",
+      "activation_vol_ytd_actual",
+      "tertiary_vol_ytd",
+      "tertiary_vol_ytd_actual",
+    ].includes(reportType);
+
     return (
       <div className="report-table-wrapper">
         <table className="report-table">
@@ -1200,16 +1271,22 @@ function SalesReportV2() {
               );
             })}
 
-            {renderInlineTagRows(tagGroupedReports[reportType], {
-              reportType,
-              reportTitle,
-              metricColumns: columns.slice(1),
-              firstColumnLabel: "Tag Volume",
-              formatCell: (value, column) =>
-                String(column).includes("%")
-                  ? formatPercent(value)
-                  : formatValue(value, false),
-            })}
+            {supportsYtdTagRows
+              ? tagGroupedReports[reportType]
+                ? renderInlineTagRows(tagGroupedReports[reportType], {
+                    reportType,
+                    reportTitle,
+                    metricColumns: columns.slice(1),
+                    firstColumnLabel: "Tag Volume",
+                    formatCell: (value, column) =>
+                      String(column).includes("%")
+                        ? formatPercent(value)
+                        : formatValue(value, false),
+                  })
+                : loadingYtdTagRows
+                ? renderTagRowShimmer(columns.slice(1))
+                : null
+              : null}
           </tbody>
         </table>
       </div>
