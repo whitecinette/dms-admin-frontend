@@ -42,6 +42,7 @@ import { RiShieldCheckLine } from "react-icons/ri";
 import { RiRefreshLine, RiDownloadCloud2Line, RiRepeatLine, RiDatabase2Line } from "react-icons/ri";
 import { LuTrophy, LuPackageSearch, LuChartColumnIncreasing } from "react-icons/lu";
 import { MdDevices } from "react-icons/md";
+import { PiTreeStructureFill } from "react-icons/pi";
 
 
 /** Helper: subtle professional colors for sub-item icons */
@@ -120,6 +121,8 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
 { name: "Top Selling", to: "/self/top-selling", icon: <LuTrophy size={20} /> },
 { name: "Extraction", to: "/extraction", icon: <LuPackageSearch size={20} /> },
 { name: "Extraction Status", to: "/extraction-status-overview", icon: <LuChartColumnIncreasing size={20} /> },
+
+
   ...(role === "super_admin"
     ? [
         {
@@ -130,12 +133,22 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       ]
     : []),
 
-      ...(role === "super_admin"
+  ...(role === "super_admin"
     ? [
         {
           name: "User Directory",
           to: "/user-directory",
-          icon: <MdDevices size={20} />,
+          icon: <MdManageAccounts size={20} />,
+        },
+      ]
+    : []),
+
+  ...(role === "super_admin"
+    ? [
+        {
+          name: "Hierarchy Manager",
+          to: "/hierarchy-manager",
+          icon: <PiTreeStructureFill size={20} />,
         },
       ]
     : []),
