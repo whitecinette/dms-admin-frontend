@@ -42,6 +42,12 @@
   cursor: pointer;
 }
 
+.tss-btn.small {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
 .tss-btn.primary {
   color: #fff;
   background: linear-gradient(90deg, #3563ff, #5b5ff6);
@@ -76,6 +82,12 @@
   color: #fff;
 }
 
+.tss-inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .tss-filter-shell {
   background: #ffffff;
   border: 1px solid #e7ebf3;
@@ -88,6 +100,11 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 14px;
+}
+
+.tss-filter-grid-secondary {
+  margin-top: 12px;
+  grid-template-columns: 1fr 1fr;
 }
 
 .tss-field {
@@ -259,7 +276,7 @@
 .tss-clean-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1550px;
+  min-width: 1650px;
 }
 
 .tss-clean-table thead th {
@@ -290,6 +307,72 @@
   background: #fafcff;
 }
 
+.tss-group-row {
+  background: #f6f8ff;
+}
+
+.tss-group-row td {
+  border-bottom-color: #e5ebff;
+}
+
+.tss-group-name {
+  font-weight: 700;
+  color: #46527a;
+}
+
+.tss-child-row td {
+  background: #ffffff;
+}
+
+.tss-child-code {
+  position: relative;
+  padding-left: 34px !important;
+}
+
+.tss-child-connector {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: #c8d3f0;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.tss-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: #1f2a44;
+  font-weight: 800;
+}
+
+.tss-caret {
+  display: inline-block;
+  transition: transform 0.18s ease;
+  color: #5a6cf3;
+}
+
+.tss-caret.open {
+  transform: rotate(90deg);
+}
+
+.tss-variant-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e8eeff;
+  color: #5267e8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .tss-segment-pill {
   display: inline-flex;
   align-items: center;
@@ -314,7 +397,7 @@
 }
 
 .tss-name-cell {
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .tss-row-tags {
@@ -370,6 +453,10 @@
 
   .tss-filter-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tss-filter-grid-secondary {
+    grid-template-columns: 1fr;
   }
 }
 
