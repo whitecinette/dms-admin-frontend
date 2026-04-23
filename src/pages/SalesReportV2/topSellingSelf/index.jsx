@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import config from "../../../config";
 import "./style.scss";
+import { FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -191,6 +192,53 @@ const KpiCard = ({ label, value, subtle }) => {
   );
 };
 
+const DEALER_FILTER_TYPES = [
+  { key: "zone", label: "Zone" },
+  { key: "district", label: "District" },
+  { key: "town", label: "Town" },
+  { key: "category", label: "Category" },
+  { key: "top_outlet", label: "Top Outlet" },
+];
+
+const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "so", "dealer"];
+const FLOW_NAME = "default_sales_flow";
+
+const isActorTab = (tabKey) => ACTOR_POSITION_KEYS.includes(tabKey);
+
+const normalizeFilterOption = (item) => {
+  if (!item) return null;
+  if (typeof item === "string") return { label: item, value: item };
+
+  const value = item.value ?? item.tag ?? item.name ?? item.label ?? item.code;
+  if (!value) return null;
+
+  return {
+    ...item,
+    label: item.label || item.name || item.tag || item.value || item.code,
+    value,
+  };
+};
+
+const FilterChip = ({ children, onClick }) => (
+  <button type="button" className="sales-filter-chip" onClick={onClick}>
+    <span>{children}</span>
+    <FaTimes />
+  </button>
+);
+
+const OptionShimmerGrid = ({ count = 6 }) => (
+  <div className="sales-option-grid sales-option-grid--loading">
+    {Array.from({ length: count }).map((_, index) => (
+      <div key={index} className="sales-option-pill sales-option-pill--shimmer">
+        <div className="sales-option-pill__shimmer-line sales-option-pill__shimmer-line--title" />
+        <div className="sales-option-pill__shimmer-line sales-option-pill__shimmer-line--meta" />
+      </div>
+    ))}
+  </div>
+);
+
+
+
 export default function TopSellingSelf() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
@@ -210,6 +258,399 @@ export default function TopSellingSelf() {
   const [tagOptions, setTagOptions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
+
+
+  const [actorPositions, setActorPositions] = useState([]);
+
+  const [filterValues, setFilterValues] = useState({
+    zone: [],
+    district: [],
+    town: [],
+    category: [],
+    top_outlet: [],
+  });
+
+  const [actorOptionsMap, setActorOptionsMap] = useState({});
+  const [selectedActorFilters, setSelectedActorFilters] = useState({});
+  const [selectedDealerFilters, setSelectedDealerFilters] = useState({
+    zone: [],
+    district: [],
+    town: [],
+    category: [],
+    top_outlet: [],
+  });
+
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState("zone");
+  const [searchText, setSearchText] = useState("");
+  const [loadingFilterOptions, setLoadingFilterOptions] = useState(false);
+
+  const defaultDealerFilterValues = useMemo(
+    () => ({
+      zone: [],
+      district: [],
+      town: [],
+      category: [],
+      top_outlet: [],
+    }),
+    []
+  );
+
+  const panelRef = useRef(null);
+
+  const authHeaders = useMemo(
+    () => ({
+      Authorization: localStorage.getItem("authToken"),
+    }),
+    []
+  );
+
+  const actorPositionOrder = useMemo(
+    () => actorPositions.map((item) => item.value).filter(Boolean),
+    [actorPositions]
+  );
+
+
+
+  const buildSubordinateFilters = (
+    source = selectedActorFilters,
+    { upToPosition = null } = {}
+  ) => {
+    const filters = {};
+    const orderedPositions = actorPositionOrder.length
+      ? actorPositionOrder
+      : ACTOR_POSITION_KEYS;
+
+    for (const position of orderedPositions) {
+      if (upToPosition && position === upToPosition) break;
+
+      const codes = (source[position] || [])
+        .map((item) => item.code)
+        .filter(Boolean);
+
+      if (codes.length) {
+        filters[position] = codes;
+      }
+    }
+
+    return filters;
+  };
+
+  const buildDealerFiltersPayload = (
+    source = selectedDealerFilters,
+    { excludeType = null } = {}
+  ) => {
+    const filters = {};
+
+    Object.entries(source).forEach(([key, selected]) => {
+      if (key === excludeType || !selected?.length) return;
+
+      const values = selected
+        .map((item) => item.value)
+        .filter((value) => value !== undefined && value !== null && value !== "");
+
+      if (values.length) {
+        filters[key] = values;
+      }
+    });
+
+    return filters;
+  };
+
+
+  const fetchDropdownOptions = async ({
+  targetType,
+  targetKey,
+  subordinates = {},
+  dealer = {},
+}) => {
+  try {
+    const body = {
+      flow_name: FLOW_NAME,
+      target_type: targetType,
+      target_key: targetKey,
+      subordinates,
+      dealer,
+      product_tags: {},
+    };
+
+    const res = await axios.post(
+      `${backendUrl}/filters/dropdown-options`,
+      body,
+      { headers: authHeaders }
+    );
+
+    return (res.data?.values || []).map(normalizeFilterOption).filter(Boolean);
+  } catch (error) {
+    console.error(
+      `Error fetching dropdown options for ${targetType}/${targetKey}:`,
+      error
+    );
+    return [];
+  }
+};
+
+  const fetchGroupingOptions = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/grouping-options`, {
+        headers: authHeaders,
+      });
+
+      setActorPositions(res.data.actorPositions || []);
+    } catch (error) {
+      console.error("Error fetching sales filter metadata:", error);
+    }
+  };
+
+  const loadFilterOptionsForTab = async (tabKey) => {
+    if (!tabKey) return;
+
+    setLoadingFilterOptions(true);
+
+    try {
+      if (isActorTab(tabKey)) {
+        const values = await fetchDropdownOptions({
+          targetType: "subordinate",
+          targetKey: tabKey,
+          subordinates: buildSubordinateFilters(selectedActorFilters, {
+            upToPosition: tabKey,
+          }),
+          dealer: buildDealerFiltersPayload(),
+        });
+
+        setActorOptionsMap((old) => ({
+          ...old,
+          [tabKey]: values,
+        }));
+        return;
+      }
+
+      const values = await fetchDropdownOptions({
+        targetType: "dealer",
+        targetKey: tabKey,
+        subordinates: buildSubordinateFilters(),
+        dealer: buildDealerFiltersPayload(selectedDealerFilters, {
+          excludeType: tabKey,
+        }),
+      });
+
+      setFilterValues((old) => ({
+        ...old,
+        [tabKey]: values,
+      }));
+    } finally {
+      setLoadingFilterOptions(false);
+    }
+  };
+
+
+  const totalSelectedFiltersCount = useMemo(() => {
+    const actorCount = Object.values(selectedActorFilters).reduce(
+      (sum, arr) => sum + (arr?.length || 0),
+      0
+    );
+    const dealerCount = Object.values(selectedDealerFilters).reduce(
+      (sum, arr) => sum + (arr?.length || 0),
+      0
+    );
+    return actorCount + dealerCount;
+  }, [selectedActorFilters, selectedDealerFilters]);
+
+  const currentTabOptions = useMemo(() => {
+    if (isActorTab(activeFilterTab)) {
+      return actorOptionsMap[activeFilterTab] || [];
+    }
+    return filterValues[activeFilterTab] || [];
+  }, [activeFilterTab, actorOptionsMap, filterValues]);
+
+  const currentTabSelected = useMemo(() => {
+    if (isActorTab(activeFilterTab)) {
+      return selectedActorFilters[activeFilterTab] || [];
+    }
+    return selectedDealerFilters[activeFilterTab] || [];
+  }, [activeFilterTab, selectedActorFilters, selectedDealerFilters]);
+
+  const filteredCurrentOptions = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return currentTabOptions;
+
+    return currentTabOptions.filter((item) => {
+      const raw =
+        `${item.label || ""} ${item.name || ""} ${item.code || ""} ${item.value || ""}`.toLowerCase();
+      return raw.includes(q);
+    });
+  }, [currentTabOptions, searchText]);
+
+
+const toggleSelection = (type, item) => {
+  if (isActorTab(type)) {
+    const orderedPositions = actorPositionOrder.length
+      ? actorPositionOrder
+      : ACTOR_POSITION_KEYS;
+    const positionIndex = orderedPositions.indexOf(type);
+
+    setSelectedActorFilters((old) => {
+      const prev = old[type] || [];
+      const exists = prev.some((x) => x.code === item.code);
+
+      const next = {
+        ...old,
+        [type]: exists ? prev.filter((x) => x.code !== item.code) : [...prev, item],
+      };
+
+      if (positionIndex !== -1) {
+        orderedPositions.slice(positionIndex + 1).forEach((position) => {
+          next[position] = [];
+        });
+      }
+
+      return next;
+    });
+
+    setActorOptionsMap((old) => {
+      const next = { ...old };
+      if (positionIndex !== -1) {
+        orderedPositions.slice(positionIndex + 1).forEach((position) => {
+          delete next[position];
+        });
+      }
+      return next;
+    });
+
+    return;
+  }
+
+  const prev = selectedDealerFilters[type] || [];
+  const exists = prev.some((x) => x.value === item.value);
+
+  setSelectedDealerFilters((old) => ({
+    ...old,
+    [type]:
+      type === "top_outlet"
+        ? exists
+          ? []
+          : [item]
+        : exists
+        ? prev.filter((x) => x.value !== item.value)
+        : [...prev, item],
+  }));
+
+  setFilterValues(defaultDealerFilterValues);
+};
+
+  const removeSelection = (type, item) => {
+    if (isActorTab(type)) {
+      setSelectedActorFilters((old) => ({
+        ...old,
+        [type]: (old[type] || []).filter((x) => x.code !== item.code),
+      }));
+      return;
+    }
+
+    setSelectedDealerFilters((old) => ({
+      ...old,
+      [type]: (old[type] || []).filter((x) => x.value !== item.value),
+    }));
+  };
+
+  const clearCurrentTab = () => {
+    if (isActorTab(activeFilterTab)) {
+      setSelectedActorFilters((old) => ({
+        ...old,
+        [activeFilterTab]: [],
+      }));
+      return;
+    }
+
+    setSelectedDealerFilters((old) => ({
+      ...old,
+      [activeFilterTab]: [],
+    }));
+  };
+
+  const resetAllFilters = () => {
+    setSelectedActorFilters({});
+    setSelectedDealerFilters(defaultDealerFilterValues);
+    setActorOptionsMap({});
+    setFilterValues(defaultDealerFilterValues);
+    setSearchText("");
+    setActiveFilterTab(actorPositions[0]?.value || "zone");
+    setFilterPanelOpen(false);
+  };
+
+
+  const renderChips = (type) => {
+    const selected = isActorTab(type)
+      ? selectedActorFilters[type] || []
+      : selectedDealerFilters[type] || [];
+
+    if (!selected.length) return null;
+
+    return (
+      <div className="sales-filter-chip-list">
+        {selected.map((item) => (
+          <FilterChip
+            key={item.code || item.value}
+            onClick={() => removeSelection(type, item)}
+          >
+            {item.label || item.name || item.value}
+          </FilterChip>
+        ))}
+      </div>
+    );
+  };
+
+
+  useEffect(() => {
+    fetchGroupingOptions();
+  }, []);
+
+  useEffect(() => {
+    if (!actorPositions.length) return;
+
+    const actorTabSet = new Set(actorPositions.map((item) => item.value));
+    const availableStaticTabs = [...DEALER_FILTER_TYPES];
+
+    if (
+      !actorTabSet.has(activeFilterTab) &&
+      !availableStaticTabs.some((item) => item.key === activeFilterTab)
+    ) {
+      setActiveFilterTab(actorPositions[0]?.value || "zone");
+    }
+  }, [actorPositions, activeFilterTab]);
+
+  useEffect(() => {
+    if (!filterPanelOpen || !activeFilterTab) return;
+    loadFilterOptionsForTab(activeFilterTab);
+  }, [filterPanelOpen, activeFilterTab]);
+
+  useEffect(() => {
+    const onClickOutside = (event) => {
+      if (filterPanelOpen && panelRef.current && !panelRef.current.contains(event.target)) {
+        setFilterPanelOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [filterPanelOpen]);
+
+  useEffect(() => {
+    if (!filterPanelOpen) return;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [filterPanelOpen]);
+
+
 
   const [metaInfo, setMetaInfo] = useState({
     usedDefaultDateRange: true,
@@ -260,12 +701,27 @@ export default function TopSellingSelf() {
       setIsLoading(true);
       setErrorText("");
 
-      const res = await axios.get(buildUrl(), {
-        headers: {
-          ...getAuthHeader(),
-          "Content-Type": "application/json",
-        },
-      });
+      const payload = {
+        startDate: startDate ? toInputDate(startDate) : undefined,
+        endDate: endDate ? toInputDate(endDate) : undefined,
+        productCategory: selectedCategory || undefined,
+        tags: selectedTags,
+        groupBy,
+        flow_name: FLOW_NAME,
+        subordinate_filters: buildSubordinateFilters(),
+        dealer_filters: buildDealerFiltersPayload(),
+      };
+
+      const res = await axios.post(
+        `${backendUrl}/other-reports/samsung/top-selling-products`,
+        payload,
+        {
+          headers: {
+            ...getAuthHeader(),
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const rawMap = normalizeSegmentMap(res.data);
 
@@ -277,8 +733,12 @@ export default function TopSellingSelf() {
 
       setSegmentMap(cleaned);
       setApiSummary(res.data?.summary || null);
-      setCategoryOptions(Array.isArray(res.data?.filters?.categories) ? res.data.filters.categories : []);
-      setTagOptions(Array.isArray(res.data?.filters?.tags) ? res.data.filters.tags : []);
+      setCategoryOptions(
+        Array.isArray(res.data?.filters?.categories) ? res.data.filters.categories : []
+      );
+      setTagOptions(
+        Array.isArray(res.data?.filters?.tags) ? res.data.filters.tags : []
+      );
       setMetaInfo({
         usedDefaultDateRange: Boolean(res.data?.meta?.usedDefaultDateRange),
         ftdDate: res.data?.meta?.ftdDate || "",
@@ -302,7 +762,9 @@ export default function TopSellingSelf() {
       console.error("Top selling products fetch failed:", e);
       setSegmentMap({});
       setApiSummary(null);
-      setErrorText(e?.response?.data?.message || "Failed to fetch top selling products report");
+      setErrorText(
+        e?.response?.data?.message || "Failed to fetch top selling products report"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -497,9 +959,30 @@ export default function TopSellingSelf() {
             </button>
           </div>
 
+          <div className="controls">
+            <button type="button" className="ghost-action" onClick={resetAllFilters}>
+              <FaSyncAlt />
+              Reset
+            </button>
+
+            <button
+              type="button"
+              className="primary-action"
+              onClick={() => setFilterPanelOpen((prev) => !prev)}
+            >
+              <FaFilter />
+              Filters
+              {totalSelectedFiltersCount > 0 && (
+                <span className="filter-badge">{totalSelectedFiltersCount}</span>
+              )}
+            </button>
+          </div>
+
           <button className="tss-btn primary" type="button" onClick={fetchReport}>
             {isLoading ? "Refreshing..." : "Apply"}
           </button>
+
+
         </div>
       </div>
 
@@ -603,6 +1086,18 @@ export default function TopSellingSelf() {
             {hasManualDate
               ? `Custom range selected. ${ftdColumnLabel} is based on end date${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}.`
               : `No date selected. Backend is using current month till today, and ${ftdColumnLabel} is based on yesterday${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}.`}
+          </div>
+        </div>
+
+
+        <div className="sales-active-filters">
+          <div className="sales-active-filters__title">Active Filters</div>
+          <div className="sales-active-filters__content">
+            {Object.keys(selectedActorFilters).map((type) => renderChips(type))}
+            {Object.keys(selectedDealerFilters).map((type) => renderChips(type))}
+            {totalSelectedFiltersCount === 0 && (
+              <div className="sales-active-filters__empty">No extra filters selected</div>
+            )}
           </div>
         </div>
 
@@ -817,6 +1312,8 @@ export default function TopSellingSelf() {
                         ))
                       : [];
 
+
+
                     return [parentRow, ...childRows];
                   })
                 )}
@@ -827,6 +1324,125 @@ export default function TopSellingSelf() {
           <div className="tss-empty-state">No data found for selected filters</div>
         )}
       </div>
+
+        {filterPanelOpen && (
+          <div className="sales-filter-overlay">
+            <div className="sales-filter-panel" ref={panelRef}>
+              <div className="sales-filter-panel__header">
+                <div>
+                  <h3>Advanced Filters</h3>
+                  <p>Actor and dealer filters work together across this report.</p>
+                </div>
+                <button
+                  type="button"
+                  className="sales-filter-panel__icon"
+                  onClick={() => setFilterPanelOpen(false)}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="sales-filter-panel__body">
+                <div className="sales-filter-sidebar">
+                  {actorPositions.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      className={activeFilterTab === item.value ? "active" : ""}
+                      onClick={() => {
+                        setActiveFilterTab(item.value);
+                        setSearchText("");
+                      }}
+                    >
+                      {item.label}
+                      {(selectedActorFilters[item.value] || []).length > 0 && (
+                        <span>{(selectedActorFilters[item.value] || []).length}</span>
+                      )}
+                    </button>
+                  ))}
+
+                  {DEALER_FILTER_TYPES.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={activeFilterTab === item.key ? "active" : ""}
+                      onClick={() => {
+                        setActiveFilterTab(item.key);
+                        setSearchText("");
+                      }}
+                    >
+                      {item.label}
+                      {(selectedDealerFilters[item.key] || []).length > 0 && (
+                        <span>{(selectedDealerFilters[item.key] || []).length}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="sales-filter-content">
+                  <div className="sales-filter-content__top">
+                    <div>
+                      <h4>
+                        {actorPositions.find((p) => p.value === activeFilterTab)?.label ||
+                          DEALER_FILTER_TYPES.find((d) => d.key === activeFilterTab)?.label ||
+                          "Filters"}
+                      </h4>
+                      <small>
+                        Actor filters drill down automatically as you move deeper in the hierarchy
+                      </small>
+                    </div>
+
+                    <div className="sales-filter-content__actions">
+                      <input
+                        type="text"
+                        placeholder="Search name, code or value"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                      />
+                      <button type="button" className="ghost-action" onClick={clearCurrentTab}>
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  {renderChips(activeFilterTab)}
+
+                  {loadingFilterOptions ? (
+                    <OptionShimmerGrid />
+                  ) : (
+                    <div className="sales-option-grid">
+                      {filteredCurrentOptions.length > 0 ? (
+                        filteredCurrentOptions.map((item) => {
+                          const isSelected = currentTabSelected.some((selected) =>
+                            isActorTab(activeFilterTab)
+                              ? selected.code === item.code
+                              : selected.value === item.value
+                          );
+
+                          return (
+                            <button
+                              type="button"
+                              key={item.code || `${activeFilterTab}-${String(item.value)}`}
+                              className={`sales-option-pill ${isSelected ? "selected" : ""}`}
+                              onClick={() => toggleSelection(activeFilterTab, item)}
+                            >
+                              <span>{item.label || item.name || item.value}</span>
+                              {isActorTab(activeFilterTab) && item.code && (
+                                <small>{item.code}</small>
+                              )}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="sales-option-empty">No options found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
