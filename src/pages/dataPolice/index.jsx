@@ -3,6 +3,7 @@ import config from "../../config";
 import CsvUploadModal from "./CsvUploadModal";
 import "./style.scss";
 import BeatMappingSyncModal from "./BeatMappingSyncModal";
+import SalesSnapshotRecalcModal from "./SalesSnapshotRecalcModal";
 
 const backendUrl = config.backend_url;
 
@@ -41,6 +42,8 @@ function DataPolice() {
 
   const [isRecalculatingSegments, setIsRecalculatingSegments] = useState(false);
   const [segmentRecalcResult, setSegmentRecalcResult] = useState(null);
+
+  const [showSalesSnapshotModal, setShowSalesSnapshotModal] = useState(false);
 
 
   const monthOptions = [
@@ -640,6 +643,23 @@ function DataPolice() {
               <button onClick={fetchSalesReportFlags}>Sales Report Flags</button>
             </div>
           </div>
+
+          <div className="tool-card feature-card">
+            <div className="tool-card-top">
+              <h3>Sales Snapshot Recalculation</h3>
+              <span className="pill">Month-wise</span>
+            </div>
+            <p>
+              Recalculate unit price and segment snapshots for Activation, Tertiary, and
+              Secondary for a selected month. Includes dry run preview before applying.
+            </p>
+            <button
+              className="feature-btn"
+              onClick={() => setShowSalesSnapshotModal(true)}
+            >
+              Open Snapshot Tool
+            </button>
+          </div>
         </div>
 
         <div className="tool-card feature-card">
@@ -787,6 +807,16 @@ function DataPolice() {
         open={showBeatSyncModal}
         onClose={() => setShowBeatSyncModal(false)}
         backendUrl={backendUrl}
+      />
+
+      <SalesSnapshotRecalcModal
+        open={showSalesSnapshotModal}
+        onClose={() => setShowSalesSnapshotModal(false)}
+        backendUrl={backendUrl}
+        monthOptions={monthOptions}
+        yearOptions={yearOptions}
+        initialMonth={today.getMonth() + 1}
+        initialYear={today.getFullYear()}
       />
 
       {showDuplicateResultModal && duplicateDryRunResult && (
