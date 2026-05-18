@@ -1,376 +1,506 @@
-import { VscGraphLine } from "react-icons/vsc";
-import { FaFileAlt } from "react-icons/fa";
-import { IoPricetagSharp } from "react-icons/io5";
-import { TiUserAdd } from "react-icons/ti";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import {
+  ResponsiveContainer,
   LineChart,
   Line,
   XAxis,
   YAxis,
   Tooltip,
   Legend,
-  ResponsiveContainer,
+  CartesianGrid,
   BarChart,
   Bar,
-  AreaChart,
-  Area,
 } from "recharts";
-import { MdPhoneIphone } from "react-icons/md";
-
+import ReactECharts from "echarts-for-react";
+import config from "../../config.js";
+import { useFilters } from "../../context/filterContext.js";
 import "./style.scss";
-import SalesGrowth from "../SalesData/salesGrowth";
+
+const backendUrl = config.backend_url;
+
+const TREND_OPTIONS = [
+  { label: "Daily", value: "daily" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
+  { label: "Yearly", value: "yearly" },
+];
+
+const EXTRACTION_TREND_KEY = {
+  daily: "extractionBrandTrendDaily",
+  weekly: "extractionBrandTrendWeekly",
+  monthly: "extractionBrandTrendMonthly",
+  yearly: "extractionBrandTrendMonthly",
+};
+
+const numberFormatter = new Intl.NumberFormat("en-IN", {
+  maximumFractionDigits: 2,
+});
+
+function toDateInputValue(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatCompact(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "0";
+
+  if (Math.abs(num) >= 10000000) return `${(num / 10000000).toFixed(2)} Cr`;
+  if (Math.abs(num) >= 100000) return `${(num / 100000).toFixed(2)} L`;
+  if (Math.abs(num) >= 1000) return `${(num / 1000).toFixed(1)} K`;
+
+  return numberFormatter.format(num);
+}
+
+function formatPct(value) {
+  return `${Number(value || 0).toFixed(2)}%`;
+}
+
+function formatPeriod(period, trend) {
+  if (!period) return "-";
+
+  if (trend === "weekly") {
+    return period.replace("W", " W");
+  }
+
+  if (trend === "monthly") {
+    const [year, month] = String(period).split("-");
+    if (!year || !month) return period;
+    const dt = new Date(Number(year), Number(month) - 1, 1);
+    return dt.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+  }
+
+  if (trend === "daily") {
+    const dt = new Date(period);
+    if (Number.isNaN(dt.getTime())) return period;
+    return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  }
+
+  return String(period);
+}
+
 function Dashboard() {
-  const extractionData = [
-    {
-      month: "Jan",
-      iPhone: 320,
-      Samsung: 290,
-      OnePlus: 340,
-      Realme: 270,
-      "Google Pixel": 180,
-      Motorola: 200,
-      Oppo: 310,
-      Vivo: 290,
-      Xiaomi: 330,
-    },
-    {
-      month: "Feb",
-      iPhone: 300,
-      Samsung: 260,
-      OnePlus: 330,
-      Realme: 280,
-      "Google Pixel": 190,
-      Motorola: 210,
-      Oppo: 300,
-      Vivo: 280,
-      Xiaomi: 320,
-    },
-    {
-      month: "Mar",
-      iPhone: 280,
-      Samsung: 230,
-      OnePlus: 310,
-      Realme: 290,
-      "Google Pixel": 200,
-      Motorola: 220,
-      Oppo: 290,
-      Vivo: 270,
-      Xiaomi: 310,
-    },
-    {
-      month: "Apr",
-      iPhone: 260,
-      Samsung: 220,
-      OnePlus: 290,
-      Realme: 300,
-      "Google Pixel": 210,
-      Motorola: 230,
-      Oppo: 280,
-      Vivo: 260,
-      Xiaomi: 300,
-    },
-    {
-      month: "May",
-      iPhone: 250,
-      Samsung: 300,
-      OnePlus: 270,
-      Realme: 310,
-      "Google Pixel": 220,
-      Motorola: 240,
-      Oppo: 270,
-      Vivo: 250,
-      Xiaomi: 290,
-    },
-    {
-      month: "Jun",
-      iPhone: 290,
-      Samsung: 350,
-      OnePlus: 310,
-      Realme: 320,
-      "Google Pixel": 230,
-      Motorola: 250,
-      Oppo: 260,
-      Vivo: 240,
-      Xiaomi: 280,
-    },
-    {
-      month: "Jul",
-      iPhone: 320,
-      Samsung: 400,
-      OnePlus: 350,
-      Realme: 330,
-      "Google Pixel": 240,
-      Motorola: 260,
-      Oppo: 250,
-      Vivo: 230,
-      Xiaomi: 270,
-    },
-    {
-      month: "Aug",
-      iPhone: 330,
-      Samsung: 370,
-      OnePlus: 360,
-      Realme: 340,
-      "Google Pixel": 250,
-      Motorola: 270,
-      Oppo: 240,
-      Vivo: 220,
-      Xiaomi: 260,
-    },
-    {
-      month: "Sep",
-      iPhone: 310,
-      Samsung: 340,
-      OnePlus: 330,
-      Realme: 350,
-      "Google Pixel": 260,
-      Motorola: 280,
-      Oppo: 230,
-      Vivo: 210,
-      Xiaomi: 250,
-    },
-    {
-      month: "Oct",
-      iPhone: 290,
-      Samsung: 310,
-      OnePlus: 300,
-      Realme: 360,
-      "Google Pixel": 270,
-      Motorola: 290,
-      Oppo: 220,
-      Vivo: 200,
-      Xiaomi: 240,
-    },
-    {
-      month: "Nov",
-      iPhone: 270,
-      Samsung: 280,
-      OnePlus: 290,
-      Realme: 370,
-      "Google Pixel": 280,
-      Motorola: 300,
-      Oppo: 210,
-      Vivo: 190,
-      Xiaomi: 230,
-    },
-    {
-      month: "Dec",
-      iPhone: 250,
-      Samsung: 260,
-      OnePlus: 270,
-      Realme: 380,
-      "Google Pixel": 290,
-      Motorola: 310,
-      Oppo: 200,
-      Vivo: 180,
-      Xiaomi: 220,
-    },
-  ];
-  const lastEntry = extractionData.at(-1);
+  const {
+    selectedValue,
+    setSelectedValue,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+  } = useFilters();
 
-  const color = ["red", "orange", "green", "purple"];
-  const products = [
-    { id: "01", name: "Himanshu Sharma", popularity: 45 },
-    { id: "02", name: "Rahul Sharma", popularity: 29 },
-    { id: "03", name: "Anil Saini", popularity: 18 },
-    { id: "04", name: "Sunil Saini", popularity: 25 },
-  ];
-  
+  const [trend, setTrend] = useState("monthly");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [overview, setOverview] = useState(null);
+
+  useEffect(() => {
+    if (!startDate || !endDate) {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(firstDay);
+      setEndDate(now);
+    }
+  }, [startDate, endDate, setStartDate, setEndDate]);
+
+  const fetchOverview = useCallback(async () => {
+    if (!startDate || !endDate) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await axios.post(
+        `${backendUrl}/main-dashboard/overview`,
+        {
+          startDate: toDateInputValue(startDate),
+          endDate: toDateInputValue(endDate),
+          metric: selectedValue,
+          flow_name: "default_sales_flow",
+          subordinate_filters: {},
+          dealer_filters: {},
+          attendance_filters: {},
+          coverage_filters: {},
+          recent_days: 7,
+        },
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+
+      setOverview(res.data || null);
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || "Failed to load dashboard overview";
+      setError(message);
+      setOverview(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, selectedValue]);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
+
+  const salesKpis = overview?.kpis?.sales || {};
+  const coverageKpis = overview?.kpis?.coverage || {};
+  const extractionKpis = overview?.kpis?.extraction || {};
+  const attendanceKpis = overview?.kpis?.attendance || {};
+
+  const salesTrendData = useMemo(() => {
+    const rows = overview?.charts?.salesTrend?.[trend] || [];
+    return rows.map((row) => ({
+      ...row,
+      label: formatPeriod(row.period, trend),
+    }));
+  }, [overview, trend]);
+
+  const topBrands = useMemo(() => {
+    const rows = overview?.charts?.extractionBrandShare || [];
+    return rows.slice(0, 4).map((item) => item.brand);
+  }, [overview]);
+
+  const extractionTrendData = useMemo(() => {
+    const trendKey = EXTRACTION_TREND_KEY[trend] || "extractionBrandTrendMonthly";
+    const rows = overview?.charts?.[trendKey] || [];
+    return rows.map((row) => ({
+      ...row,
+      label: formatPeriod(row.period, trend),
+    }));
+  }, [overview, trend]);
+
+  const coverageTrendData = useMemo(() => {
+    const rows = overview?.charts?.coverageTrend || [];
+    return rows.map((row) => ({
+      ...row,
+      label: formatPeriod(row.period, "daily"),
+    }));
+  }, [overview]);
+
+  const attendanceTrendData = useMemo(() => {
+    const rows = overview?.charts?.attendanceDailyTrend || [];
+    return rows.map((row) => ({
+      ...row,
+      label: formatPeriod(row.period, "daily"),
+    }));
+  }, [overview]);
+
+  const extractionBrandShareData = useMemo(() => {
+    const rows = overview?.charts?.extractionBrandShare || [];
+    return rows.slice(0, 8).map((row) => ({
+      brand: row.brand,
+      sharePct: Number(row.sharePct || 0),
+    }));
+  }, [overview]);
+
+  const heatmapOption = useMemo(() => {
+    const salesRows = overview?.charts?.salesRegionHeatmap || [];
+    const coverageRows = overview?.charts?.coverageRegionHeatmap || [];
+    const attendanceRows = overview?.charts?.attendanceGeoHeatmap || [];
+
+    const districtUniverse = salesRows.slice(0, 15).map((item) => item.district);
+    const districts = [...new Set(districtUniverse.filter(Boolean))];
+
+    const coverageMap = new Map(
+      coverageRows.map((row) => [row.district, Number(row.coveragePct || 0)])
+    );
+
+    const attendanceMap = new Map(
+      attendanceRows.map((row) => {
+        const totalStatus =
+          Number(row.present || 0) +
+          Number(row.absent || 0) +
+          Number(row.halfDay || 0) +
+          Number(row.leave || 0) +
+          Number(row.pending || 0);
+        const presentPct = totalStatus
+          ? (Number(row.present || 0) / totalStatus) * 100
+          : 0;
+        return [row.district, presentPct];
+      })
+    );
+
+    const maxSales = Math.max(...salesRows.map((row) => Number(row.total || 0)), 0);
+
+    const metricRows = ["Sales Strength", "Coverage %", "Attendance %"];
+    const points = [];
+
+    districts.forEach((district, index) => {
+      const sales = salesRows.find((row) => row.district === district);
+      const salesPct = maxSales
+        ? (Number(sales?.total || 0) / maxSales) * 100
+        : 0;
+
+      points.push([index, 0, Number(salesPct.toFixed(2))]);
+      points.push([index, 1, Number((coverageMap.get(district) || 0).toFixed(2))]);
+      points.push([index, 2, Number((attendanceMap.get(district) || 0).toFixed(2))]);
+    });
+
+    return {
+      tooltip: {
+        position: "top",
+        formatter: (params) => {
+          const district = districts[params.data[0]] || "Unknown";
+          const metric = metricRows[params.data[1]];
+          return `${district}<br/>${metric}: ${params.data[2]}%`;
+        },
+      },
+      grid: {
+        left: 100,
+        right: 20,
+        top: 20,
+        bottom: 80,
+      },
+      xAxis: {
+        type: "category",
+        data: districts,
+        axisLabel: {
+          interval: 0,
+          rotate: 35,
+          color: "#5f6b7a",
+        },
+      },
+      yAxis: {
+        type: "category",
+        data: metricRows,
+        axisLabel: {
+          color: "#5f6b7a",
+        },
+      },
+      visualMap: {
+        min: 0,
+        max: 100,
+        calculable: true,
+        orient: "horizontal",
+        left: "center",
+        bottom: 10,
+        inRange: {
+          color: ["#f97316", "#fde68a", "#86efac", "#16a34a"],
+        },
+      },
+      series: [
+        {
+          type: "heatmap",
+          data: points,
+          label: {
+            show: false,
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 12,
+              shadowColor: "rgba(0, 0, 0, 0.2)",
+            },
+          },
+        },
+      ],
+    };
+  }, [overview]);
+
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">Dashboard</div>
-      <div className="first-line">
-        <div className="today-sales">
-          <SalesGrowth />
+    <div className="dashboard-v2">
+      <div className="dashboard-v2__header">
+        <div>
+          <h2>Main Dashboard</h2>
+          <p>Command center for sales, market coverage, extraction, and attendance.</p>
         </div>
-        <div className="extraction-insights-graph">
-          <div className="extraction-header">Extraction Insights</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={extractionData}>
-              <XAxis tick={{ fontSize: 10 }} dataKey="month" />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="iPhone"
-                stroke="#FF5733"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="Samsung"
-                stroke="#33FF57"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="OnePlus"
-                stroke="#3380FF"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div className="second-line">
-        <div className="total-revenue-graph">
-          <div className="total-revenue-header">Total Revenue</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={extractionData}>
-              <XAxis tick={{ fontSize: 10 }} interval={1} dataKey="month" />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              {/* Bars for different brands */}
-              <Bar dataKey="iPhone" fill="#0095FF" />
-              <Bar dataKey="Samsung" fill="#00E096" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="customer-satisfaction-graph">
-          <div className="customer-satisfaction-header">
-            Customer Satisfaction
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart
-              data={extractionData}
-              margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+        <div className="dashboard-v2__controls">
+          <label>
+            From
+            <input
+              type="date"
+              value={toDateInputValue(startDate)}
+              onChange={(e) => setStartDate(new Date(e.target.value))}
+            />
+          </label>
+          <label>
+            To
+            <input
+              type="date"
+              value={toDateInputValue(endDate)}
+              onChange={(e) => setEndDate(new Date(e.target.value))}
+            />
+          </label>
+          <label>
+            Metric
+            <select
+              value={selectedValue}
+              onChange={(e) => setSelectedValue(e.target.value)}
             >
-              <defs>
-                <linearGradient id="colorLastMonth" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#438ef7" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#438ef7" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorThisMonth" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#34c38f" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#34c38f" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis hide dataKey="name" />
-              <YAxis hide />
-              <Tooltip />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="iPhone"
-                stroke="#438ef7"
-                fillOpacity={1}
-                fill="url(#colorLastMonth)"
-              />
-              <Area
-                type="monotone"
-                dataKey="Samsung"
-                stroke="#34c38f"
-                fillOpacity={1}
-                fill="url(#colorThisMonth)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-          <div className="data-table-content">
-            <div>{lastEntry["iPhone"]}</div>
-            <div>{lastEntry.Samsung}</div>
-          </div>
-        </div>
-        <div className="target-reality-graph">
-          <div className="target-reality-header">Target Vs Reality</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={extractionData}>
-              <XAxis dataKey="month" interval={1} />
-              <YAxis hide />
-              <Tooltip />
-
-              {/* Bars for different brands */}
-              <Bar
-                dataKey="iPhone"
-                fill="#4AB58E"
-                barSize={30}
-                radius={[5, 5, 0, 0]}
-                fillOpacity={0.8}
-              />
-              <Bar
-                dataKey="Samsung"
-                fill="#FFCF00"
-                barSize={30}
-                radius={[5, 5, 0, 0]}
-                fillOpacity={0.8}
-              />
-            </BarChart>
-            <div className="custom-legend">
-              <div className="custom-legend-content green">
-                <div>
-                  <MdPhoneIphone />
-                  iPhone
-                </div>
-                <span>{lastEntry.iPhone}</span>
-              </div>
-              <div className="custom-legend-content yellow">
-                <div>
-                  <MdPhoneIphone />
-                  Samsung
-                </div>
-                <span>{lastEntry.Samsung}</span>
-              </div>
-            </div>
-          </ResponsiveContainer>
+              <option value="value">Value</option>
+              <option value="volume">Volume</option>
+            </select>
+          </label>
+          <label>
+            Trend
+            <select value={trend} onChange={(e) => setTrend(e.target.value)}>
+              {TREND_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={fetchOverview} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
       </div>
-      <div className="third-line">
-        <div className="top-products">
-          <div className="top-products-header">Top Products</div>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Popularity</th>
-                <th>Sales</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product, index) => (
-                <tr>
-                  <td>{index}</td>
-                  <td>{product.name}</td>
-                  <td>
-                    <div className="progress-bar">
-                      <div
-                        className={`progress ${color[index % color.length]} `}
-                        style={{
-                          width: `${product.popularity}%`,
-                        }}
-                      ></div>
-                      <div className="progress-bg"></div>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`sales-badge ${color[index % color.length]}`}
-                      style={{ color: product.color }}
-                    >
-                      {product.popularity}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      {error ? <div className="dashboard-v2__error">{error}</div> : null}
+
+      <div className="dashboard-v2__kpis">
+        <div className="kpi-card">
+          <span>MTD Sell In</span>
+          <strong>{formatCompact(salesKpis.mtdSellIn)}</strong>
+          <small>Growth: {formatPct(salesKpis.sellInGrowthPct)}</small>
         </div>
-        <div className="volume-service">
-          <div className="volume-service-header">Volume vs Service Level</div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={extractionData} barSize={40}>
-              <XAxis dataKey="name" stroke="#8884d8" />
+        <div className="kpi-card">
+          <span>MTD Sell Out</span>
+          <strong>{formatCompact(salesKpis.mtdSellOut)}</strong>
+          <small>Growth: {formatPct(salesKpis.sellOutGrowthPct)}</small>
+        </div>
+        <div className="kpi-card">
+          <span>Market Value</span>
+          <strong>{formatCompact(extractionKpis.totalMarketValue)}</strong>
+          <small>Total market extraction</small>
+        </div>
+        <div className="kpi-card">
+          <span>Coverage %</span>
+          <strong>{formatPct(coverageKpis.coveragePct)}</strong>
+          <small>
+            Done {Number(coverageKpis.done || 0)} / Planned {Number(coverageKpis.planned || 0)}
+          </small>
+        </div>
+        <div className="kpi-card">
+          <span>Attendance Present</span>
+          <strong>{Number(attendanceKpis.present || 0)}</strong>
+          <small>Eligible: {Number(attendanceKpis.totalEligible || 0)}</small>
+        </div>
+        <div className="kpi-card">
+          <span>Avg Hours Worked</span>
+          <strong>{numberFormatter.format(Number(attendanceKpis.avgHoursWorked || 0))}</strong>
+          <small>Not punched out: {Number(attendanceKpis.notPunchedOut || 0)}</small>
+        </div>
+      </div>
+
+      <div className="dashboard-v2__grid">
+        <section className="panel panel--wide">
+          <header>
+            <h3>Sales Trend</h3>
+            <p>Activation vs Tertiary vs Secondary ({trend})</p>
+          </header>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={salesTrendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="iPhone" stackId="a" fill="#00C49F" />
-              <Bar dataKey="Samsung" stackId="a" fill="#0088FE" />
+              <Line type="monotone" dataKey="activation" stroke="#2563eb" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="tertiary" stroke="#16a34a" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="secondary" stroke="#f97316" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </section>
+
+        <section className="panel">
+          <header>
+            <h3>Region Heatmap</h3>
+            <p>District strength across sales, coverage, attendance</p>
+          </header>
+          <ReactECharts option={heatmapOption} style={{ height: 320 }} />
+        </section>
+
+        <section className="panel">
+          <header>
+            <h3>Extraction Trend</h3>
+            <p>Top brand comparison over time</p>
+          </header>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={extractionTrendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {topBrands.map((brand, index) => (
+                <Line
+                  key={brand}
+                  type="monotone"
+                  dataKey={brand}
+                  stroke={["#2563eb", "#16a34a", "#f97316", "#a21caf"][index % 4]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </section>
+
+        <section className="panel">
+          <header>
+            <h3>Brand Share</h3>
+            <p>Current extraction share by brand</p>
+          </header>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart layout="vertical" data={extractionBrandShareData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" domain={[0, 100]} />
+              <YAxis dataKey="brand" type="category" width={90} />
+              <Tooltip formatter={(value) => `${Number(value).toFixed(2)}%`} />
+              <Bar dataKey="sharePct" fill="#0ea5e9" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </section>
+
+        <section className="panel">
+          <header>
+            <h3>Market Coverage Trend</h3>
+            <p>Planned vs done vs pending</p>
+          </header>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={coverageTrendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="planned" fill="#94a3b8" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="done" fill="#22c55e" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="pending" fill="#f97316" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </section>
+
+        <section className="panel">
+          <header>
+            <h3>Attendance Trend</h3>
+            <p>Presence discipline and absentee behavior</p>
+          </header>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={attendanceTrendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="present" stroke="#16a34a" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="absent" stroke="#ef4444" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="leave" stroke="#f59e0b" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="pending" stroke="#6366f1" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </section>
       </div>
     </div>
   );
 }
+
 export default Dashboard;
