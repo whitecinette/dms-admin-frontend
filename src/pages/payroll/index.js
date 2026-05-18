@@ -13,43 +13,25 @@ import PayRollProcess from "./process/index";
 import GeneratePayrollModal from "../../components/payrollComponents/generatePayrollModal/index.jsx";
 import DownloadPayrollModal from "../../components/payrollComponents/downloadPayrollModal/index.jsx";
 import UploadPayrollModal from "../../components/payrollComponents/uploadPayrollModal/index.jsx";
+import PayslipsTab from "./tabs/PayslipsTab";
+import LeaveManagementTab from "./tabs/LeaveManagementTab";
+import PayrollConfigTab from "./tabs/PayrollConfigTab";
 
 const backendUrl = config.backend_url;
 
 const Payroll = () => {
+  const [workspaceTab, setWorkspaceTab] = useState("runs");
   const [view, setView] = useState("overview");
-  const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState([]);
   const [selectedFirm, setSelectedFirm] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadModal, setDownloadModal] = useState(false);
-    const [uploadModal, setUploadModal] = useState(false);
-    const [summary, setSummary] = useState({ selectedCount: 0, totalAmount: 0 });
+  const [uploadModal, setUploadModal] = useState(false);
   const [monthYear, setMonthYear] = useState(() => {
     const now = new Date();
     return `${now.getMonth() + 1}-${now.getFullYear()}`;
   });
 
-  const getSummaryData = async (codes = []) => {
-  try {
-    const [month, year] = monthYear.split("-");
-    const response = await axios.post(
-      `${backendUrl}/payroll/summary/two-blocks`,
-      { month, year, codes },
-      { headers: { Authorization: localStorage.getItem("authToken") } }
-    );
-    setSummary({
-      selectedCount: response.data.selectedCount,
-      totalAmount: response.data.totalAmount,
-    });
-  } catch (err) {
-    console.error("❌ Error fetching payroll summary:", err);
-    setSummary({ selectedCount: 0, totalAmount: 0 });
-  }
-};
-
-
-  // fetch overview
   const getOverviewData = async () => {
     try {
       const [month, year] = monthYear.split("-");
@@ -59,20 +41,20 @@ const Payroll = () => {
       });
       setOverview(response.data.data || []);
     } catch (error) {
-      console.error("❌ Error fetching data:", error);
+      console.error("Error fetching payroll overview:", error);
       setOverview([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    getOverviewData();
-  }, [monthYear]);
+    if (workspaceTab === "runs") {
+      getOverviewData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthYear, workspaceTab]);
 
-  // helper: safe number formatting
   const formatValue = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return "0";
+    if (value === undefined || value === null || Number.isNaN(value)) return "0";
     const num = typeof value === "string" ? parseFloat(value) : value;
     return num.toLocaleString("en-IN", { maximumFractionDigits: 2 });
   };
@@ -93,192 +75,227 @@ const Payroll = () => {
 
   const handleMonthYearChange = (newMonthYear) => setMonthYear(newMonthYear);
 
+  const sectionTitleMap = {
+    runs: "Payroll Runs",
+    payslips: "Payslips",
+    leaves: "Leave Management",
+    config: "Payroll Config",
+  };
+
   return (
     <div className="payroll-page">
       <div className="payroll-page-header">
         <div className="payroll-page-header-title">
-          Payroll {view.charAt(0).toUpperCase() + view.slice(1)}
+          {sectionTitleMap[workspaceTab] || "Payroll"}
         </div>
 
-        <div className="payroll-actions">
-        <button className="primary-button" onClick={() => setModalOpen(true)}>
-            + Generate Payroll
-        </button>
+        {workspaceTab === "runs" ? (
+          <div className="payroll-actions">
+            <button className="primary-button" onClick={() => setModalOpen(true)}>
+              + Generate Payroll
+            </button>
 
-        <button className="secondary-button" onClick={() => setDownloadModal(true)}>
-            ⬇ Download Payroll
-        </button>
+            <button className="secondary-button" onClick={() => setDownloadModal(true)}>
+              Download Payroll
+            </button>
 
-        <button className="secondary-button" onClick={() => setUploadModal(true)}>
-            ⬆ Upload Bulk
-        </button>
-        </div>
-
-
-        <TextToggle
-          textFirst="overview"
-          textSecond="process"
-          setText={setView}
-          selectedText={view}
-          classStyle={{ width: "200px" }}
-        />
+            <button className="secondary-button" onClick={() => setUploadModal(true)}>
+              Upload Bulk
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      {modalOpen && (
-        <GeneratePayrollModal
-          closeModal={() => setModalOpen(false)}
-          onGenerated={() => {
-            setModalOpen(false);
-            getOverviewData();
-          }}
-        />
-      )}
+      <div className="payroll-workspace-tabs">
+        <button
+          className={workspaceTab === "runs" ? "active" : ""}
+          onClick={() => setWorkspaceTab("runs")}
+        >
+          Payroll Runs
+        </button>
+        <button
+          className={workspaceTab === "payslips" ? "active" : ""}
+          onClick={() => setWorkspaceTab("payslips")}
+        >
+          Salary Slips
+        </button>
+        <button
+          className={workspaceTab === "leaves" ? "active" : ""}
+          onClick={() => setWorkspaceTab("leaves")}
+        >
+          Leave Management
+        </button>
+        <button
+          className={workspaceTab === "config" ? "active" : ""}
+          onClick={() => setWorkspaceTab("config")}
+        >
+          Firm Config
+        </button>
+      </div>
 
-      {view === "overview" ? (
+      {workspaceTab === "runs" ? (
         <>
-          <div className="payroll-overview">
-            <div className="payroll-overview-cards">
-              <div className="payroll-overview-card">
-                <div>
-                  <div className="payroll-overview-card-header">
-                    Total Employees
-                  </div>
-                  <div className="payroll-overview-card-content">
-                    {formatValue(
-                      overview.reduce((acc, curr) => acc + (curr.total ?? 0), 0)
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="payroll-overview-card-icon"
-                  style={{ color: "#3b82f6", backgroundColor: "#dbeafe" }}
-                >
-                  <FiUsers size={20} />
-                </div>
-              </div>
-
-              <div className="payroll-overview-card">
-                <div>
-                  <div className="payroll-overview-card-header">
-                    Total Payroll
-                  </div>
-                  <div className="payroll-overview-card-content">
-                    {formatValue(
-                      overview.reduce((acc, curr) => acc + (curr.amount ?? 0), 0)
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="payroll-overview-card-icon"
-                  style={{ color: "#16a34a", backgroundColor: "#dcfce7" }}
-                >
-                  <LuIndianRupee size={20} />
-                </div>
-              </div>
-
-              <div className="payroll-overview-card">
-                <div>
-                  <div className="payroll-overview-card-header">Paid</div>
-                  <div className="payroll-overview-card-content">
-                    {formatValue(
-                      overview.reduce((acc, curr) => acc + (curr.paid ?? 0), 0)
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="payroll-overview-card-icon"
-                  style={{ color: "#a453ee", backgroundColor: "#f3e8ff" }}
-                >
-                  <IoMdCheckmarkCircleOutline size={20} />
-                </div>
-              </div>
-
-              <div className="payroll-overview-card">
-                <div>
-                  <div className="payroll-overview-card-header">Pending</div>
-                  <div className="payroll-overview-card-content">
-                    {formatValue(
-                      overview.reduce(
-                        (acc, curr) => acc + (curr.pending ?? 0),
-                        0
-                      )
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="payroll-overview-card-icon"
-                  style={{ color: "#ea580c", backgroundColor: "#ffedd5" }}
-                >
-                  <LuClock4 size={20} />
-                </div>
-              </div>
-            </div>
-
-            <div className="charts-container">
-              <div className="charts-header">
-                <h3>Payroll Overview by Firm</h3>
-                <div className="charts-navigation">
-                  <button className="nav-arrow" onClick={scrollLeft}>
-                    <FaArrowLeft />
-                  </button>
-                  <button className="nav-arrow" onClick={scrollRight}>
-                    <FaArrowRight />
-                  </button>
-                </div>
-              </div>
-              <div className="charts-scroll-container" ref={scrollContainerRef}>
-                <div className="charts-wrapper">
-                  {overview.map((firm) => (
-                    <div
-                      key={firm.firmId}
-                      className={`chart-card ${
-                        selectedFirm.includes(firm.firmName) ? "selected" : ""
-                      }`}
-                      onClick={() => handleChartCardClick(firm.firmName)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div className="firm-name">{firm.firmName}</div>
-                      <div className="chart-wrapper">
-                        <DonutChart
-                          data={{
-                            paid: firm.paid ?? 0,
-                            pending: firm.pending ?? 0,
-                            generated: firm.generated ?? 0,
-                            total: firm.total ?? 0,
-                          }}
-                        />
-                      </div>
-                      <div className="firm-amount">
-                        ₹{formatValue(firm.amount)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className="payroll-subtabs-wrap">
+            <TextToggle
+              textFirst="overview"
+              textSecond="process"
+              setText={setView}
+              selectedText={view}
+              classStyle={{ width: "200px" }}
+            />
           </div>
 
-        {downloadModal && (
-            <DownloadPayrollModal closeModal={() => setDownloadModal(false)} />
-            )}
-
-            {uploadModal && (
-            <UploadPayrollModal
-                closeModal={() => setUploadModal(false)}
-                refresh={getOverviewData}
+          {modalOpen ? (
+            <GeneratePayrollModal
+              closeModal={() => setModalOpen(false)}
+              onGenerated={() => {
+                setModalOpen(false);
+                getOverviewData();
+              }}
             />
-            )}
+          ) : null}
 
-          <PayrollTable
-            selectedFirm={selectedFirm}
-            selectedMonthYear={monthYear}
-            onMonthYearChange={handleMonthYearChange}
-            onSelectionChange={(codes) => getSummaryData(codes)}
-          />
+          {view === "overview" ? (
+            <>
+              <div className="payroll-overview">
+                <div className="payroll-overview-cards">
+                  <div className="payroll-overview-card">
+                    <div>
+                      <div className="payroll-overview-card-header">Total Employees</div>
+                      <div className="payroll-overview-card-content">
+                        {formatValue(
+                          overview.reduce((acc, curr) => acc + (curr.total ?? 0), 0)
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="payroll-overview-card-icon"
+                      style={{ color: "#3b82f6", backgroundColor: "#dbeafe" }}
+                    >
+                      <FiUsers size={20} />
+                    </div>
+                  </div>
+
+                  <div className="payroll-overview-card">
+                    <div>
+                      <div className="payroll-overview-card-header">Total Payroll</div>
+                      <div className="payroll-overview-card-content">
+                        {formatValue(
+                          overview.reduce((acc, curr) => acc + (curr.amount ?? 0), 0)
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="payroll-overview-card-icon"
+                      style={{ color: "#16a34a", backgroundColor: "#dcfce7" }}
+                    >
+                      <LuIndianRupee size={20} />
+                    </div>
+                  </div>
+
+                  <div className="payroll-overview-card">
+                    <div>
+                      <div className="payroll-overview-card-header">Paid</div>
+                      <div className="payroll-overview-card-content">
+                        {formatValue(
+                          overview.reduce((acc, curr) => acc + (curr.paid ?? 0), 0)
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="payroll-overview-card-icon"
+                      style={{ color: "#a453ee", backgroundColor: "#f3e8ff" }}
+                    >
+                      <IoMdCheckmarkCircleOutline size={20} />
+                    </div>
+                  </div>
+
+                  <div className="payroll-overview-card">
+                    <div>
+                      <div className="payroll-overview-card-header">Pending</div>
+                      <div className="payroll-overview-card-content">
+                        {formatValue(
+                          overview.reduce((acc, curr) => acc + (curr.pending ?? 0), 0)
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="payroll-overview-card-icon"
+                      style={{ color: "#ea580c", backgroundColor: "#ffedd5" }}
+                    >
+                      <LuClock4 size={20} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="charts-container">
+                <div className="charts-header">
+                  <h3>Payroll Overview by Firm</h3>
+                  <div className="charts-navigation">
+                    <button className="nav-arrow" onClick={scrollLeft}>
+                      <FaArrowLeft />
+                    </button>
+                    <button className="nav-arrow" onClick={scrollRight}>
+                      <FaArrowRight />
+                    </button>
+                  </div>
+                </div>
+                <div className="charts-scroll-container" ref={scrollContainerRef}>
+                  <div className="charts-wrapper">
+                    {overview.map((firm) => (
+                      <div
+                        key={firm.firmCode || firm.firmName}
+                        className={`chart-card ${
+                          selectedFirm.includes(firm.firmName) ? "selected" : ""
+                        }`}
+                        onClick={() => handleChartCardClick(firm.firmName)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="firm-name">{firm.firmName}</div>
+                        <div className="chart-wrapper">
+                          <DonutChart
+                            data={{
+                              paid: firm.paid ?? 0,
+                              pending: firm.pending ?? 0,
+                              generated: firm.generated ?? 0,
+                              total: firm.total ?? 0,
+                            }}
+                          />
+                        </div>
+                        <div className="firm-amount">₹{formatValue(firm.amount)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {downloadModal ? (
+                <DownloadPayrollModal closeModal={() => setDownloadModal(false)} />
+              ) : null}
+
+              {uploadModal ? (
+                <UploadPayrollModal
+                  closeModal={() => setUploadModal(false)}
+                  refresh={getOverviewData}
+                />
+              ) : null}
+
+              <PayrollTable
+                selectedFirm={selectedFirm}
+                selectedMonthYear={monthYear}
+                onMonthYearChange={handleMonthYearChange}
+              />
+            </>
+          ) : (
+            <PayRollProcess />
+          )}
         </>
-      ) : (
-        <PayRollProcess />
-      )}
+      ) : null}
+
+      {workspaceTab === "payslips" ? <PayslipsTab /> : null}
+      {workspaceTab === "leaves" ? <LeaveManagementTab /> : null}
+      {workspaceTab === "config" ? <PayrollConfigTab /> : null}
     </div>
   );
 };

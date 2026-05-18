@@ -278,3 +278,323 @@
     }
   }
 }
+
+.payroll-page {
+  .payroll-workspace-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+
+    button {
+      border: 1px solid #d4d4d8;
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s ease;
+
+      &.active {
+        background: linear-gradient(120deg, #0f766e, #14b8a6);
+        color: #ffffff;
+        border-color: #0f766e;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  .payroll-subtabs-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+
+  .hr-tab-section {
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .hr-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+
+    .hr-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      input,
+      select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .hr-multiselect {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+
+    summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      list-style: none;
+    }
+
+    .hr-multiselect-list {
+      display: grid;
+      gap: 8px;
+      max-height: 180px;
+      overflow: auto;
+      border-top: 1px solid #e2e8f0;
+      padding: 10px;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .hr-table-wrap {
+    overflow-x: auto;
+  }
+
+  .hr-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    th {
+      font-size: 12px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-weight: 700;
+    }
+
+    .hr-actions-cell {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      button {
+        border: 1px solid #94a3b8;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+      }
+    }
+  }
+
+  .hr-default-pill {
+    margin-left: 6px;
+    font-size: 11px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-weight: 700;
+  }
+
+  .hr-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(2, 6, 23, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    .hr-modal {
+      width: min(720px, 100%);
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 14px;
+
+      .hr-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        h3 {
+          margin: 0;
+        }
+
+        button {
+          border: 1px solid #cbd5e1;
+          background: #fff;
+          border-radius: 8px;
+          padding: 6px 10px;
+          cursor: pointer;
+        }
+      }
+
+      .hr-slip-grid {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(180px, 1fr));
+        gap: 8px 14px;
+
+        p {
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  .hr-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .hr-config-card {
+    border: 1px solid #dbeafe;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px;
+
+    h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      color: #0f172a;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .hr-help-text {
+      margin: 6px 0 0 0;
+      color: #64748b;
+      font-size: 12px;
+    }
+  }
+
+  .hr-inline-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 10px;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      span {
+        font-size: 12px;
+        color: #334155;
+      }
+
+      input,
+      select,
+      button {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 9px 10px;
+      }
+
+      button {
+        background: #0f766e;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .hr-config-actions {
+    margin-top: 12px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    button {
+      border: 1px solid #0f766e;
+      background: #0f766e;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    span {
+      font-size: 13px;
+      color: #166534;
+      font-weight: 600;
+    }
+  }
+
+  .hr-policy-block {
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 12px;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .payroll-workspace-tabs {
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+
+    .hr-filter-grid,
+    .hr-config-grid,
+    .hr-inline-fields,
+    .hr-modal-backdrop .hr-modal .hr-slip-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .payroll-subtabs-wrap {
+      justify-content: flex-start;
+    }
+  }
+}

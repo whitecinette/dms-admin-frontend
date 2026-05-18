@@ -31,7 +31,7 @@ const PayRollProcess = () => {
         const res = await axios.get(`${backendUrl}/get-firms-for-dropdown`, {
           headers: { Authorization: localStorage.getItem("authToken") },
         });
-        setAllFirms(res.data.firms || []);
+        setAllFirms(res.data?.data || res.data?.firms || []);
       } catch (err) {
         console.error("❌ Error fetching firms", err);
       }

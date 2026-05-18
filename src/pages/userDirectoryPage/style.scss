@@ -97,6 +97,46 @@
       grid-template-columns: repeat(4, minmax(180px, 1fr));
       gap: 14px;
     }
+
+    .bulk-policy-row {
+      margin-top: 14px;
+      border: 1px dashed #d6deea;
+      border-radius: 16px;
+      background: #f9fbff;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .bulk-policy-text {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #344054;
+      }
+
+      .bulk-policy-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+
+        .bulk-scope-note {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #475467;
+          background: #eef4ff;
+          border: 1px solid #d6e3ff;
+          padding: 7px 10px;
+          border-radius: 999px;
+        }
+
+        select {
+          min-width: 240px;
+        }
+      }
+    }
   }
 
   .field {
@@ -240,6 +280,12 @@
       border-collapse: separate;
       border-spacing: 0;
 
+      .select-col {
+        width: 48px;
+        min-width: 48px;
+        text-align: center;
+      }
+
       thead th {
         position: sticky;
         top: 0;
@@ -261,6 +307,10 @@
         font-size: 0.92rem;
         color: #101828;
         background: #fff;
+
+        &.select-col {
+          padding: 14px 10px;
+        }
       }
 
       tbody tr:hover td {

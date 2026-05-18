@@ -71,6 +71,14 @@ const buildMetadataForm = (metadata = {}, code = "", name = "") => {
         : cleaned.leaves === "No"
         ? false
         : false,
+    use_payroll_policy:
+      typeof cleaned.use_payroll_policy === "boolean"
+        ? cleaned.use_payroll_policy
+        : cleaned.use_payroll_policy === "Yes"
+        ? true
+        : cleaned.use_payroll_policy === "No"
+        ? false
+        : false,
     basic_salary:
       cleaned.basic_salary && cleaned.basic_salary !== "NA"
         ? cleaned.basic_salary
@@ -101,6 +109,7 @@ export default function UserDirectoryPage() {
   const [position, setPosition] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
+  const [firmCode, setFirmCode] = useState("");
 
   const [positionOptions, setPositionOptions] = useState([]);
   const [roleOptions, setRoleOptions] = useState([]);
@@ -110,6 +119,9 @@ export default function UserDirectoryPage() {
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
   const [metaSaving, setMetaSaving] = useState(false);
+  const [bulkPolicySaving, setBulkPolicySaving] = useState(false);
+  const [bulkPolicyValue, setBulkPolicyValue] = useState("true");
+  const [selectedCodes, setSelectedCodes] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [metaForm, setMetaForm] = useState(buildMetadataForm({}, "", ""));
 
@@ -146,6 +158,7 @@ export default function UserDirectoryPage() {
           position,
           role,
           status,
+          firm_code: firmCode,
           page: customPage,
           limit: pageInfo.limit,
         },
@@ -206,6 +219,11 @@ export default function UserDirectoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const available = new Set(rows.map((row) => row?.code).filter(Boolean));
+    setSelectedCodes((prev) => prev.filter((code) => available.has(code)));
+  }, [rows]);
+
   const visibleMetadataKeys = useMemo(() => {
     const preferredOrder = [
       "attendance",
@@ -213,6 +231,7 @@ export default function UserDirectoryPage() {
       "basic_salary",
       "allowed_leaves",
       "leaves",
+      "use_payroll_policy",
       "leaves_balance",
       "system_code",
       "punch_location",
@@ -236,6 +255,21 @@ export default function UserDirectoryPage() {
       return !EXCLUDED_POSITIONS.includes(pos);
     });
   }, [rows]);
+
+  const visibleCodes = useMemo(() => {
+    return filteredRows.map((row) => row.code).filter(Boolean);
+  }, [filteredRows]);
+
+  const selectedVisibleCount = useMemo(() => {
+    const visibleSet = new Set(visibleCodes);
+    return selectedCodes.filter((code) => visibleSet.has(code)).length;
+  }, [selectedCodes, visibleCodes]);
+
+  const allVisibleSelected =
+    visibleCodes.length > 0 && selectedVisibleCount === visibleCodes.length;
+
+  const someVisibleSelected =
+    selectedVisibleCount > 0 && selectedVisibleCount < visibleCodes.length;
 
   const toggleExpand = (code) => {
     setExpandedCodes((prev) => ({
@@ -338,6 +372,7 @@ export default function UserDirectoryPage() {
         ...metaForm,
         attendance: !!metaForm.attendance,
         leaves: !!metaForm.leaves,
+        use_payroll_policy: !!metaForm.use_payroll_policy,
       };
 
       await axios.put(
@@ -361,11 +396,89 @@ export default function UserDirectoryPage() {
     setPosition("");
     setRole("");
     setStatus("");
+    setFirmCode("");
+    setSelectedCodes([]);
 
     setTimeout(() => {
       setPageInfo((prev) => ({ ...prev, page: 1 }));
       fetchData(1);
     }, 0);
+  };
+
+  const applyBulkPayrollPolicy = async () => {
+    if (loading || bulkPolicySaving) return;
+
+    const selectedTargetCodes = selectedCodes.filter(Boolean);
+    const useSelected = selectedTargetCodes.length > 0;
+    const targetCount = useSelected
+      ? selectedTargetCodes.length
+      : Number(pageInfo.total || 0);
+
+    if (!targetCount) {
+      alert("No users found for current filters.");
+      return;
+    }
+
+    const nextValue = bulkPolicyValue === "true";
+    const confirmationMessage = `Apply payroll policy as ${
+      nextValue ? "ON" : "OFF"
+    } for ${targetCount} ${useSelected ? "selected" : "filtered"} user(s)?`;
+
+    if (!window.confirm(confirmationMessage)) return;
+
+    try {
+      setBulkPolicySaving(true);
+
+      await axios.patch(
+        `${backendUrl}/super-admin/user-directory/metadata/bulk/payroll-policy`,
+        {
+          use_payroll_policy: nextValue,
+          ...(useSelected
+            ? { codes: selectedTargetCodes }
+            : {
+                search,
+                position,
+                role,
+                status,
+                firm_code: firmCode,
+              }),
+        },
+        { headers: getAuthHeader() }
+      );
+
+      await fetchData(1);
+      if (useSelected) setSelectedCodes([]);
+      alert(
+        `Bulk payroll policy updated successfully for ${
+          useSelected ? "selected" : "filtered"
+        } users: ${
+          nextValue ? "ON" : "OFF"
+        }.`
+      );
+    } catch (error) {
+      console.error("Failed to bulk update payroll policy:", error);
+      alert(
+        error?.response?.data?.message || "Failed to bulk update payroll policy"
+      );
+    } finally {
+      setBulkPolicySaving(false);
+    }
+  };
+
+  const toggleSelectCode = (code) => {
+    setSelectedCodes((prev) =>
+      prev.includes(code) ? prev.filter((item) => item !== code) : [...prev, code]
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedCodes((prev) => {
+      if (allVisibleSelected || someVisibleSelected) {
+        return prev.filter((code) => !visibleCodes.includes(code));
+      }
+      const merged = new Set([...prev, ...visibleCodes]);
+      return Array.from(merged);
+    });
   };
 
   return (
@@ -457,6 +570,56 @@ export default function UserDirectoryPage() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <div className="field">
+            <label>Firm</label>
+            <select
+              value={firmCode}
+              onChange={(e) => setFirmCode(e.target.value)}
+            >
+              <option value="">All Firms</option>
+              {firmOptions.map((firm) => (
+                <option key={firm.code} value={firm.code}>
+                  {firm.name} ({firm.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="bulk-policy-row">
+          <div className="bulk-policy-text">Bulk Payroll Policy</div>
+          <div className="bulk-policy-controls">
+            <span className="bulk-scope-note">
+              {selectedCodes.length > 0
+                ? `Scope: ${selectedCodes.length} selected user(s)`
+                : `Scope: all filtered users (${pageInfo.total || 0})`}
+            </span>
+            {selectedCodes.length > 0 && (
+              <button
+                className="secondary-btn small"
+                onClick={() => setSelectedCodes([])}
+                disabled={loading || bulkPolicySaving}
+              >
+                Clear Selection
+              </button>
+            )}
+            <select
+              value={bulkPolicyValue}
+              onChange={(e) => setBulkPolicyValue(e.target.value)}
+              disabled={loading || bulkPolicySaving}
+            >
+              <option value="true">Set ON (Apply PF/ESI)</option>
+              <option value="false">Set OFF (Skip PF/ESI)</option>
+            </select>
+            <button
+              className="primary-btn"
+              onClick={applyBulkPayrollPolicy}
+              disabled={loading || bulkPolicySaving}
+            >
+              {bulkPolicySaving ? "Applying..." : "Apply Bulk Policy"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -477,6 +640,18 @@ export default function UserDirectoryPage() {
             <table className="ud-table">
               <thead>
                 <tr>
+                  <th className="select-col">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = someVisibleSelected;
+                      }}
+                      onChange={toggleSelectAllVisible}
+                      disabled={loading || !visibleCodes.length}
+                      title="Select all visible users"
+                    />
+                  </th>
                   <th>User</th>
                   <th>Position</th>
                   <th>Role</th>
@@ -497,6 +672,15 @@ export default function UserDirectoryPage() {
                   return (
                     <React.Fragment key={row.code}>
                       <tr>
+                        <td className="select-col">
+                          <input
+                            type="checkbox"
+                            checked={selectedCodes.includes(row.code)}
+                            onChange={() => toggleSelectCode(row.code)}
+                            disabled={loading}
+                            title={`Select ${displayValue(row.name)}`}
+                          />
+                        </td>
                         <td>
                           <div className="user-cell">
                             <div className="user-name">
@@ -611,7 +795,7 @@ export default function UserDirectoryPage() {
 
                       {expanded && (
                         <tr className="expanded-row">
-                          <td colSpan={7 + visibleMetadataKeys.length}>
+                          <td colSpan={8 + visibleMetadataKeys.length}>
                             <div className="expanded-content">
                               <div className="expanded-grid">
                                 <div className="detail-card">
@@ -791,7 +975,6 @@ export default function UserDirectoryPage() {
                         <span>{metaForm.attendance ? "Yes" : "No"}</span>
                       </div>
                     </div>
-
                     <div className="field checkbox-field">
                       <label>Leaves Enabled</label>
                       <div className="switch-row">
@@ -803,6 +986,20 @@ export default function UserDirectoryPage() {
                           }
                         />
                         <span>{metaForm.leaves ? "Yes" : "No"}</span>
+                      </div>
+                    </div>
+
+                    <div className="field checkbox-field">
+                      <label>Use Payroll Policy (PF/ESI)</label>
+                      <div className="switch-row">
+                        <input
+                          type="checkbox"
+                          checked={!!metaForm.use_payroll_policy}
+                          onChange={(e) =>
+                            handleMetaInput("use_payroll_policy", e.target.checked)
+                          }
+                        />
+                        <span>{metaForm.use_payroll_policy ? "Yes" : "No"}</span>
                       </div>
                     </div>
                   </div>
