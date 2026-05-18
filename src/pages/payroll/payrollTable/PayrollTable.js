@@ -5,6 +5,7 @@ import config from "../../../config.js";
 import "./PayrollTable.scss";
 
 const backendUrl = config.backend_url;
+const PAGE_SIZE = 50;
 
 const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthYearChange }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,7 +30,11 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
     if (selectedFirm && selectedFirm.length > 0) {
       setFirms(selectedFirm);
       setTempFirms(selectedFirm);
+    } else if (selectedFirm && selectedFirm.length === 0) {
+      setFirms([]);
+      setTempFirms([]);
     }
+    setCurrentPage(1);
     if (propMonthYear && propMonthYear !== selectedMonthYear) {
       setSelectedMonthYear(propMonthYear);
     }
@@ -66,7 +71,7 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
           month,
           year,
           page: currentPage,
-          limit: 10,
+          limit: PAGE_SIZE,
         },
         headers: { Authorization: localStorage.getItem("authToken") },
       });
@@ -103,20 +108,23 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
     setDropdownOpen(!dropdownOpen);
     if (!dropdownOpen) setTempFirms([...firms]);
   };
+
   const handleFirmSelect = (firm) => {
-    if (tempFirms.includes(firm.code)) {
-      setTempFirms(tempFirms.filter((c) => c !== firm.code));
-    } else {
-      setTempFirms([...tempFirms, firm.code]);
-    }
-  };
-  const handleClearFirms = () => setTempFirms([]);
-  const handleApplyFirms = () => {
-    setFirms([...tempFirms]);
-    setDropdownOpen(false);
-    setDropdownSearch("");
+    const nextFirms = firms.includes(firm.code)
+      ? firms.filter((c) => c !== firm.code)
+      : [...firms, firm.code];
+
+    setFirms(nextFirms);
+    setTempFirms(nextFirms);
     setCurrentPage(1);
   };
+
+  const handleClearFirms = () => {
+    setFirms([]);
+    setTempFirms([]);
+    setCurrentPage(1);
+  };
+
   const handleResetFilters = () => {
     setSearch("");
     setStatus("");
@@ -128,7 +136,7 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
   };
 
   // pagination
-  const totalPages = Math.ceil(totalRecords / 10);
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
   const prevPage = () => currentPage > 1 && setCurrentPage((p) => p - 1);
   const nextPage = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
 
@@ -196,8 +204,8 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
           {/* firm dropdown */}
           <div className="custom-dropdown" ref={dropdownRef}>
             <div className="dropdown-header" onClick={handleDropdownClick}>
-              {tempFirms.length > 0 ? (
-                <span>{tempFirms.length} firm(s) selected</span>
+              {firms.length > 0 ? (
+                <span>{firms.length} firm(s) selected</span>
               ) : (
                 <span>Select Firms</span>
               )}
@@ -222,7 +230,7 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
                   .map((firm) => (
                     <div
                       key={firm.code}
-                      className={`firm-item ${tempFirms.includes(firm.code) ? "selected" : ""}`}
+                      className={`firm-item ${firms.includes(firm.code) ? "selected" : ""}`}
                       onClick={() => handleFirmSelect(firm)}
                     >
                       {firm.name} ({firm.code})
@@ -230,7 +238,6 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
                   ))}
                 <div className="dropdown-actions">
                   <button className="clear-btn" onClick={handleClearFirms}>Clear</button>
-                  <button className="apply-btn" onClick={handleApplyFirms}>Apply</button>
                 </div>
               </div>
             )}
@@ -262,7 +269,7 @@ const PayrollTable = ({ selectedFirm, selectedMonthYear: propMonthYear, onMonthY
           <tbody>
             {payrollData.map((p, idx) => (
               <tr key={p._id}>
-                <td>{(currentPage - 1) * 10 + idx + 1}</td>
+                <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                 <td>{p.code}</td>
                 <td>{p.employeeName}</td>
                 <td>{p.position}</td>

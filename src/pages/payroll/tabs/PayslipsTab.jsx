@@ -22,8 +22,7 @@ const monthOptions = () => {
   return options;
 };
 
-const downloadHtml = (filename, html) => {
-  const blob = new Blob([html], { type: "text/html" });
+const downloadBlob = (filename, blob) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -32,57 +31,6 @@ const downloadHtml = (filename, html) => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-};
-
-const buildSlipHtml = (row) => {
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Payslip ${row.code}</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 32px; color: #0f172a; }
-    .wrap { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
-    .h { display: flex; justify-content: space-between; margin-bottom: 16px; }
-    .title { font-size: 24px; font-weight: 700; color: #0f766e; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    td, th { padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-    .amt { text-align: right; }
-    .footer { margin-top: 16px; font-size: 12px; color: #64748b; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="h">
-      <div>
-        <div class="title">Salary Slip</div>
-        <div>${monthLabel(row.month, row.year)}</div>
-      </div>
-      <div>
-        <div><strong>Firm:</strong> ${row.firmName || "N/A"}</div>
-        <div><strong>Status:</strong> ${row.status || "N/A"}</div>
-      </div>
-    </div>
-
-    <table>
-      <tr><th>Employee Name</th><td>${row.employeeName || "N/A"}</td></tr>
-      <tr><th>Code</th><td>${row.code || "N/A"}</td></tr>
-      <tr><th>Position</th><td>${row.position || "N/A"}</td></tr>
-      <tr><th>Working Days</th><td>${row.working_days || 0}</td></tr>
-      <tr><th>Present Days</th><td>${row.days_present || 0}</td></tr>
-    </table>
-
-    <table>
-      <tr><th>Earnings</th><th class="amt">Amount</th></tr>
-      <tr><td>Gross Salary</td><td class="amt">${Number(row.gross_salary || 0).toLocaleString("en-IN")}</td></tr>
-      <tr><td>Deductions & Adjustments</td><td class="amt">${Number((row.gross_salary || 0) - (row.net_salary || 0)).toLocaleString("en-IN")}</td></tr>
-      <tr><th>Net Salary</th><th class="amt">${Number(row.net_salary || 0).toLocaleString("en-IN")}</th></tr>
-    </table>
-
-    <div class="footer">System generated slip. Generated at ${new Date().toLocaleString()}.</div>
-  </div>
-</body>
-</html>`;
 };
 
 function PayslipsTab() {
@@ -155,9 +103,24 @@ function PayslipsTab() {
     );
   };
 
-  const downloadOne = (row) => {
-    const html = buildSlipHtml(row);
-    downloadHtml(`Payslip_${row.code}_${row.month}_${row.year}.html`, html);
+  const downloadOne = async (row, monthOverride, yearOverride) => {
+    try {
+      const month = monthOverride || row?.month;
+      const year = yearOverride || row?.year;
+      const code = row?.code;
+      if (!code || !month || !year) return;
+
+      const res = await axios.get(`${backendUrl}/payroll/payslip/pdf`, {
+        headers: authHeaders,
+        params: { code, month, year },
+        responseType: "blob",
+      });
+
+      downloadBlob(`Payslip_${code}_${month}_${year}.pdf`, res.data);
+    } catch (error) {
+      console.error("Error downloading payslip PDF:", error);
+      alert("Failed to download payslip PDF");
+    }
   };
 
   const previousMonths = () => {
@@ -190,7 +153,7 @@ function PayslipsTab() {
 
         const match = (res.data?.data || []).find((x) => x.code === row.code);
         if (match) {
-          downloadOne(match);
+          await downloadOne(match, item.month, item.year);
         }
       }
     } catch (error) {
@@ -285,12 +248,12 @@ function PayslipsTab() {
                   <td>₹{Number(row.net_salary || 0).toLocaleString("en-IN")}</td>
                   <td className="hr-actions-cell">
                     <button onClick={() => setActiveSlip(row)}>View</button>
-                    <button onClick={() => downloadOne(row)}>Download</button>
+                    <button onClick={() => downloadOne(row)}>Download PDF</button>
                     <button
                       onClick={() => downloadLast3(row)}
                       disabled={!!downloading3[row._id]}
                     >
-                      {downloading3[row._id] ? "Please wait..." : "Last 3 Months"}
+                      {downloading3[row._id] ? "Please wait..." : "Last 3 Months PDF"}
                     </button>
                   </td>
                 </tr>

@@ -43,6 +43,17 @@ const getStatusClass = (status) => {
   return "neutral";
 };
 
+const parsePolicyFlag = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "y", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "n", "off"].includes(normalized)) return false;
+  }
+  return null;
+};
+
 const buildMetadataForm = (metadata = {}, code = "", name = "") => {
   const cleaned = metadata && typeof metadata === "object" ? metadata : {};
 
@@ -741,13 +752,29 @@ export default function UserDirectoryPage() {
                         </td>
 
                         <td>
-                          <span
-                            className={`pill ${
-                              row.metadata_available ? "active" : "neutral"
-                            }`}
-                          >
-                            {row.metadata_available ? "Available" : "Missing"}
-                          </span>
+                          <div className="metadata-stack">
+                            <span
+                              className={`pill ${
+                                row.metadata_available ? "active" : "neutral"
+                              }`}
+                            >
+                              {row.metadata_available ? "Available" : "Missing"}
+                            </span>
+                            <span
+                              className={`pill policy ${
+                                parsePolicyFlag(row.metadata?.use_payroll_policy) === true
+                                  ? "active"
+                                  : parsePolicyFlag(row.metadata?.use_payroll_policy) === false ||
+                                    parsePolicyFlag(row.metadata?.use_payroll_policy) === null
+                                  ? "inactive"
+                                  : "neutral"
+                              }`}
+                            >
+                              {parsePolicyFlag(row.metadata?.use_payroll_policy) === true
+                                ? "PF/ESI On"
+                                : "PF/ESI Off"}
+                            </span>
+                          </div>
                         </td>
 
                         {visibleMetadataKeys.map((key) => (

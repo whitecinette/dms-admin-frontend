@@ -23,6 +23,13 @@ const Payroll = () => {
   const [workspaceTab, setWorkspaceTab] = useState("runs");
   const [view, setView] = useState("overview");
   const [overview, setOverview] = useState([]);
+  const [kpis, setKpis] = useState({
+    totalEmployees: 0,
+    totalPayroll: 0,
+    paid: 0,
+    pending: 0,
+    generated: 0,
+  });
   const [selectedFirm, setSelectedFirm] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadModal, setDownloadModal] = useState(false);
@@ -36,13 +43,33 @@ const Payroll = () => {
     try {
       const [month, year] = monthYear.split("-");
       const response = await axios.get(`${backendUrl}/get-all-payrolls`, {
-        params: { month, year },
+        params: { month, year, page: 1, limit: 1 },
         headers: { Authorization: localStorage.getItem("authToken") },
       });
-      setOverview(response.data.data || []);
+
+      const overviewByFirm = Array.isArray(response.data?.overviewByFirm)
+        ? response.data.overviewByFirm
+        : [];
+      const apiKpis = response.data?.kpis || {};
+
+      setOverview(overviewByFirm);
+      setKpis({
+        totalEmployees: Number(apiKpis.totalEmployees || 0),
+        totalPayroll: Number(apiKpis.totalPayroll || 0),
+        paid: Number(apiKpis.paid || 0),
+        pending: Number(apiKpis.pending || 0),
+        generated: Number(apiKpis.generated || 0),
+      });
     } catch (error) {
       console.error("Error fetching payroll overview:", error);
       setOverview([]);
+      setKpis({
+        totalEmployees: 0,
+        totalPayroll: 0,
+        paid: 0,
+        pending: 0,
+        generated: 0,
+      });
     }
   };
 
@@ -65,11 +92,11 @@ const Payroll = () => {
   const scrollRight = () =>
     scrollContainerRef.current?.scrollBy({ left: 800, behavior: "smooth" });
 
-  const handleChartCardClick = (firmName) => {
+  const handleChartCardClick = (firmCode) => {
     setSelectedFirm((prev) =>
-      prev.includes(firmName)
-        ? prev.filter((name) => name !== firmName)
-        : [...prev, firmName]
+      prev.includes(firmCode)
+        ? prev.filter((code) => code !== firmCode)
+        : [...prev, firmCode]
     );
   };
 
@@ -163,9 +190,7 @@ const Payroll = () => {
                     <div>
                       <div className="payroll-overview-card-header">Total Employees</div>
                       <div className="payroll-overview-card-content">
-                        {formatValue(
-                          overview.reduce((acc, curr) => acc + (curr.total ?? 0), 0)
-                        )}
+                        {formatValue(kpis.totalEmployees)}
                       </div>
                     </div>
                     <div
@@ -180,9 +205,7 @@ const Payroll = () => {
                     <div>
                       <div className="payroll-overview-card-header">Total Payroll</div>
                       <div className="payroll-overview-card-content">
-                        {formatValue(
-                          overview.reduce((acc, curr) => acc + (curr.amount ?? 0), 0)
-                        )}
+                        {formatValue(kpis.totalPayroll)}
                       </div>
                     </div>
                     <div
@@ -197,9 +220,7 @@ const Payroll = () => {
                     <div>
                       <div className="payroll-overview-card-header">Paid</div>
                       <div className="payroll-overview-card-content">
-                        {formatValue(
-                          overview.reduce((acc, curr) => acc + (curr.paid ?? 0), 0)
-                        )}
+                        {formatValue(kpis.paid)}
                       </div>
                     </div>
                     <div
@@ -214,9 +235,7 @@ const Payroll = () => {
                     <div>
                       <div className="payroll-overview-card-header">Pending</div>
                       <div className="payroll-overview-card-content">
-                        {formatValue(
-                          overview.reduce((acc, curr) => acc + (curr.pending ?? 0), 0)
-                        )}
+                        {formatValue(kpis.pending)}
                       </div>
                     </div>
                     <div
@@ -247,9 +266,9 @@ const Payroll = () => {
                       <div
                         key={firm.firmCode || firm.firmName}
                         className={`chart-card ${
-                          selectedFirm.includes(firm.firmName) ? "selected" : ""
+                          selectedFirm.includes(firm.firmCode) ? "selected" : ""
                         }`}
-                        onClick={() => handleChartCardClick(firm.firmName)}
+                        onClick={() => handleChartCardClick(firm.firmCode)}
                         style={{ cursor: "pointer" }}
                       >
                         <div className="firm-name">{firm.firmName}</div>
