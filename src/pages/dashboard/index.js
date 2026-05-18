@@ -307,7 +307,7 @@ function Dashboard() {
     <div className="dashboard-v2">
       <div className="dashboard-v2__header">
         <div>
-          <h2>Main Dashboard</h2>
+          <h3>Main Dashboard</h3>
           <p>Command center for sales, market coverage, extraction, and attendance.</p>
         </div>
         <div className="dashboard-v2__controls">

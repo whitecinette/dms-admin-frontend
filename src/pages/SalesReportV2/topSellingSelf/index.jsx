@@ -46,6 +46,134 @@ const pickFirst = (obj, keys = [], fallback = 0) => {
   return fallback;
 };
 
+const getGroupFamilyName = (groupRow = {}) => {
+  const firstChild = Array.isArray(groupRow.children) ? groupRow.children[0] || {} : {};
+  const explicitFamily =
+    pickFirst(groupRow, ["family_name", "familyName", "model_family", "modelFamily"], "") ||
+    pickFirst(firstChild, ["family_name", "familyName", "model_family", "modelFamily"], "");
+
+  if (String(explicitFamily || "").trim()) return String(explicitFamily).trim();
+
+  const firstChildName = String(firstChild?.name || "").trim();
+  if (!firstChildName) return "Model Family";
+
+  return firstChildName.replace(/\s*\([^)]*\)\s*$/, "").trim() || firstChildName;
+};
+
+const buildFamilyGroupedRows = (rows = []) => {
+  const buckets = new Map();
+
+  rows.forEach((row) => {
+    const familyName = getGroupFamilyName(row);
+    const familyKey = String(familyName || "").toLowerCase().trim() || "unknown";
+
+    if (!buckets.has(familyKey)) {
+      buckets.set(familyKey, {
+        ...row,
+        model_code: familyName,
+        model: familyName,
+        name: familyName,
+        familyName,
+        product_category: "",
+        category: "",
+        variantCount: 0,
+        total: 0,
+        totalValue: 0,
+        LM: 0,
+        MTD: 0,
+        FTD: 0,
+        ADS: 0,
+        WOS: 0,
+        GR: 0,
+        dp: 0,
+        minDp: Number.POSITIVE_INFINITY,
+        maxDp: 0,
+        tags: [],
+        children: [],
+        _ratioCount: 0,
+      });
+    }
+
+    const bucket = buckets.get(familyKey);
+    const rowChildren = Array.isArray(row.children) ? row.children : [];
+
+    bucket.variantCount += safeNum(row.variantCount) || rowChildren.length;
+    bucket.total += safeNum(row.total);
+    bucket.totalValue += safeNum(row.totalValue);
+    bucket.LM += safeNum(row.LM);
+    bucket.MTD += safeNum(row.MTD);
+    bucket.FTD += safeNum(row.FTD);
+    bucket.ADS += safeNum(row.ADS);
+    bucket.WOS += safeNum(row.WOS);
+    bucket.GR += safeNum(row.GR);
+    bucket._ratioCount += 1;
+    bucket.dp = Math.max(bucket.dp, safeNum(row.dp));
+    bucket.minDp = Math.min(bucket.minDp, safeNum(row.dp) || Number.POSITIVE_INFINITY);
+    bucket.maxDp = Math.max(bucket.maxDp, safeNum(row.dp));
+
+    if (!bucket.product_category) {
+      bucket.product_category =
+        row.product_category ||
+        row.category ||
+        (rowChildren.find((child) => child?.product_category)?.product_category || "");
+    }
+    if (!bucket.category) {
+      bucket.category = row.category || bucket.product_category || "";
+    }
+
+    const mergedTags = new Set([...(bucket.tags || []), ...(row.tags || [])]);
+    bucket.tags = [...mergedTags];
+
+    rowChildren.forEach((child) => {
+      bucket.children.push({
+        ...child,
+        parentModelCode: row.model_code || row.model || row.name || "-",
+      });
+    });
+  });
+
+  return [...buckets.values()].map((bucket) => {
+    const { _ratioCount, ...rest } = bucket;
+    const ratioCount = safeNum(_ratioCount) || 1;
+    return {
+      ...rest,
+      ADS: safeNum(rest.ADS) / ratioCount,
+      WOS: safeNum(rest.WOS) / ratioCount,
+      GR: safeNum(rest.GR) / ratioCount,
+      minDp:
+        rest.minDp === Number.POSITIVE_INFINITY
+          ? safeNum(rest.maxDp || rest.dp)
+          : safeNum(rest.minDp),
+      maxDp: safeNum(rest.maxDp || rest.dp),
+    };
+  });
+};
+
+const getVariantCodeLabel = (child = {}) => {
+  const modelCode = String(
+    child.parentModelCode || child.model_code || child.model || ""
+  ).trim();
+  const productCode = String(child.product_code || "").trim();
+
+  if (modelCode && productCode && modelCode !== productCode) {
+    return `${modelCode} / ${productCode}`;
+  }
+
+  return modelCode || productCode || "-";
+};
+
+const getFamilyDpRangeLabel = (groupRow = {}, formatter = formatMoneyNormal) => {
+  const minDp = safeNum(groupRow.minDp);
+  const maxDp = safeNum(groupRow.maxDp || groupRow.dp);
+
+  if (!minDp && !maxDp) return formatter(0);
+  if (minDp && maxDp && minDp !== maxDp) {
+    return `${formatter(minDp)} - ${formatter(maxDp)}`;
+  }
+
+  return formatter(maxDp || minDp);
+};
+
 const SEGMENT_ORDER = [
   "0-6",
   "6-10",
@@ -816,7 +944,7 @@ const toggleSelection = (type, item) => {
           ? String(row.model_code || row.model || "").toLowerCase().includes(q) ||
             (row.children || []).some((child) => {
               const hay =
-                `${child.product_code} ${child.model} ${child.name} ${child.product_category} ${(child.tags || []).join(" ")}`.toLowerCase();
+                `${child.parentModelCode || ""} ${child.product_code} ${child.model} ${child.name} ${child.product_category} ${(child.tags || []).join(" ")}`.toLowerCase();
               return hay.includes(q);
             })
           : `${row.product_code} ${row.model} ${row.name} ${row.product_category} ${(row.tags || []).join(" ")}`.toLowerCase().includes(q);
@@ -835,6 +963,10 @@ const toggleSelection = (type, item) => {
         if (sortBy === "dp") return safeNum(b.dp) - safeNum(a.dp);
         return safeNum(b.MTD) - safeNum(a.MTD);
       });
+
+      if (groupBy === "model") {
+        rows = buildFamilyGroupedRows(rows);
+      }
 
       next[segment] = rows;
     });
@@ -1244,12 +1376,12 @@ const toggleSelection = (type, item) => {
                             onClick={() => toggleGroup(groupKey)}
                           >
                             <span className={`tss-caret ${isOpen ? "open" : ""}`}>▸</span>
-                            <span className="mono">{row.model_code}</span>
+                            <span className="mono tss-group-family-label">{row.model_code}</span>
                             <span className="tss-variant-badge">{row.variantCount} variants</span>
                           </button>
                         </td>
-                        <td className="tss-name-cell tss-group-name">Model Family</td>
-                        <td>—</td>
+                        <td className="tss-name-cell tss-group-name">—</td>
+                        <td>{row.product_category || row.category || "—"}</td>
                         <td>
                           <div className="tss-row-tags">
                             {(row.tags || []).slice(0, 2).map((tag) => (
@@ -1262,7 +1394,7 @@ const toggleSelection = (type, item) => {
                             ) : null}
                           </div>
                         </td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(row.dp)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{getFamilyDpRangeLabel(row, moneyFormatter)}</span></td>
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
@@ -1283,7 +1415,7 @@ const toggleSelection = (type, item) => {
                             <td></td>
                             <td className="mono tss-child-code">
                               <span className="tss-child-connector" />
-                              {child.product_code}
+                              {getVariantCodeLabel(child)}
                             </td>
                             <td className="tss-name-cell">{child.name}</td>
                             <td>{child.product_category || "-"}</td>
