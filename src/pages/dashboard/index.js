@@ -199,11 +199,33 @@ function Dashboard() {
     }));
   }, [overview]);
 
-  const attendanceTrendData = useMemo(() => {
-    const rows = overview?.charts?.attendanceDailyTrend || [];
-    return rows.map((row) => ({
-      ...row,
-      label: formatPeriod(row.period, "daily"),
+  const attendanceOverviewCards = useMemo(
+    () => [
+      {
+        key: "present",
+        label: "Present",
+        value: Number(attendanceKpis.present || 0) + Number(attendanceKpis.pending || 0),
+        tone: "present",
+      },
+      { key: "halfDay", label: "Half Day", value: Number(attendanceKpis.halfDay || 0), tone: "halfday" },
+      { key: "leave", label: "Leave", value: Number(attendanceKpis.leave || 0), tone: "leave" },
+      { key: "absent", label: "Absent", value: Number(attendanceKpis.absent || 0), tone: "absent" },
+      { key: "pending", label: "Pending", value: Number(attendanceKpis.pending || 0), tone: "pending" },
+      { key: "totalEligible", label: "Eligible", value: Number(attendanceKpis.totalEligible || 0), tone: "eligible" },
+    ],
+    [attendanceKpis]
+  );
+
+  const attendanceFirmData = useMemo(() => {
+    const rows = overview?.charts?.attendanceFirmBreakdown || [];
+    return rows.slice(0, 10).map((row) => ({
+      label: row.firmName || row.firmCode || "NA",
+      present: Number(row.present || 0),
+      halfDay: Number(row.halfDay || 0),
+      leave: Number(row.leave || 0),
+      absent: Number(row.absent || 0),
+      pending: Number(row.pending || 0),
+      totalEligible: Number(row.totalEligible || 0),
     }));
   }, [overview]);
 
@@ -395,7 +417,7 @@ function Dashboard() {
         </div>
         <div className="kpi-card">
           <span>Attendance Present</span>
-          <strong>{Number(attendanceKpis.present || 0)}</strong>
+          <strong>{Number(attendanceKpis.present || 0) + Number(attendanceKpis.pending || 0)}</strong>
           <small>Eligible: {Number(attendanceKpis.totalEligible || 0)}</small>
         </div>
         <div className="kpi-card">
@@ -494,24 +516,44 @@ function Dashboard() {
           </ResponsiveContainer>
         </section>
 
-        <section className="panel">
+        <section className="panel panel--wide">
           <header>
-            <h3>Attendance Trend</h3>
-            <p>Presence discipline and absentee behavior</p>
+            <h3>Attendance Overview (Today)</h3>
+            <p>
+              Overall and firm-wise status snapshot for{" "}
+              {attendanceKpis.asOfDate || toDateInputValue(new Date())}
+            </p>
           </header>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={attendanceTrendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="present" stroke="#16a34a" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="absent" stroke="#ef4444" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="leave" stroke="#f59e0b" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="pending" stroke="#6366f1" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="attendance-overview">
+            <div className="attendance-overview__cards">
+              {attendanceOverviewCards.map((card) => (
+                <div className={`attendance-overview-card ${card.tone}`} key={card.key}>
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="attendance-overview__firm-chart">
+              {attendanceFirmData.length ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart layout="vertical" data={attendanceFirmData} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="label" type="category" width={120} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="present" stackId="a" fill="#16a34a" />
+                    <Bar dataKey="halfDay" stackId="a" fill="#0ea5e9" />
+                    <Bar dataKey="leave" stackId="a" fill="#f59e0b" />
+                    <Bar dataKey="absent" stackId="a" fill="#ef4444" />
+                    <Bar dataKey="pending" stackId="a" fill="#6366f1" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="attendance-overview__empty">No firm-wise attendance data for selected date range.</div>
+              )}
+            </div>
+          </div>
         </section>
       </div>
     </div>

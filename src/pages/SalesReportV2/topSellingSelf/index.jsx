@@ -11,6 +11,42 @@ const toInputDate = (d) => {
   return d.toISOString().split("T")[0];
 };
 
+const getPreviousIsoDate = (dateStr) => {
+  const text = String(dateStr || "").trim();
+  if (!text) return "";
+
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month, day));
+
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  parsed.setUTCDate(parsed.getUTCDate() - 1);
+  return parsed.toISOString().slice(0, 10);
+};
+
+const getNextIsoDate = (dateStr) => {
+  const text = String(dateStr || "").trim();
+  if (!text) return "";
+
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month, day));
+
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  parsed.setUTCDate(parsed.getUTCDate() + 1);
+  return parsed.toISOString().slice(0, 10);
+};
+
 const getAuthHeader = () => {
   const raw = localStorage.getItem("authToken") || "";
   if (!raw) return {};
@@ -44,6 +80,35 @@ const pickFirst = (obj, keys = [], fallback = 0) => {
     if (obj?.[key] !== undefined && obj?.[key] !== null) return obj[key];
   }
   return fallback;
+};
+
+const pickFirstPresent = (obj, keys = []) => {
+  for (const key of keys) {
+    if (obj?.[key] !== undefined && obj?.[key] !== null) return obj[key];
+  }
+  return undefined;
+};
+
+const getDateValueFromRow = (row = {}, isoDate = "") => {
+  const date = String(isoDate || "").trim();
+  if (!date) return undefined;
+
+  const [yyyy, mm, dd] = date.split("-");
+  const alt1 = `${dd}-${mm}-${yyyy}`;
+  const alt2 = `${dd}/${mm}/${yyyy}`;
+  const alt3 = `${yyyy}/${mm}/${dd}`;
+  const candidates = [date, alt1, alt2, alt3].filter(Boolean);
+
+  for (const key of candidates) {
+    if (row?.[key] !== undefined && row?.[key] !== null) return row[key];
+  }
+
+  const matchKey = Object.keys(row || {}).find((key) =>
+    candidates.some((candidate) => String(key).includes(candidate))
+  );
+  if (matchKey) return row[matchKey];
+
+  return undefined;
 };
 
 const getGroupFamilyName = (groupRow = {}) => {
@@ -82,6 +147,10 @@ const buildFamilyGroupedRows = (rows = []) => {
         LM: 0,
         MTD: 0,
         FTD: 0,
+        D1: 0,
+        SPD_STK: 0,
+        MDD_STK: 0,
+        RETAIL_STK: 0,
         ADS: 0,
         WOS: 0,
         GR: 0,
@@ -103,6 +172,10 @@ const buildFamilyGroupedRows = (rows = []) => {
     bucket.LM += safeNum(row.LM);
     bucket.MTD += safeNum(row.MTD);
     bucket.FTD += safeNum(row.FTD);
+    bucket.D1 += safeNum(row.D1);
+    bucket.SPD_STK += safeNum(row.SPD_STK);
+    bucket.MDD_STK += safeNum(row.MDD_STK);
+    bucket.RETAIL_STK += safeNum(row.RETAIL_STK);
     bucket.ADS += safeNum(row.ADS);
     bucket.WOS += safeNum(row.WOS);
     bucket.GR += safeNum(row.GR);
@@ -220,11 +293,39 @@ const normalizeSegmentMap = (payload) => {
   return {};
 };
 
-const normalizeRow = (row = {}, segmentKey = "") => {
+const normalizeRow = (row = {}, segmentKey = "", d1Date = "") => {
   const dp = pickFirst(row, ["dp", "price", "DP", "avgPrice", "average_price", "unit_price"]);
   const lm = pickFirst(row, ["LM", "lm"]);
   const mtd = pickFirst(row, ["MTD", "mtd"]);
   const ftd = pickFirst(row, ["FTD", "ftd"]);
+  let d1Raw = pickFirstPresent(row, [
+    "D1",
+    "d1",
+    "D_1",
+    "d_1",
+    "D-1",
+    "d-1",
+    "D1_VOL",
+    "d1_vol",
+    "D_1_VOL",
+    "d_1_vol",
+    "day_before_yesterday",
+    "dayBeforeYesterday",
+    "day_before_yesterday_vol",
+    "dayBeforeYesterdayVol",
+    "db_yesterday",
+    "DB_YESTERDAY",
+  ]);
+  if (d1Raw === undefined && d1Date) {
+    d1Raw = getDateValueFromRow(row, d1Date);
+  }
+  if (d1Raw === undefined) {
+    const matchKey = Object.keys(row || {}).find((key) =>
+      /(d[\s_-]?1|day[\s_-]?before[\s_-]?yesterday|db[\s_-]?yesterday|dby)/i.test(key)
+    );
+    if (matchKey) d1Raw = row[matchKey];
+  }
+  const d1 = safeNum(d1Raw);
   const gr = pickFirst(row, ["GR", "gr"]);
   const ads = pickFirst(row, ["ADS", "ads"]);
   const wos = pickFirst(row, ["WOS", "wos"]);
@@ -245,6 +346,10 @@ const normalizeRow = (row = {}, segmentKey = "") => {
     LM: safeNum(lm),
     MTD: safeNum(mtd),
     FTD: safeNum(ftd),
+    D1: d1,
+    SPD_STK: 0,
+    MDD_STK: 0,
+    RETAIL_STK: 0,
     GR: safeNum(gr),
     ADS: safeNum(ads),
     WOS: safeNum(wos),
@@ -252,9 +357,71 @@ const normalizeRow = (row = {}, segmentKey = "") => {
     totalValue: safeNum(totalValue),
     variantCount: safeNum(row.variantCount),
     children: Array.isArray(row.children)
-      ? row.children.map((child) => normalizeRow(child, segmentKey))
+      ? row.children.map((child) => normalizeRow(child, segmentKey, d1Date))
       : [],
   };
+};
+
+const buildGroupLookupKey = (segment, row = {}) =>
+  `group::${segment}::${row.model_code || row.model || ""}::${row.name || ""}`;
+
+const buildItemLookupKey = (segment, row = {}) =>
+  `item::${segment}::${row.product_code || ""}::${row.model_code || row.model || ""}::${row.name || ""}`;
+
+const applyD1FromFtdSnapshot = (baseRows = {}, d1Rows = {}) => {
+  const d1Lookup = new Map();
+
+  Object.keys(d1Rows || {}).forEach((segment) => {
+    (d1Rows[segment] || []).forEach((row) => {
+      if ((row.children || []).length) {
+        d1Lookup.set(buildGroupLookupKey(segment, row), safeNum(row.FTD));
+        (row.children || []).forEach((child) => {
+          d1Lookup.set(buildItemLookupKey(segment, child), safeNum(child.FTD));
+        });
+      } else {
+        d1Lookup.set(buildItemLookupKey(segment, row), safeNum(row.FTD));
+      }
+    });
+  });
+
+  Object.keys(baseRows || {}).forEach((segment) => {
+    (baseRows[segment] || []).forEach((row) => {
+      if ((row.children || []).length) {
+        if (!safeNum(row.D1)) {
+          row.D1 = safeNum(d1Lookup.get(buildGroupLookupKey(segment, row)));
+        }
+
+        (row.children || []).forEach((child) => {
+          if (!safeNum(child.D1)) {
+            child.D1 = safeNum(d1Lookup.get(buildItemLookupKey(segment, child)));
+          }
+        });
+
+        if (!safeNum(row.D1)) {
+          row.D1 = (row.children || []).reduce((sum, child) => sum + safeNum(child.D1), 0);
+        }
+      } else if (!safeNum(row.D1)) {
+        row.D1 = safeNum(d1Lookup.get(buildItemLookupKey(segment, row)));
+      }
+    });
+  });
+};
+
+const hasMeaningfulMetrics = (row = {}) => {
+  const keys = [
+    "LM",
+    "MTD",
+    "FTD",
+    "D1",
+    "GR",
+    "ADS",
+    "WOS",
+    "totalValue",
+    "SPD_STK",
+    "MDD_STK",
+    "RETAIL_STK",
+  ];
+  return keys.some((key) => Math.abs(safeNum(row[key])) > 0);
 };
 
 const getMaxOf = (rows, key) => {
@@ -784,6 +951,7 @@ const toggleSelection = (type, item) => {
   const [metaInfo, setMetaInfo] = useState({
     usedDefaultDateRange: true,
     ftdDate: "",
+    d1Date: "",
     groupBy: "product_code",
   });
 
@@ -794,7 +962,11 @@ const toggleSelection = (type, item) => {
   const moneyFormatter = (value) =>
     moneyView === "compact" ? formatMoneyCompact(value) : formatMoneyNormal(value);
 
-  const ftdColumnLabel = metaInfo?.usedDefaultDateRange ? "Yesterday Vol" : "FTD Vol";
+  const ftdBaseLabel = "FTD";
+  const ftdColumnLabel = metaInfo?.ftdDate ? `${ftdBaseLabel} (${metaInfo.ftdDate})` : ftdBaseLabel;
+  const d1ColumnLabel = metaInfo?.d1Date ? `D-1 (${metaInfo.d1Date})` : "D-1";
+  // const ftdColumnLabel = "FTD Vol";
+
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
@@ -853,12 +1025,61 @@ const toggleSelection = (type, item) => {
       );
 
       const rawMap = normalizeSegmentMap(res.data);
+      const responseMeta = res.data?.meta || {};
+      const resolvedFtdDate =
+        responseMeta?.ftdDate ||
+        getNextIsoDate(responseMeta?.d1Date || responseMeta?.dayBeforeYesterdayDate || "");
+      const resolvedD1Date =
+        responseMeta?.d1Date ||
+        responseMeta?.dayBeforeYesterdayDate ||
+        getPreviousIsoDate(resolvedFtdDate);
 
       const cleaned = {};
       Object.keys(rawMap || {}).forEach((segmentKey) => {
         const arr = Array.isArray(rawMap[segmentKey]) ? rawMap[segmentKey] : [];
-        cleaned[segmentKey] = arr.map((row) => normalizeRow(row, segmentKey));
+        cleaned[segmentKey] = arr.map((row) => normalizeRow(row, segmentKey, resolvedD1Date));
       });
+
+      const normalizedRows = Object.values(cleaned)
+        .flat()
+        .flatMap((row) => [row, ...(row.children || [])]);
+      const hasAnyD1 = normalizedRows.some((row) => safeNum(row.D1) > 0);
+      const hasAnyFtd = normalizedRows.some((row) => safeNum(row.FTD) > 0);
+      if (!hasAnyD1 && hasAnyFtd && resolvedD1Date) {
+        const d1Payload = {
+          ...payload,
+          startDate: payload.startDate || resolvedD1Date,
+          endDate: resolvedD1Date,
+        };
+
+        const d1Res = await axios.post(
+          `${backendUrl}/other-reports/samsung/top-selling-products`,
+          d1Payload,
+          {
+            headers: {
+              ...getAuthHeader(),
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const d1RawMap = normalizeSegmentMap(d1Res.data);
+        const d1Cleaned = {};
+        Object.keys(d1RawMap || {}).forEach((segmentKey) => {
+          const arr = Array.isArray(d1RawMap[segmentKey]) ? d1RawMap[segmentKey] : [];
+          d1Cleaned[segmentKey] = arr.map((row) => normalizeRow(row, segmentKey, ""));
+        });
+
+        applyD1FromFtdSnapshot(cleaned, d1Cleaned);
+
+        const firstRawRow = Object.values(rawMap).flat().find(Boolean);
+        console.warn(
+          "D-1 missing in primary payload, applied fallback from shifted-date FTD snapshot. Sample row keys:",
+          firstRawRow ? Object.keys(firstRawRow) : [],
+          "fallbackDate:",
+          resolvedD1Date
+        );
+      }
 
       setSegmentMap(cleaned);
       setApiSummary(res.data?.summary || null);
@@ -870,7 +1091,8 @@ const toggleSelection = (type, item) => {
       );
       setMetaInfo({
         usedDefaultDateRange: Boolean(res.data?.meta?.usedDefaultDateRange),
-        ftdDate: res.data?.meta?.ftdDate || "",
+        ftdDate: resolvedFtdDate,
+        d1Date: resolvedD1Date || "",
         groupBy: res.data?.meta?.groupBy || groupBy,
       });
 
@@ -953,6 +1175,16 @@ const toggleSelection = (type, item) => {
         return categoryOk && tagsOk && searchOk;
       });
 
+      rows = rows.filter((row) => {
+        if (row.rowType === "group") {
+          return (
+            hasMeaningfulMetrics(row) ||
+            (row.children || []).some((child) => hasMeaningfulMetrics(child))
+          );
+        }
+        return hasMeaningfulMetrics(row);
+      });
+
       rows.sort((a, b) => {
         if (sortBy === "value") return safeNum(b.totalValue) - safeNum(a.totalValue);
         if (sortBy === "lm") return safeNum(b.LM) - safeNum(a.LM);
@@ -1025,6 +1257,10 @@ const toggleSelection = (type, item) => {
       lm: getMaxOf(rowsForHeat, "LM"),
       mtd: getMaxOf(rowsForHeat, "MTD"),
       ftd: getMaxOf(rowsForHeat, "FTD"),
+      d1: getMaxOf(rowsForHeat, "D1"),
+      spdStk: getMaxOf(rowsForHeat, "SPD_STK"),
+      mddStk: getMaxOf(rowsForHeat, "MDD_STK"),
+      retailStk: getMaxOf(rowsForHeat, "RETAIL_STK"),
       ads: getMaxOf(rowsForHeat, "ADS"),
       wos: getMaxOf(rowsForHeat, "WOS"),
       totalValue: getMaxOf(rowsForHeat, "totalValue"),
@@ -1229,8 +1465,8 @@ const toggleSelection = (type, item) => {
         <div className="tss-filter-meta-row">
           <div className="tss-filter-note">
             {hasManualDate
-              ? `Custom range selected. ${ftdColumnLabel} is based on end date${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}.`
-              : `No date selected. Backend is using current month till today, and ${ftdColumnLabel} is based on yesterday${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}.`}
+              ? `Custom range selected. ${ftdBaseLabel} is based on end date${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}. ${d1ColumnLabel} is based on previous day${metaInfo?.d1Date ? ` (${metaInfo.d1Date})` : ""}.`
+              : `No date selected. Backend is using current month till today, and ${ftdBaseLabel} is based on yesterday${metaInfo?.ftdDate ? ` (${metaInfo.ftdDate})` : ""}. ${d1ColumnLabel} is based on day before yesterday${metaInfo?.d1Date ? ` (${metaInfo.d1Date})` : ""}.`}
           </div>
         </div>
 
@@ -1329,14 +1565,18 @@ const toggleSelection = (type, item) => {
                   <th>Name</th>
                   <th>Category</th>
                   <th>Tags</th>
-                  {showDp ? <th>DP</th> : null}
                   <th>LMTD Vol</th>
                   <th>MTD Vol</th>
-                  <th>{ftdColumnLabel}</th>
                   <th>GR %</th>
                   <th>ADS</th>
+                  <th>{ftdColumnLabel}</th>
+                  <th>{d1ColumnLabel}</th>
+                  <th>SPD stk</th>
+                  <th>MDD stk</th>
+                  <th>Retail stk</th>
                   <th>WOS</th>
                   <th>Total Value</th>
+                  {showDp ? <th>DP</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -1363,16 +1603,20 @@ const toggleSelection = (type, item) => {
                               )}
                             </div>
                           </td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
+                          <td><span className="tss-heat-cell" style={getGrowthStyle(row.GR)}>{`${formatDecimal(row.GR)}%`}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(row.ADS)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.D1, heatMax.d1, "14,165,155")}>{formatNum(row.D1)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.SPD_STK, heatMax.spdStk, "6,182,212")}>{formatNum(row.SPD_STK)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MDD_STK, heatMax.mddStk, "6,182,212")}>{formatNum(row.MDD_STK)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.RETAIL_STK, heatMax.retailStk, "6,182,212")}>{formatNum(row.RETAIL_STK)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(row.WOS)}</span></td>
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(row.totalValue)}</span></td>
                           {showDp ? (
                             <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(row.dp)}</span></td>
                           ) : null}
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
-                          <td><span className="tss-heat-cell" style={getGrowthStyle(row.GR)}>{`${formatDecimal(row.GR)}%`}</span></td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(row.ADS)}</span></td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(row.WOS)}</span></td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(row.totalValue)}</span></td>
                         </tr>
                       );
                     }
@@ -1409,21 +1653,27 @@ const toggleSelection = (type, item) => {
                             ) : null}
                           </div>
                         </td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
+                        <td><span className="tss-heat-cell" style={getGrowthStyle(row.GR)}>{`${formatDecimal(row.GR)}%`}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(row.ADS)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.D1, heatMax.d1, "14,165,155")}>{formatNum(row.D1)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.SPD_STK, heatMax.spdStk, "6,182,212")}>{formatNum(row.SPD_STK)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MDD_STK, heatMax.mddStk, "6,182,212")}>{formatNum(row.MDD_STK)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.RETAIL_STK, heatMax.retailStk, "6,182,212")}>{formatNum(row.RETAIL_STK)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(row.WOS)}</span></td>
+                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(row.totalValue)}</span></td>
                         {showDp ? (
                           <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{getFamilyDpRangeLabel(row, moneyFormatter)}</span></td>
                         ) : null}
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
-                        <td><span className="tss-heat-cell" style={getGrowthStyle(row.GR)}>{`${formatDecimal(row.GR)}%`}</span></td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(row.ADS)}</span></td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(row.WOS)}</span></td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(row.totalValue)}</span></td>
                       </tr>
                     );
 
                     const childRows = isOpen
-                      ? (row.children || []).map((child, childIdx) => (
+                      ? (row.children || [])
+                          .filter((child) => hasMeaningfulMetrics(child))
+                          .map((child, childIdx) => (
                           <tr
                             key={`child-${groupKey}-${child.product_code}-${childIdx}`}
                             className="tss-child-row"
@@ -1449,16 +1699,20 @@ const toggleSelection = (type, item) => {
                                 )}
                               </div>
                             </td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.LM, heatMax.lm, "59,130,246")}>{formatNum(child.LM)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.MTD, heatMax.mtd, "37,99,235")}>{formatNum(child.MTD)}</span></td>
+                            <td><span className="tss-heat-cell" style={getGrowthStyle(child.GR)}>{`${formatDecimal(child.GR)}%`}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(child.ADS)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.FTD, heatMax.ftd, "14,165,155")}>{formatNum(child.FTD)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.D1, heatMax.d1, "14,165,155")}>{formatNum(child.D1)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.SPD_STK, heatMax.spdStk, "6,182,212")}>{formatNum(child.SPD_STK)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.MDD_STK, heatMax.mddStk, "6,182,212")}>{formatNum(child.MDD_STK)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.RETAIL_STK, heatMax.retailStk, "6,182,212")}>{formatNum(child.RETAIL_STK)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(child.WOS)}</span></td>
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(child.totalValue)}</span></td>
                             {showDp ? (
                               <td><span className="tss-heat-cell" style={getHeatCellStyle(child.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(child.dp)}</span></td>
                             ) : null}
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.LM, heatMax.lm, "59,130,246")}>{formatNum(child.LM)}</span></td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.MTD, heatMax.mtd, "37,99,235")}>{formatNum(child.MTD)}</span></td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.FTD, heatMax.ftd, "14,165,155")}>{formatNum(child.FTD)}</span></td>
-                            <td><span className="tss-heat-cell" style={getGrowthStyle(child.GR)}>{`${formatDecimal(child.GR)}%`}</span></td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.ADS, heatMax.ads, "99,102,241")}>{formatDecimal(child.ADS)}</span></td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.WOS, heatMax.wos, "168,85,247")}>{formatDecimal(child.WOS)}</span></td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.totalValue, heatMax.totalValue, "124,58,237")}>{moneyFormatter(child.totalValue)}</span></td>
                           </tr>
                         ))
                       : [];

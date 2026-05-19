@@ -14,7 +14,7 @@ export const FiltersProvider = ({ children }) => {
     currentDate.setDate(1);
     const start = new Date(currentDate);
     start.setMonth(currentDate.getMonth());
-    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    const end = new Date();
     setStartDate(start);
     setEndDate(end);
   };
