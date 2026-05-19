@@ -544,7 +544,7 @@ export default function TopSellingSelf() {
   const [search, setSearch] = useState("");
   const [segmentMap, setSegmentMap] = useState({});
   const [apiSummary, setApiSummary] = useState(null);
-  const [moneyView, setMoneyView] = useState("normal");
+  const [moneyView, setMoneyView] = useState("compact");
   const [activeSegment, setActiveSegment] = useState("all");
   const [sortBy, setSortBy] = useState("mtd");
   const [groupBy, setGroupBy] = useState("model");
@@ -1229,11 +1229,12 @@ const toggleSelection = (type, item) => {
         acc.lm += safeNum(row.LM);
         acc.mtd += safeNum(row.MTD);
         acc.ftd += safeNum(row.FTD);
+        acc.d1 += safeNum(row.D1);
         acc.totalValue += safeNum(row.totalValue);
         acc.ads += safeNum(row.ADS);
         return acc;
       },
-      { models: 0, lm: 0, mtd: 0, ftd: 0, totalValue: 0, ads: 0 }
+      { models: 0, lm: 0, mtd: 0, ftd: 0, d1: 0, totalValue: 0, ads: 0 }
     );
 
     const segmentCount = Object.keys(visibleSegmentRows).filter(
@@ -1246,6 +1247,7 @@ const toggleSelection = (type, item) => {
       lm: totals.lm,
       mtd: totals.mtd,
       ftd: totals.ftd,
+      d1: totals.d1,
       totalValue: totals.totalValue,
       avgAds: flatRows.length ? totals.ads / flatRows.length : 0,
     };
@@ -1524,6 +1526,7 @@ const toggleSelection = (type, item) => {
         <KpiCard label="LMTD Vol" value={formatNum(summary.lm)} />
         <KpiCard label="MTD Vol" value={formatNum(summary.mtd)} />
         <KpiCard label={ftdColumnLabel} value={formatNum(summary.ftd)} subtle={metaInfo?.ftdDate || ""} />
+        <KpiCard label={d1ColumnLabel} value={formatNum(summary.d1)} subtle={metaInfo?.d1Date || ""} />
         <KpiCard label="Avg ADS" value={formatDecimal(summary.avgAds)} />
         <KpiCard label="Total Value" value={moneyFormatter(summary.totalValue)} />
       </div>
