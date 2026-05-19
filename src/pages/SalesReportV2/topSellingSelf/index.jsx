@@ -381,6 +381,7 @@ export default function TopSellingSelf() {
   const [activeSegment, setActiveSegment] = useState("all");
   const [sortBy, setSortBy] = useState("mtd");
   const [groupBy, setGroupBy] = useState("model");
+  const [showDp, setShowDp] = useState(false);
 
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [tagOptions, setTagOptions] = useState([]);
@@ -1198,6 +1199,18 @@ const toggleSelection = (type, item) => {
             </div>
           </div>
 
+          <div className="tss-field">
+            <label>Display</label>
+            <label className="tss-check-option">
+              <input
+                type="checkbox"
+                checked={showDp}
+                onChange={(e) => setShowDp(e.target.checked)}
+              />
+              <span>Show DP</span>
+            </label>
+          </div>
+
           {groupBy === "model" ? (
             <div className="tss-field">
               <label>Group Controls</label>
@@ -1316,7 +1329,7 @@ const toggleSelection = (type, item) => {
                   <th>Name</th>
                   <th>Category</th>
                   <th>Tags</th>
-                  <th>DP</th>
+                  {showDp ? <th>DP</th> : null}
                   <th>LMTD Vol</th>
                   <th>MTD Vol</th>
                   <th>{ftdColumnLabel}</th>
@@ -1350,7 +1363,9 @@ const toggleSelection = (type, item) => {
                               )}
                             </div>
                           </td>
-                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(row.dp)}</span></td>
+                          {showDp ? (
+                            <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(row.dp)}</span></td>
+                          ) : null}
                           <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
                           <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
                           <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
@@ -1394,7 +1409,9 @@ const toggleSelection = (type, item) => {
                             ) : null}
                           </div>
                         </td>
-                        <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{getFamilyDpRangeLabel(row, moneyFormatter)}</span></td>
+                        {showDp ? (
+                          <td><span className="tss-heat-cell" style={getHeatCellStyle(row.dp, heatMax.dp, "245,158,11")}>{getFamilyDpRangeLabel(row, moneyFormatter)}</span></td>
+                        ) : null}
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.LM, heatMax.lm, "59,130,246")}>{formatNum(row.LM)}</span></td>
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.MTD, heatMax.mtd, "37,99,235")}>{formatNum(row.MTD)}</span></td>
                         <td><span className="tss-heat-cell" style={getHeatCellStyle(row.FTD, heatMax.ftd, "14,165,155")}>{formatNum(row.FTD)}</span></td>
@@ -1432,7 +1449,9 @@ const toggleSelection = (type, item) => {
                                 )}
                               </div>
                             </td>
-                            <td><span className="tss-heat-cell" style={getHeatCellStyle(child.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(child.dp)}</span></td>
+                            {showDp ? (
+                              <td><span className="tss-heat-cell" style={getHeatCellStyle(child.dp, heatMax.dp, "245,158,11")}>{moneyFormatter(child.dp)}</span></td>
+                            ) : null}
                             <td><span className="tss-heat-cell" style={getHeatCellStyle(child.LM, heatMax.lm, "59,130,246")}>{formatNum(child.LM)}</span></td>
                             <td><span className="tss-heat-cell" style={getHeatCellStyle(child.MTD, heatMax.mtd, "37,99,235")}>{formatNum(child.MTD)}</span></td>
                             <td><span className="tss-heat-cell" style={getHeatCellStyle(child.FTD, heatMax.ftd, "14,165,155")}>{formatNum(child.FTD)}</span></td>

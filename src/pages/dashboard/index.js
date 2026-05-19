@@ -37,6 +37,19 @@ const numberFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 });
 
+const EXTRACTION_COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f97316",
+  "#a21caf",
+  "#0891b2",
+  "#dc2626",
+  "#4f46e5",
+  "#65a30d",
+  "#db2777",
+  "#0f766e",
+];
+
 function toDateInputValue(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
   const year = date.getFullYear();
@@ -162,9 +175,11 @@ function Dashboard() {
     }));
   }, [overview, trend]);
 
-  const topBrands = useMemo(() => {
+  const extractionBrands = useMemo(() => {
     const rows = overview?.charts?.extractionBrandShare || [];
-    return rows.slice(0, 4).map((item) => item.brand);
+    return rows
+      .filter((item) => Number(item?.sharePct || 0) > 0)
+      .map((item) => item.brand);
   }, [overview]);
 
   const extractionTrendData = useMemo(() => {
@@ -421,7 +436,7 @@ function Dashboard() {
         <section className="panel">
           <header>
             <h3>Extraction Trend</h3>
-            <p>Top brand comparison over time</p>
+            <p>All brands with sales in selected period</p>
           </header>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={extractionTrendData}>
@@ -430,12 +445,12 @@ function Dashboard() {
               <YAxis />
               <Tooltip />
               <Legend />
-              {topBrands.map((brand, index) => (
+              {extractionBrands.map((brand, index) => (
                 <Line
                   key={brand}
                   type="monotone"
                   dataKey={brand}
-                  stroke={["#2563eb", "#16a34a", "#f97316", "#a21caf"][index % 4]}
+                  stroke={EXTRACTION_COLORS[index % EXTRACTION_COLORS.length]}
                   strokeWidth={2}
                   dot={false}
                 />
