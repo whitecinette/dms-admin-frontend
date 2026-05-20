@@ -1,18 +1,8 @@
-import React, {useState, useEffect} from "react";
+import React, {useMemo, useState, useEffect} from "react";
 import {FaDownload, FaFileUpload} from "react-icons/fa";
 import config from "../../config.js";
 import axios from "axios";
 import "./style.scss";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    CartesianGrid,
-} from "recharts";
 import CustomAlert from "../../components/CustomAlert/index.js";
 import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
 import {useLocation, useNavigate} from "react-router-dom";
@@ -21,7 +11,6 @@ import * as XLSX from "xlsx";
 import TableLoading from "../../components/tableLoading";
 import ReactECharts from "echarts-for-react";
 // import TimelineView from "./timelineView/index.jsx";
-import moment from "moment";
 
 const backendUrl = config.backend_url;
 
@@ -56,7 +45,46 @@ const ViewBeatMappingStatus = () => {
     const [expandedRowData, setExpandedRowData] = useState([]);
     const [isDownload, setIsDownload] = useState(false);
     const [isLoading, setLoading] = useState(false);
-    const [viewMode, setViewMode] = useState("overview");
+    const [firmFilter, setFirmFilter] = useState("");
+    const [positionFilter, setPositionFilter] = useState("");
+    const [roleFilter, setRoleFilter] = useState("");
+    const [topDealerFilter, setTopDealerFilter] = useState("all");
+
+    const getNormalizedString = (value) =>
+        value === null || value === undefined ? "" : String(value).trim().toLowerCase();
+
+    const getDealerFirm = (dealer = {}) =>
+        String(
+            dealer.firm ||
+            dealer.firmName ||
+            dealer.firm_code ||
+            dealer.firmCode ||
+            dealer.category ||
+            ""
+        ).trim();
+
+    const getActorFirm = (actor = {}, schedule = []) =>
+        String(
+            actor.firm ||
+            actor.firmName ||
+            actor.firm_code ||
+            actor.firmCode ||
+            actor.orgName ||
+            (Array.isArray(schedule) ? getDealerFirm(schedule[0] || {}) : "") ||
+            ""
+        ).trim();
+
+    const getActorPosition = (actor = {}) =>
+        String(actor.position || actor.userPosition || actor.designation || "").trim();
+
+    const getActorRole = (actor = {}) =>
+        String(actor.role || actor.userRole || "").trim();
+
+    const isTopDealer = (dealer = {}) =>
+        dealer.top_outlet === true || dealer.topOutlet === true || dealer.topDealer === true;
+
+    const hasActiveFilters =
+        !!firmFilter || !!positionFilter || !!roleFilter || topDealerFilter !== "all";
 
     const getBeatMapping = async () => {
         setLoading(true);
@@ -111,7 +139,7 @@ const ViewBeatMappingStatus = () => {
             setExpandedRow(null);
             setExpandedRowData([]);
         }
-    }, [ search, startDay, endDay]);
+    }, [ search, startDay, endDay, firmFilter, positionFilter, roleFilter, topDealerFilter]);
 
     const addDailyBeatMapping = async () => {
         try {
@@ -182,7 +210,11 @@ const ViewBeatMappingStatus = () => {
         const defaultEndDate = "";
         setStartDay(defaultStartDate);
         setEndDay(defaultEndDate);
-        navigate("/viewBeatMappingStatus", {replace: true});
+        setFirmFilter("");
+        setPositionFilter("");
+        setRoleFilter("");
+        setTopDealerFilter("all");
+        navigate("/marketCoverage", {replace: true});
         getBeatMapping();
     };
 
@@ -199,7 +231,7 @@ const ViewBeatMappingStatus = () => {
 
         // Flatten data: one row per dealer per employee
         let excelData = [];
-        data.forEach((item, idx) => {
+        filteredData.forEach((item) => {
             // If item.dealers is an array, otherwise adjust as per your data structure
             const dealers = Array.isArray(item.schedule) ? item.schedule : [];
             if (dealers.length === 0) {
@@ -242,14 +274,92 @@ const ViewBeatMappingStatus = () => {
         setIsDownload(false)
     };
 
-    const stackedData = data.map((emp) => {
-        const total = emp.done + emp.pending;
+    const optionsFromData = useMemo(() => {
+        const unique = (values = []) =>
+            Array.from(new Set(values.map((v) => String(v || "").trim()).filter(Boolean))).sort((a, b) =>
+                a.localeCompare(b)
+            );
+
+        return {
+            firms: unique(
+                data.map((item) =>
+                    getActorFirm(item, Array.isArray(item.schedule) ? item.schedule : [])
+                )
+            ),
+            positions: unique(data.map((item) => getActorPosition(item))),
+            roles: unique(data.map((item) => getActorRole(item))),
+        };
+    }, [data]);
+
+    const filteredData = useMemo(() => {
+        return data
+            .map((item) => {
+                const schedule = Array.isArray(item.schedule) ? item.schedule : [];
+                const actorFirm = getActorFirm(item, schedule);
+                const actorPosition = getActorPosition(item);
+                const actorRole = getActorRole(item);
+                const hasTopDealer = schedule.some((dealer) => isTopDealer(dealer));
+
+                const firmMatches =
+                    !firmFilter || getNormalizedString(actorFirm) === getNormalizedString(firmFilter);
+                const positionMatches =
+                    !positionFilter || getNormalizedString(actorPosition) === getNormalizedString(positionFilter);
+                const roleMatches =
+                    !roleFilter || getNormalizedString(actorRole) === getNormalizedString(roleFilter);
+                const topDealerMatches =
+                    topDealerFilter === "all" ||
+                    (topDealerFilter === "top" && hasTopDealer) ||
+                    (topDealerFilter === "nonTop" && !hasTopDealer);
+
+                if (!(firmMatches && positionMatches && roleMatches && topDealerMatches)) {
+                    return null;
+                }
+
+                let filteredSchedule = schedule;
+                if (topDealerFilter === "top") {
+                    filteredSchedule = schedule.filter((dealer) => isTopDealer(dealer));
+                } else if (topDealerFilter === "nonTop") {
+                    filteredSchedule = schedule.filter((dealer) => !isTopDealer(dealer));
+                }
+
+                const done = filteredSchedule.filter((s) => s.status === "done").length;
+                const pending = filteredSchedule.filter((s) => s.status === "pending").length;
+
+                return {
+                    ...item,
+                    schedule: hasActiveFilters ? filteredSchedule : schedule,
+                    done,
+                    pending,
+                    actorFirm,
+                    actorPosition,
+                    actorRole,
+                };
+            })
+            .filter(Boolean);
+    }, [data, firmFilter, positionFilter, roleFilter, topDealerFilter, hasActiveFilters]);
+
+    const stackedData = filteredData.map((emp) => {
+        const total = (emp.done || 0) + (emp.pending || 0);
+        const donePct = total > 0 ? ((emp.done / total) * 100).toFixed(1) : "0.0";
+        const pendingPct = total > 0 ? ((emp.pending / total) * 100).toFixed(1) : "0.0";
         return {
             ...emp,
-            done: ((emp.done / total) * 100).toFixed(1),
-            pending: ((emp.pending / total) * 100).toFixed(1),
+            done: donePct,
+            pending: pendingPct,
+            coverage: donePct,
         };
     });
+
+    const overallTotals = useMemo(() => {
+        return filteredData.reduce(
+            (acc, row) => {
+                acc.done += row.done || 0;
+                acc.pending += row.pending || 0;
+                return acc;
+            },
+            {done: 0, pending: 0}
+        );
+    }, [filteredData]);
 
     return (
         <div className="viewBeatMappingStatus-page">
@@ -264,25 +374,9 @@ const ViewBeatMappingStatus = () => {
                 Market Coverage
             </div>
 
-            <div className="view-toggle-container">
-            <button 
-                className={`view-toggle-btn ${viewMode === 'overview' ? 'active' : ''}`}
-                onClick={() => setViewMode('overview')}
-            >
-                Overview
-            </button>
-            <button 
-                className={`view-toggle-btn ${viewMode === 'timeline' ? 'active' : ''}`}
-                onClick={() => setViewMode('timeline')}
-            >
-                Timeline
-            </button>
-            </div>
-
-            {viewMode === "overview" ? (
             <>
             {/* first part  */}
-            {data.length > 0 && (
+            {filteredData.length > 0 && (
                 <div className="viewBeatMapping-page-graph">
                     <div className="viewBeatMappingStatus-calendar-header">
                         <h2>
@@ -314,75 +408,162 @@ const ViewBeatMappingStatus = () => {
                         </BarChart>
                     </ResponsiveContainer> */}
 
-                    <ReactECharts
-                        style={{ height: "400px", width: "100%" }}
-                        option={{
-                            tooltip: {
-                            trigger: "axis",
-                            axisPointer: { type: "shadow" }
-                            },
-                            legend: {
-                            data: ["Done", "Pending"]
-                            },
-                            xAxis: {
-                            type: "category",
-                            data: stackedData.map(d => d.name.split(" ")[0]),
-                            axisLabel: {
-                                rotate: 45,
-                                fontSize: 12
-                            }
-                            },
-                            yAxis: {
-                            type: "value",
-                            max: 100,
-                            axisLabel: {
-                                formatter: "{value}%"
-                            }
-                            },
-                            series: [
-                            {
-                                name: "Done",
-                                type: "bar",
-                                stack: "total",
-                                emphasis: { focus: "series" },
-                                itemStyle: { color: {
-                                        type: 'linear',
-                                        x: 0,
-                                        y: 0,
-                                        x2: 0,
-                                        y2: 1,
-                                        colorStops: [
-                                            { offset: 0, color: '#0fefa4ff' }, // top
-                                            { offset: 1, color: '#26b07c' }  // bottom
-                                        ]
-                                        }
-                                 },
-                                data: stackedData.map(d => parseFloat(d.done))
-                            },
-                            {
-                                name: "Pending",
-                                type: "bar",
-                                stack: "total",
-                                emphasis: { focus: "series" },
-                                itemStyle: { 
-                                    color: {
-                                        type: 'linear',
-                                        x: 0,
-                                        y: 0,
-                                        x2: 0,
-                                        y2: 1,
-                                        colorStops: [
-                                            { offset: 0, color: '#ffd67e' }, // top
-                                            { offset: 1, color: '#fb8c52' }  // bottom
-                                        ]
-                                        }
-
-                                 },
-                                data: stackedData.map(d => parseFloat(d.pending))
-                            }
-                            ]
-                        }}
-                        />
+                    <div className="modern-charts-grid">
+                        <div className="modern-chart-card">
+                            <ReactECharts
+                                style={{height: "420px", width: "100%"}}
+                                option={{
+                                    tooltip: {
+                                        trigger: "axis",
+                                        axisPointer: {type: "shadow"},
+                                    },
+                                    legend: {
+                                        top: 4,
+                                        data: ["Done %", "Pending %", "Coverage %"],
+                                    },
+                                    grid: {
+                                        left: 30,
+                                        right: 20,
+                                        top: 42,
+                                        bottom: 70,
+                                        containLabel: true,
+                                    },
+                                    xAxis: {
+                                        type: "category",
+                                        data: stackedData.map((d) => d.name),
+                                        axisLabel: {
+                                            rotate: 35,
+                                            fontSize: 11,
+                                            overflow: "truncate",
+                                            width: 90,
+                                        },
+                                    },
+                                    yAxis: {
+                                        type: "value",
+                                        max: 100,
+                                        axisLabel: {formatter: "{value}%"},
+                                        splitLine: {lineStyle: {type: "dashed"}},
+                                    },
+                                    series: [
+                                        {
+                                            name: "Done %",
+                                            type: "bar",
+                                            stack: "total",
+                                            barWidth: 22,
+                                            itemStyle: {
+                                                borderRadius: [8, 8, 0, 0],
+                                                color: {
+                                                    type: "linear",
+                                                    x: 0,
+                                                    y: 0,
+                                                    x2: 0,
+                                                    y2: 1,
+                                                    colorStops: [
+                                                        {offset: 0, color: "#11c38e"},
+                                                        {offset: 1, color: "#0f9f74"},
+                                                    ],
+                                                },
+                                            },
+                                            data: stackedData.map((d) => parseFloat(d.done)),
+                                        },
+                                        {
+                                            name: "Pending %",
+                                            type: "bar",
+                                            stack: "total",
+                                            barWidth: 22,
+                                            itemStyle: {
+                                                borderRadius: [8, 8, 0, 0],
+                                                color: {
+                                                    type: "linear",
+                                                    x: 0,
+                                                    y: 0,
+                                                    x2: 0,
+                                                    y2: 1,
+                                                    colorStops: [
+                                                        {offset: 0, color: "#ffbe66"},
+                                                        {offset: 1, color: "#f18948"},
+                                                    ],
+                                                },
+                                            },
+                                            data: stackedData.map((d) => parseFloat(d.pending)),
+                                        },
+                                        {
+                                            name: "Coverage %",
+                                            type: "line",
+                                            smooth: true,
+                                            symbolSize: 7,
+                                            lineStyle: {width: 3, color: "#4453ff"},
+                                            itemStyle: {color: "#4453ff"},
+                                            areaStyle: {color: "rgba(68,83,255,0.12)"},
+                                            data: stackedData.map((d) => parseFloat(d.coverage)),
+                                        },
+                                    ],
+                                }}
+                            />
+                        </div>
+                        <div className="modern-chart-card donut">
+                            <ReactECharts
+                                style={{height: "420px", width: "100%"}}
+                                option={{
+                                    tooltip: {trigger: "item"},
+                                    legend: {bottom: 8},
+                                    series: [
+                                        {
+                                            name: "Dealer Status",
+                                            type: "pie",
+                                            radius: ["55%", "76%"],
+                                            center: ["50%", "45%"],
+                                            itemStyle: {
+                                                borderRadius: 10,
+                                                borderColor: "#fff",
+                                                borderWidth: 2,
+                                            },
+                                            label: {
+                                                show: true,
+                                                formatter: "{b}\n{d}%",
+                                                fontSize: 12,
+                                            },
+                                            data: [
+                                                {
+                                                    value: overallTotals.done,
+                                                    name: "Done",
+                                                    itemStyle: {color: "#15b887"},
+                                                },
+                                                {
+                                                    value: overallTotals.pending,
+                                                    name: "Pending",
+                                                    itemStyle: {color: "#f49a54"},
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                    graphic: [
+                                        {
+                                            type: "text",
+                                            left: "center",
+                                            top: "40%",
+                                            style: {
+                                                text: `${overallTotals.done + overallTotals.pending}`,
+                                                fontSize: 24,
+                                                fontWeight: 700,
+                                                fill: "#1f2937",
+                                            },
+                                        },
+                                        {
+                                            type: "text",
+                                            left: "center",
+                                            top: "48%",
+                                            style: {
+                                                text: "Total Dealers",
+                                                fontSize: 12,
+                                                fill: "#6b7280",
+                                            },
+                                        },
+                                    ],
+                                }}
+                            />
+                        </div>
+                    </div>
 
                 </div>
             )}
@@ -397,6 +578,47 @@ const ViewBeatMappingStatus = () => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
+                            <select
+                                value={firmFilter}
+                                onChange={(e) => setFirmFilter(e.target.value)}
+                            >
+                                <option value="">All Firms</option>
+                                {optionsFromData.firms.map((firm) => (
+                                    <option key={firm} value={firm}>
+                                        {firm}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={positionFilter}
+                                onChange={(e) => setPositionFilter(e.target.value)}
+                            >
+                                <option value="">All Positions</option>
+                                {optionsFromData.positions.map((position) => (
+                                    <option key={position} value={position}>
+                                        {position}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                            >
+                                <option value="">All Roles</option>
+                                {optionsFromData.roles.map((role) => (
+                                    <option key={role} value={role}>
+                                        {role}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={topDealerFilter}
+                                onChange={(e) => setTopDealerFilter(e.target.value)}
+                            >
+                                <option value="all">All Dealers</option>
+                                <option value="top">Top Dealer Only</option>
+                                <option value="nonTop">Non-Top Dealer Only</option>
+                            </select>
                             <div className="viewBeatMappingStatus-date-filter">
                                 <div className="date">
                                     <label>From:</label>
@@ -484,14 +706,14 @@ const ViewBeatMappingStatus = () => {
                             <TableLoading columnCount={9}/>
                         ) : (
                             <tbody>
-                            {data.length === 0 ? (
+                            {filteredData.length === 0 ? (
                                 <tr>
                                     <td colSpan="11" style={{textAlign: "center"}}>
                                         No data available
                                     </td>
                                 </tr>
                             ) : (
-                                data.map((item, index) => {
+                                filteredData.map((item, index) => {
                                     const isExpanded = expandedRow === index;
 
                                     const counts = getRouteFilteredCounts(
@@ -623,25 +845,6 @@ const ViewBeatMappingStatus = () => {
             {/* first part  */}
 
               </>
-            ) 
-            : (
-                <></>
-
-                // <TimelineView
-                //     data={data}
-                //     startDay={startDay}
-                //     endDay={endDay}
-                //     onDateChange={(newStart, newEnd) => {
-                //         if (newStart && newEnd) {
-                //         setStartDay(newStart);
-                //         setEndDay(newEnd);
-                //         getBeatMapping();
-                //         }
-                //     }}
-                //     />
-
-
-            )}
 
         </div>
     )

@@ -14,6 +14,7 @@ import {
 import "./style.scss";
 
 const backend_url = config.backend_url;
+const FLOW_NAME = "default_sales_flow";
 
 const DEALER_FILTER_TYPES = [
   { key: "zone", label: "Zone" },
@@ -254,6 +255,14 @@ function DynamicExtractionReport() {
     []
   );
 
+  const actorPositionOrder = useMemo(
+    () => actorPositions.map((item) => item.value).filter(Boolean),
+    [actorPositions]
+  );
+
+  const isActorTab = (tabKey) =>
+    actorPositionOrder.includes(tabKey) || ACTOR_POSITION_KEYS.includes(tabKey);
+
   const fetchGroupingOptions = async () => {
     try {
       const res = await axios.get(`${backend_url}/grouping-options`, {
@@ -271,43 +280,114 @@ function DynamicExtractionReport() {
     }
   };
 
-  const fetchFilterValues = async (type, position = "") => {
-    try {
-      const params = { type };
-      if (position) params.position = position;
+  const buildSubordinateFilters = (
+    source = selectedActorFilters,
+    { upToPosition = null } = {}
+  ) => {
+    const filters = {};
+    const orderedPositions = actorPositionOrder.length
+      ? actorPositionOrder
+      : ACTOR_POSITION_KEYS;
 
-      const res = await axios.get(`${backend_url}/filter-values`, {
-        params,
+    for (const position of orderedPositions) {
+      if (upToPosition && position === upToPosition) break;
+
+      const codes = (source[position] || [])
+        .map((item) => item.code)
+        .filter(Boolean);
+
+      if (codes.length) {
+        filters[position] = codes;
+      }
+    }
+
+    return filters;
+  };
+
+  const buildDealerFiltersPayload = (
+    source = selectedDealerFilters,
+    { excludeType = null } = {}
+  ) => {
+    const filters = {};
+
+    Object.entries(source).forEach(([key, selected]) => {
+      if (key === excludeType || !selected?.length) return;
+
+      const values = selected
+        .map((item) => item.value)
+        .filter((value) => value !== undefined && value !== null && value !== "");
+
+      if (values.length) {
+        filters[key] = values;
+      }
+    });
+
+    return filters;
+  };
+
+  const fetchDropdownOptions = async ({
+    targetType,
+    targetKey,
+    subordinates = {},
+    dealer = {},
+  }) => {
+    try {
+      const body = {
+        flow_name: FLOW_NAME,
+        target_type: targetType,
+        target_key: targetKey,
+        subordinates,
+        dealer,
+        product_tags: {},
+      };
+
+      const res = await axios.post(`${backend_url}/filters/dropdown-options`, body, {
         headers: authHeaders,
       });
 
-      return res.data.values || [];
+      return res.data?.values || [];
     } catch (error) {
-      console.error(`Error fetching filter values for ${type}:`, error);
+      console.error(
+        `Error fetching dropdown options for ${targetType}/${targetKey}:`,
+        error
+      );
       return [];
     }
   };
 
-  const loadStaticFilterValues = async () => {
-    const results = await Promise.all(
-      DEALER_FILTER_TYPES.map((item) => fetchFilterValues(item.key))
-    );
+  const loadFilterOptionsForTab = async (tabKey) => {
+    if (!tabKey) return;
 
-    const mapped = {};
-    DEALER_FILTER_TYPES.forEach((item, index) => {
-      mapped[item.key] = results[index] || [];
+    if (isActorTab(tabKey)) {
+      const values = await fetchDropdownOptions({
+        targetType: "subordinate",
+        targetKey: tabKey,
+        subordinates: buildSubordinateFilters(selectedActorFilters, {
+          upToPosition: tabKey,
+        }),
+        dealer: buildDealerFiltersPayload(),
+      });
+
+      setActorOptionsMap((old) => ({
+        ...old,
+        [tabKey]: values,
+      }));
+      return;
+    }
+
+    const values = await fetchDropdownOptions({
+      targetType: "dealer",
+      targetKey: tabKey,
+      subordinates: buildSubordinateFilters(),
+      dealer: buildDealerFiltersPayload(selectedDealerFilters, {
+        excludeType: tabKey,
+      }),
     });
 
-    setFilterValues(mapped);
-  };
-
-  const loadActorLists = async () => {
-    const map = {};
-    for (const pos of actorPositions) {
-      const positionValue = pos.value;
-      map[positionValue] = await fetchFilterValues("actor", positionValue);
-    }
-    setActorOptionsMap(map);
+    setFilterValues((old) => ({
+      ...old,
+      [tabKey]: values,
+    }));
   };
 
   const loadGroupActorOptions = async (positionValue) => {
@@ -321,7 +401,15 @@ function DynamicExtractionReport() {
       return;
     }
 
-    const values = await fetchFilterValues("actor", positionValue);
+    const values = await fetchDropdownOptions({
+      targetType: "subordinate",
+      targetKey: positionValue,
+      subordinates: buildSubordinateFilters(selectedActorFilters, {
+        upToPosition: positionValue,
+      }),
+      dealer: buildDealerFiltersPayload(),
+    });
+
     setActorOptionsMap((prev) => ({ ...prev, [positionValue]: values }));
     setGroupActorOptions(values);
   };
@@ -436,14 +524,24 @@ function DynamicExtractionReport() {
 
   useEffect(() => {
     fetchGroupingOptions();
-    loadStaticFilterValues();
   }, []);
 
   useEffect(() => {
-    if (actorPositions.length) {
-      loadActorLists();
+    if (!filterPanelOpen || !activeFilterTab) return;
+    loadFilterOptionsForTab(activeFilterTab);
+  }, [
+    filterPanelOpen,
+    activeFilterTab,
+    JSON.stringify(selectedActorFilters),
+    JSON.stringify(selectedDealerFilters),
+    JSON.stringify(actorPositionOrder),
+  ]);
+
+  useEffect(() => {
+    if (!activeFilterTab && actorPositions.length) {
+      setActiveFilterTab(actorPositions[0].value);
     }
-  }, [JSON.stringify(actorPositions)]);
+  }, [activeFilterTab, JSON.stringify(actorPositions)]);
 
   useEffect(() => {
     if (groupBy === "actor" && groupPosition) {
@@ -514,18 +612,23 @@ function DynamicExtractionReport() {
   }, [selectedActorFilters, selectedDealerFilters]);
 
   const currentTabOptions = useMemo(() => {
-    if (ACTOR_POSITION_KEYS.includes(activeFilterTab)) {
+    if (isActorTab(activeFilterTab)) {
       return actorOptionsMap[activeFilterTab] || [];
     }
     return filterValues[activeFilterTab] || [];
-  }, [activeFilterTab, actorOptionsMap, filterValues]);
+  }, [activeFilterTab, actorOptionsMap, filterValues, JSON.stringify(actorPositionOrder)]);
 
   const currentTabSelected = useMemo(() => {
-    if (ACTOR_POSITION_KEYS.includes(activeFilterTab)) {
+    if (isActorTab(activeFilterTab)) {
       return selectedActorFilters[activeFilterTab] || [];
     }
     return selectedDealerFilters[activeFilterTab] || [];
-  }, [activeFilterTab, selectedActorFilters, selectedDealerFilters]);
+  }, [
+    activeFilterTab,
+    selectedActorFilters,
+    selectedDealerFilters,
+    JSON.stringify(actorPositionOrder),
+  ]);
 
   const filteredCurrentOptions = useMemo(() => {
     const q = searchText.trim().toLowerCase();
@@ -539,14 +642,39 @@ function DynamicExtractionReport() {
   }, [searchText, currentTabOptions]);
 
   const toggleSelection = (type, item) => {
-    if (ACTOR_POSITION_KEYS.includes(type)) {
-      const prev = selectedActorFilters[type] || [];
-      const exists = prev.some((x) => x.code === item.code);
+    if (isActorTab(type)) {
+      const orderedPositions = actorPositionOrder.length
+        ? actorPositionOrder
+        : ACTOR_POSITION_KEYS;
+      const positionIndex = orderedPositions.indexOf(type);
 
-      setSelectedActorFilters((old) => ({
-        ...old,
-        [type]: exists ? prev.filter((x) => x.code !== item.code) : [...prev, item],
-      }));
+      setSelectedActorFilters((old) => {
+        const prev = old[type] || [];
+        const exists = prev.some((x) => x.code === item.code);
+
+        const next = {
+          ...old,
+          [type]: exists ? prev.filter((x) => x.code !== item.code) : [...prev, item],
+        };
+
+        if (positionIndex !== -1) {
+          orderedPositions.slice(positionIndex + 1).forEach((position) => {
+            next[position] = [];
+          });
+        }
+
+        return next;
+      });
+
+      setActorOptionsMap((old) => {
+        const next = { ...old };
+        if (positionIndex !== -1) {
+          orderedPositions.slice(positionIndex + 1).forEach((position) => {
+            delete next[position];
+          });
+        }
+        return next;
+      });
       return;
     }
 
@@ -568,7 +696,7 @@ function DynamicExtractionReport() {
   };
 
   const removeSelection = (type, item) => {
-    if (ACTOR_POSITION_KEYS.includes(type)) {
+    if (isActorTab(type)) {
       setSelectedActorFilters((old) => ({
         ...old,
         [type]: (old[type] || []).filter((x) => x.code !== item.code),
@@ -583,7 +711,7 @@ function DynamicExtractionReport() {
   };
 
   const clearCurrentTab = () => {
-    if (ACTOR_POSITION_KEYS.includes(activeFilterTab)) {
+    if (isActorTab(activeFilterTab)) {
       setSelectedActorFilters((old) => ({
         ...old,
         [activeFilterTab]: [],
@@ -598,7 +726,7 @@ function DynamicExtractionReport() {
   };
 
   const renderChips = (type) => {
-    const selected = ACTOR_POSITION_KEYS.includes(type)
+    const selected = isActorTab(type)
       ? selectedActorFilters[type] || []
       : selectedDealerFilters[type] || [];
 
@@ -905,7 +1033,7 @@ function DynamicExtractionReport() {
                   {filteredCurrentOptions.length > 0 ? (
                     filteredCurrentOptions.map((item) => {
                       const isSelected = currentTabSelected.some((selected) =>
-                        ACTOR_POSITION_KEYS.includes(activeFilterTab)
+                        isActorTab(activeFilterTab)
                           ? selected.code === item.code
                           : selected.value === item.value
                       );
@@ -918,7 +1046,7 @@ function DynamicExtractionReport() {
                           onClick={() => toggleSelection(activeFilterTab, item)}
                         >
                           <span>{item.label || item.name || item.value}</span>
-                          {ACTOR_POSITION_KEYS.includes(activeFilterTab) && item.code && (
+                          {isActorTab(activeFilterTab) && item.code && (
                             <small>{item.code}</small>
                           )}
                         </button>
@@ -1040,6 +1168,6 @@ function DynamicExtractionReport() {
   );
 }
 
-const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "dealer"];
+const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "so", "dealer"];
 
 export default DynamicExtractionReport;
