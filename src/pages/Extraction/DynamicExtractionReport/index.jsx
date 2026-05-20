@@ -28,7 +28,8 @@ const parseNumericValue = (value) => {
   if (typeof value === "number") return value;
   if (typeof value !== "string") return NaN;
 
-  const numericString = value.replace(/[^0-9.-]/g, "");
+  const normalized = value.replace(/−/g, "-");
+  const numericString = normalized.replace(/[^0-9.-]/g, "");
   const num = parseFloat(numericString);
   return isNaN(num) ? NaN : num;
 };
@@ -130,16 +131,55 @@ const getSmartHeatmapColor = (value, stats) => {
   };
 };
 
-const formatIndianNumber = (value) => {
+const formatNormalNumber = (value) => {
   if (typeof value !== "string" && typeof value !== "number") return value;
+  if (typeof value === "string" && value.includes("%")) return value;
 
   const num = parseNumericValue(value);
   if (isNaN(num)) return value;
 
   return num.toLocaleString("en-IN", {
+    useGrouping: false,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+};
+
+const formatCrLacNumber = (value) => {
+  if (typeof value !== "string" && typeof value !== "number") return value;
+  if (typeof value === "string" && value.includes("%")) return value;
+
+  const num = parseNumericValue(value);
+  if (isNaN(num)) return value;
+
+  const abs = Math.abs(num);
+  const sign = num < 0 ? "-" : "";
+
+  if (abs >= 10000000) {
+    return `${sign}${(abs / 10000000).toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })} Cr`;
+  }
+
+  if (abs >= 100000) {
+    return `${sign}${(abs / 100000).toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })} Lac`;
+  }
+
+  if (abs >= 1000) {
+    return `${sign}${(abs / 1000).toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })} K`;
+  }
+
+  return `${sign}${abs.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 const getRedShadeColor = (value, rowMin, rowMax) => {
@@ -204,8 +244,9 @@ function DynamicExtractionReport() {
 
   const [startDate, setStartDate] = useState(prevMonthRange.start);
   const [endDate, setEndDate] = useState(prevMonthRange.end);
-  const [metric, setMetric] = useState("value");
-  const [view, setView] = useState("default");
+  const [metric, setMetric] = useState("volume");
+  const [valueFormat, setValueFormat] = useState("crLac");
+  const view = "default";
 
   const [groupingOptions, setGroupingOptions] = useState([]);
   const [actorPositions, setActorPositions] = useState([]);
@@ -582,8 +623,8 @@ function DynamicExtractionReport() {
     const prev = getDefaultPrevMonthRange();
     setStartDate(prev.start);
     setEndDate(prev.end);
-    setMetric("value");
-    setView("default");
+    setMetric("volume");
+    setValueFormat("crLac");
     setGroupBy("price_segment");
     setGroupPosition("");
     setBrand("");
@@ -798,7 +839,7 @@ function DynamicExtractionReport() {
         <div className="hero-card">
           <span className="hero-label">Metric</span>
           <strong>{metric === "value" ? "Value" : "Volume"}</strong>
-          <small>{view === "share" ? "Share View" : "Default View"}</small>
+          <small>{valueFormat === "crLac" ? "CR/LAC View" : "Normal View"}</small>
         </div>
 
         <div className="hero-card">
@@ -893,10 +934,10 @@ function DynamicExtractionReport() {
         <div className="toggle-row">
           <div className="toggle-wrap">
             <TextToggle
-              textFirst="default"
-              textSecond="share"
-              setText={setView}
-              selectedText={view}
+              textFirst="crLac"
+              textSecond="normal"
+              setText={setValueFormat}
+              selectedText={valueFormat}
             />
             <TextToggle
               textFirst="value"
@@ -1140,9 +1181,13 @@ function DynamicExtractionReport() {
                                 }}
                             >
                                 {isHeatmapColumn && isNumeric ? (
-                                view === "share" ? value : formatIndianNumber(value)
+                                valueFormat === "normal"
+                                  ? formatNormalNumber(value)
+                                  : formatCrLacNumber(value)
                                 ) : headerKey === "Total" ? (
-                                formatIndianNumber(value)
+                                valueFormat === "normal"
+                                  ? formatNormalNumber(value)
+                                  : formatCrLacNumber(value)
                                 ) : (
                                 value
                                 )}

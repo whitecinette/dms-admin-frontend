@@ -7,6 +7,8 @@ import CustomAlert from "../../components/CustomAlert/index.js";
 import SecurityKeyPopup from "./SecurityKeyPopup/index.js";
 import {useLocation, useNavigate} from "react-router-dom";
 import EmployeeSchedule from "./employeeSchedule";
+import BeatSetupModal from "./BeatSetupModal";
+import BeatConfigListModal from "./BeatConfigListModal";
 import * as XLSX from "xlsx";
 import TableLoading from "../../components/tableLoading";
 import ReactECharts from "echarts-for-react";
@@ -49,6 +51,10 @@ const ViewBeatMappingStatus = () => {
     const [positionFilter, setPositionFilter] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [topDealerFilter, setTopDealerFilter] = useState("all");
+    const [actorMetaByCode, setActorMetaByCode] = useState({});
+    const [showBeatSetupModal, setShowBeatSetupModal] = useState(false);
+    const [showConfigListModal, setShowConfigListModal] = useState(false);
+    const [selectedConfigForEdit, setSelectedConfigForEdit] = useState(null);
 
     const getNormalizedString = (value) =>
         value === null || value === undefined ? "" : String(value).trim().toLowerCase();
@@ -63,28 +69,48 @@ const ViewBeatMappingStatus = () => {
             ""
         ).trim();
 
-    const getActorFirm = (actor = {}, schedule = []) =>
+    const getActorFirm = (actor = {}, schedule = [], actorMeta = {}) =>
         String(
             actor.firm ||
             actor.firmName ||
             actor.firm_code ||
             actor.firmCode ||
             actor.orgName ||
+            actorMeta.firm ||
+            actorMeta.firmName ||
+            actorMeta.firm_code ||
+            actorMeta.firmCode ||
+            actorMeta.firm_name ||
             (Array.isArray(schedule) ? getDealerFirm(schedule[0] || {}) : "") ||
             ""
         ).trim();
 
-    const getActorPosition = (actor = {}) =>
-        String(actor.position || actor.userPosition || actor.designation || "").trim();
+    const getActorPosition = (actor = {}, actorMeta = {}) =>
+        String(
+            actor.position ||
+            actor.userPosition ||
+            actor.designation ||
+            actorMeta.position ||
+            actorMeta.userPosition ||
+            ""
+        ).trim();
 
-    const getActorRole = (actor = {}) =>
-        String(actor.role || actor.userRole || "").trim();
+    const getActorRole = (actor = {}, actorMeta = {}) =>
+        String(actor.role || actor.userRole || actorMeta.role || actorMeta.userRole || "").trim();
 
     const isTopDealer = (dealer = {}) =>
         dealer.top_outlet === true || dealer.topOutlet === true || dealer.topDealer === true;
 
     const hasActiveFilters =
         !!firmFilter || !!positionFilter || !!roleFilter || topDealerFilter !== "all";
+
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem("authToken") || "";
+        if (!token) return {};
+        return {
+            Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+        };
+    };
 
     const getBeatMapping = async () => {
         setLoading(true);
@@ -141,6 +167,126 @@ const ViewBeatMappingStatus = () => {
         }
     }, [ search, startDay, endDay, firmFilter, positionFilter, roleFilter, topDealerFilter]);
 
+    useEffect(() => {
+        const actorCodes = Array.from(
+            new Set(
+                data
+                    .map((item) => String(item?.code || "").trim())
+                    .filter(Boolean)
+            )
+        );
+
+        if (actorCodes.length === 0) {
+            setActorMetaByCode({});
+            return;
+        }
+
+        const missingCodes = actorCodes.filter(
+            (code) => !actorMetaByCode[String(code).toLowerCase()]
+        );
+        if (missingCodes.length === 0) return;
+
+        let cancelled = false;
+
+        const fetchActorMeta = async () => {
+            try {
+                const codeSet = new Set(missingCodes.map((code) => String(code).toLowerCase()));
+                const collected = {};
+                let page = 1;
+                const limit = 1000;
+                let hasMore = true;
+
+                const collectFromRows = (rows = []) => {
+                    rows.forEach((row) => {
+                        const code = String(
+                            row?.code || row?.employeeCode || row?.empCode || row?.userCode || ""
+                        ).trim();
+                        if (!code) return;
+                        const normCode = code.toLowerCase();
+                        if (!codeSet.has(normCode)) return;
+                        collected[normCode] = row;
+                    });
+                };
+
+                try {
+                    while (hasMore && page <= 25 && Object.keys(collected).length < missingCodes.length) {
+                        const res = await axios.get(`${backendUrl}/user/get-by-admins`, {
+                            params: {
+                                page,
+                                limit,
+                                sort: "createdAt",
+                                order: -1,
+                                search: "",
+                            },
+                            headers: getAuthHeaders(),
+                        });
+
+                        const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
+                        collectFromRows(rows);
+                        const totalRecords = Number(res?.data?.totalRecords || 0);
+                        hasMore = rows.length === limit && page * limit < totalRecords;
+                        page += 1;
+                    }
+                } catch (primaryError) {
+                    console.warn("Primary actor metadata source failed, trying fallback source:", primaryError);
+                }
+
+                if (Object.keys(collected).length < missingCodes.length) {
+                    try {
+                        let fallbackPage = 1;
+                        let fallbackHasMore = true;
+                        const fallbackLimit = 1000;
+                        while (
+                            fallbackHasMore &&
+                            fallbackPage <= 25 &&
+                            Object.keys(collected).length < missingCodes.length
+                        ) {
+                            const fallbackRes = await axios.get(`${backendUrl}/super-admin/user-directory`, {
+                                params: {
+                                    search: "",
+                                    position: "",
+                                    role: "",
+                                    status: "",
+                                    firm_code: "",
+                                    page: fallbackPage,
+                                    limit: fallbackLimit,
+                                },
+                                headers: getAuthHeaders(),
+                            });
+
+                            const rows = Array.isArray(fallbackRes?.data?.rows)
+                                ? fallbackRes.data.rows
+                                : [];
+                            collectFromRows(rows);
+                            const totalRecords = Number(fallbackRes?.data?.total || 0);
+                            fallbackHasMore =
+                                rows.length === fallbackLimit &&
+                                fallbackPage * fallbackLimit < totalRecords;
+                            fallbackPage += 1;
+                        }
+                    } catch (fallbackError) {
+                        console.warn("Fallback actor metadata source failed:", fallbackError);
+                    }
+                }
+
+                if (!cancelled && Object.keys(collected).length > 0) {
+                    setActorMetaByCode((prev) => ({
+                        ...prev,
+                        ...collected,
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to hydrate actor metadata for market coverage filters:", error);
+            }
+        };
+
+        fetchActorMeta();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [data, actorMetaByCode]);
+
     const addDailyBeatMapping = async () => {
         try {
             const res = await axios.put(`${backendUrl}/add-daily-beat-mapping`);
@@ -159,6 +305,21 @@ const ViewBeatMappingStatus = () => {
         } finally {
             getBeatMapping();
         }
+    };
+
+    const handleBeatSetupApplied = ({ type, message }) => {
+        setAlert({
+            show: true,
+            type: type || "success",
+            message: message || "Beat setup applied successfully.",
+        });
+        getBeatMapping();
+    };
+
+    const handleOpenConfigForEdit = (cfg) => {
+        setShowConfigListModal(false);
+        setSelectedConfigForEdit(cfg || null);
+        setShowBeatSetupModal(true);
     };
 
 
@@ -274,6 +435,27 @@ const ViewBeatMappingStatus = () => {
         setIsDownload(false)
     };
 
+    const enrichedActorRows = useMemo(() => {
+        return data.map((item) => {
+            const schedule = Array.isArray(item.schedule) ? item.schedule : [];
+            const actorCode = String(item?.code || "").trim();
+            const actorMeta = actorMetaByCode[actorCode.toLowerCase()] || {};
+            const actorFirm = getActorFirm(item, schedule, actorMeta);
+            const actorPosition = getActorPosition(item, actorMeta);
+            const actorRole = getActorRole(item, actorMeta);
+            const hasTopDealer = schedule.some((dealer) => isTopDealer(dealer));
+
+            return {
+                ...item,
+                schedule,
+                actorFirm,
+                actorPosition,
+                actorRole,
+                hasTopDealer,
+            };
+        });
+    }, [data, actorMetaByCode]);
+
     const optionsFromData = useMemo(() => {
         const unique = (values = []) =>
             Array.from(new Set(values.map((v) => String(v || "").trim()).filter(Boolean))).sort((a, b) =>
@@ -281,24 +463,20 @@ const ViewBeatMappingStatus = () => {
             );
 
         return {
-            firms: unique(
-                data.map((item) =>
-                    getActorFirm(item, Array.isArray(item.schedule) ? item.schedule : [])
-                )
-            ),
-            positions: unique(data.map((item) => getActorPosition(item))),
-            roles: unique(data.map((item) => getActorRole(item))),
+            firms: unique(enrichedActorRows.map((item) => item.actorFirm)),
+            positions: unique(enrichedActorRows.map((item) => item.actorPosition)),
+            roles: unique(enrichedActorRows.map((item) => item.actorRole)),
         };
-    }, [data]);
+    }, [enrichedActorRows]);
 
     const filteredData = useMemo(() => {
-        return data
+        return enrichedActorRows
             .map((item) => {
-                const schedule = Array.isArray(item.schedule) ? item.schedule : [];
-                const actorFirm = getActorFirm(item, schedule);
-                const actorPosition = getActorPosition(item);
-                const actorRole = getActorRole(item);
-                const hasTopDealer = schedule.some((dealer) => isTopDealer(dealer));
+                const schedule = item.schedule || [];
+                const actorFirm = item.actorFirm || "";
+                const actorPosition = item.actorPosition || "";
+                const actorRole = item.actorRole || "";
+                const hasTopDealer = item.hasTopDealer === true;
 
                 const firmMatches =
                     !firmFilter || getNormalizedString(actorFirm) === getNormalizedString(firmFilter);
@@ -336,7 +514,7 @@ const ViewBeatMappingStatus = () => {
                 };
             })
             .filter(Boolean);
-    }, [data, firmFilter, positionFilter, roleFilter, topDealerFilter, hasActiveFilters]);
+    }, [enrichedActorRows, firmFilter, positionFilter, roleFilter, topDealerFilter, hasActiveFilters]);
 
     const stackedData = filteredData.map((emp) => {
         const total = (emp.done || 0) + (emp.pending || 0);
@@ -662,6 +840,27 @@ const ViewBeatMappingStatus = () => {
                                 Add Daily Beat Mapping
                             </label>
                         </div>
+                        <div
+                            className="viewBeatMappingStatus-upload-btn"
+                            onClick={() => {
+                                setSelectedConfigForEdit(null);
+                                setShowBeatSetupModal(true);
+                            }}
+                        >
+                            <label className="browse-btn">
+                                <FaFileUpload/>
+                                Edit Config
+                            </label>
+                        </div>
+                        <div
+                            className="viewBeatMappingStatus-upload-btn"
+                            onClick={() => setShowConfigListModal(true)}
+                        >
+                            <label className="browse-btn">
+                                <FaFileUpload/>
+                                View Configs
+                            </label>
+                        </div>
                         <div className="viewBeatMappingStatus-download-btn">
                             <div className="browse-btn" onClick={handleDownloadExcel}>
                                 <FaDownload/>
@@ -831,6 +1030,28 @@ const ViewBeatMappingStatus = () => {
                     />
                 )
             }
+            {showBeatSetupModal && (
+                <BeatSetupModal
+                    open={showBeatSetupModal}
+                    onClose={() => {
+                        setShowBeatSetupModal(false);
+                        setSelectedConfigForEdit(null);
+                    }}
+                    backendUrl={backendUrl}
+                    weeklyRows={data}
+                    onApplied={handleBeatSetupApplied}
+                    initialConfig={selectedConfigForEdit}
+                />
+            )}
+            {showConfigListModal && (
+                <BeatConfigListModal
+                    open={showConfigListModal}
+                    onClose={() => setShowConfigListModal(false)}
+                    backendUrl={backendUrl}
+                    weeklyRows={data}
+                    onEditConfig={handleOpenConfigForEdit}
+                />
+            )}
             {
                 expandedRow !== null && (
                     <EmployeeSchedule
