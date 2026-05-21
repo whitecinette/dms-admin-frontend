@@ -954,7 +954,8 @@
 }
 
 .beat-config-list-modal {
-  width: min(980px, 100%);
+  position: relative;
+  width: min(1180px, 100%);
   max-height: 90vh;
   background: #fff;
   border-radius: 12px;
@@ -1017,6 +1018,12 @@
       background: #f8fafc;
     }
 
+    .config-actions-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     td button {
       border: 1px solid #c7d2fe;
       background: #eef2ff;
@@ -1027,9 +1034,88 @@
       cursor: pointer;
     }
 
+    td .delete-config-btn {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #dc2626;
+      padding: 0;
+    }
+
+    td .delete-config-btn:hover:not(:disabled) {
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+
     td button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+  }
+
+  .beat-config-confirm-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.42);
+    padding: 18px;
+  }
+
+  .beat-config-confirm {
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+    padding: 22px;
+
+    h4 {
+      margin: 0 0 8px;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 22px;
+
+      button {
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+        background: #fff;
+        color: #374151;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:last-child {
+        border-color: #dc2626;
+        background: #dc2626;
+        color: #fff;
+      }
+
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
     }
   }
 }

@@ -239,6 +239,20 @@ const getDefaultPrevMonthRange = () => {
   };
 };
 
+const decodeJwtPayload = (token) => {
+  try {
+    if (!token || typeof token !== "string") return {};
+    const parts = token.split(".");
+    if (parts.length < 2) return {};
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    return JSON.parse(json) || {};
+  } catch (_) {
+    return {};
+  }
+};
+
 function DynamicExtractionReport() {
   const prevMonthRange = getDefaultPrevMonthRange();
 
@@ -296,13 +310,51 @@ function DynamicExtractionReport() {
     []
   );
 
+  const authContext = useMemo(() => {
+    const token = localStorage.getItem("authToken");
+    const decoded = decodeJwtPayload(token);
+    const role = String(localStorage.getItem("role") || decoded?.role || "")
+      .trim()
+      .toLowerCase();
+    const position = String(decoded?.position || "")
+      .trim()
+      .toLowerCase();
+    return { role, position };
+  }, []);
+
+  const isAdminLikeUser = useMemo(
+    () => ["admin", "super_admin"].includes(authContext.role),
+    [authContext.role]
+  );
+
+  const actorPositionItems = useMemo(() => {
+    if (actorPositions?.length) return actorPositions;
+    return ACTOR_POSITION_KEYS.map((value) => ({
+      value,
+      label: String(value).toUpperCase(),
+    }));
+  }, [actorPositions]);
+
+  const visibleActorPositionItems = useMemo(() => {
+    if (isAdminLikeUser) return actorPositionItems;
+    const myPos = authContext.position;
+    if (!myPos) return actorPositionItems;
+
+    const idx = actorPositionItems.findIndex(
+      (item) => String(item.value || "").toLowerCase() === myPos
+    );
+
+    if (idx < 0) return actorPositionItems;
+    return actorPositionItems.slice(idx + 1);
+  }, [actorPositionItems, isAdminLikeUser, authContext.position]);
+
   const actorPositionOrder = useMemo(
-    () => actorPositions.map((item) => item.value).filter(Boolean),
-    [actorPositions]
+    () => visibleActorPositionItems.map((item) => item.value).filter(Boolean),
+    [visibleActorPositionItems]
   );
 
   const isActorTab = (tabKey) =>
-    actorPositionOrder.includes(tabKey) || ACTOR_POSITION_KEYS.includes(tabKey);
+    actorPositionOrder.includes(tabKey);
 
   const fetchGroupingOptions = async () => {
     try {
@@ -579,10 +631,20 @@ function DynamicExtractionReport() {
   ]);
 
   useEffect(() => {
-    if (!activeFilterTab && actorPositions.length) {
-      setActiveFilterTab(actorPositions[0].value);
+    if (!activeFilterTab && actorPositionOrder.length) {
+      setActiveFilterTab(actorPositionOrder[0]);
     }
-  }, [activeFilterTab, JSON.stringify(actorPositions)]);
+  }, [activeFilterTab, actorPositionOrder]);
+
+  useEffect(() => {
+    const validTabs = [
+      ...actorPositionOrder,
+      ...DEALER_FILTER_TYPES.map((d) => d.key),
+    ];
+    if (validTabs.length && !validTabs.includes(activeFilterTab)) {
+      setActiveFilterTab(validTabs[0]);
+    }
+  }, [actorPositionOrder, activeFilterTab]);
 
   useEffect(() => {
     if (groupBy === "actor" && groupPosition) {
@@ -592,6 +654,17 @@ function DynamicExtractionReport() {
       setGroupActorSelection([]);
     }
   }, [groupBy, groupPosition]);
+
+  useEffect(() => {
+    if (
+      groupBy === "actor" &&
+      groupPosition &&
+      !actorPositionOrder.includes(groupPosition)
+    ) {
+      setGroupPosition("");
+      setGroupActorSelection([]);
+    }
+  }, [groupBy, groupPosition, actorPositionOrder]);
 
   useEffect(() => {
     getExtractionReport();
@@ -901,7 +974,7 @@ function DynamicExtractionReport() {
                 }}
               >
                 <option value="">Select position</option>
-                {actorPositions.map((item) => (
+                {visibleActorPositionItems.map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
                   </option>
@@ -1009,7 +1082,7 @@ function DynamicExtractionReport() {
 
             <div className="filter-panel-body">
               <div className="filter-sidebar">
-                {actorPositions.map((item) => (
+                {visibleActorPositionItems.map((item) => (
                   <button
                     key={item.value}
                     type="button"
@@ -1048,7 +1121,7 @@ function DynamicExtractionReport() {
                 <div className="filter-content-top">
                   <div>
                     <h4>
-                      {actorPositions.find((p) => p.value === activeFilterTab)?.label ||
+                      {visibleActorPositionItems.find((p) => p.value === activeFilterTab)?.label ||
                         DEALER_FILTER_TYPES.find((d) => d.key === activeFilterTab)?.label ||
                         "Filters"}
                     </h4>

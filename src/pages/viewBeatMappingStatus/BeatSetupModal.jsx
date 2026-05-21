@@ -106,7 +106,7 @@ const hierarchySystemFields = new Set([
   "__v",
 ]);
 
-const buildHierarchySeeds = (rows = [], columns = []) => {
+const resolveHierarchyFields = (rows = [], columns = []) => {
   const resolvedColumns =
     Array.isArray(columns) && columns.length
       ? columns
@@ -125,21 +125,13 @@ const buildHierarchySeeds = (rows = [], columns = []) => {
     actorFields.push(field);
   });
 
-  const actorSeeds = [];
+  return { actorFields, dealerFields };
+};
+
+const buildDealerSeedsFromRows = (rows = [], dealerFields = []) => {
   const dealerSeeds = [];
 
   rows.forEach((row) => {
-    actorFields.forEach((field) => {
-      const position = String(field || "").trim();
-      parseCodesFromValue(row?.[field]).forEach((code) => {
-        actorSeeds.push({
-          code,
-          position,
-          role: "employee",
-        });
-      });
-    });
-
     dealerFields.forEach((field) => {
       const position = String(field || "").trim();
       const defaultRole = normalize(field) === "mdd" ? "mdd" : "dealer";
@@ -153,9 +145,30 @@ const buildHierarchySeeds = (rows = [], columns = []) => {
     });
   });
 
+  return dedupeByCode(dealerSeeds);
+};
+
+const buildHierarchySeeds = (rows = [], columns = []) => {
+  const { actorFields, dealerFields } = resolveHierarchyFields(rows, columns);
+
+  const actorSeeds = [];
+
+  rows.forEach((row) => {
+    actorFields.forEach((field) => {
+      const position = String(field || "").trim();
+      parseCodesFromValue(row?.[field]).forEach((code) => {
+        actorSeeds.push({
+          code,
+          position,
+          role: "employee",
+        });
+      });
+    });
+  });
+
   return {
     actorSeeds: dedupeByCode(actorSeeds),
-    dealerSeeds: dedupeByCode(dealerSeeds),
+    dealerSeeds: buildDealerSeedsFromRows(rows, dealerFields),
   };
 };
 
@@ -163,6 +176,54 @@ const isAdminLikeRole = (roleValue = "") => {
   const role = normalize(roleValue);
   return role === "admin" || role === "super_admin" || role === "super admin";
 };
+
+const buildDealerSeedsForSelectedActors = ({
+  rows = [],
+  columns = [],
+  selectedActorCodes = [],
+  actors = [],
+}) => {
+  const { actorFields, dealerFields } = resolveHierarchyFields(rows, columns);
+  const selectedSet = new Set(selectedActorCodes.map((code) => normalize(code)).filter(Boolean));
+
+  if (selectedSet.size === 0) {
+    return buildDealerSeedsFromRows(rows, dealerFields);
+  }
+
+  const actorByCode = new Map(actors.map((actor) => [normalize(actor.code), actor]));
+  const hasAdminActor = Array.from(selectedSet).some((code) =>
+    isAdminLikeRole(actorByCode.get(code)?.role)
+  );
+
+  if (hasAdminActor) {
+    return buildDealerSeedsFromRows(rows, dealerFields);
+  }
+
+  const matchedRows = rows.filter((row) =>
+    actorFields.some((field) =>
+      parseCodesFromValue(row?.[field]).some((code) => selectedSet.has(normalize(code)))
+    )
+  );
+
+  return buildDealerSeedsFromRows(matchedRows, dealerFields);
+};
+
+const mapDealerSeedsToRows = (dealerSeeds = [], userByCode = {}) =>
+  dealerSeeds
+    .map((seed) => {
+      const row = userByCode[normalize(seed.code)] || {};
+      const code = getCode(row) || seed.code;
+      return {
+        code,
+        name: getName(row) || code,
+        role: getRole(row) || seed.role || "dealer",
+        position: getPosition(row) || seed.position || "",
+        zone: getZoneFromRow(row),
+        district: getDistrictFromRow(row),
+        topDealer: boolTopDealer(row),
+      };
+    })
+    .filter((row) => row.code);
 
 const toDateInputValue = (value) => {
   if (!value) return "";
@@ -202,6 +263,9 @@ function BeatSetupModal({
   const [selectedActorCodes, setSelectedActorCodes] = useState([]);
   const [pendingInitialActorCodes, setPendingInitialActorCodes] = useState([]);
   const [actorSearch, setActorSearch] = useState("");
+  const [hierarchyRows, setHierarchyRows] = useState([]);
+  const [hierarchyColumns, setHierarchyColumns] = useState([]);
+  const [userByCodeMap, setUserByCodeMap] = useState({});
 
   const [dealerMddList, setDealerMddList] = useState([]);
   const [selectedDealerCodes, setSelectedDealerCodes] = useState([]);
@@ -274,6 +338,9 @@ function BeatSetupModal({
     setSelectedActorCodes([]);
     setPendingInitialActorCodes([]);
     setActorSearch("");
+    setHierarchyRows([]);
+    setHierarchyColumns([]);
+    setUserByCodeMap({});
     setDealerMddList([]);
     setSelectedDealerCodes([]);
     setDealerSearch("");
@@ -539,6 +606,9 @@ function BeatSetupModal({
         setSelectedActorCodes([]);
         setSelectedDealerCodes([]);
       }
+      setHierarchyRows([]);
+      setHierarchyColumns([]);
+      setUserByCodeMap({});
       return;
     }
 
@@ -549,7 +619,7 @@ function BeatSetupModal({
 
       try {
         const hierarchy = await fetchHierarchyRowsForFlow(firmCode, flowName);
-        const { actorSeeds, dealerSeeds } = buildHierarchySeeds(
+        const { actorSeeds } = buildHierarchySeeds(
           hierarchy.rows,
           hierarchy.columns
         );
@@ -637,26 +707,24 @@ function BeatSetupModal({
           ...missingSelectedActors,
         ]);
 
-        const dealerRows = dealerSeeds
-          .map((seed) => {
-            const row = userByCode[normalize(seed.code)] || {};
-            const code = getCode(row) || seed.code;
-            return {
-              code,
-              name: getName(row) || code,
-              role: getRole(row) || seed.role || "dealer",
-              position: getPosition(row) || seed.position || "",
-              zone: getZoneFromRow(row),
-              district: getDistrictFromRow(row),
-              topDealer: boolTopDealer(row),
-            };
-          })
-          .filter((row) => row.code);
+        const dealerSeedsForSelection = buildDealerSeedsForSelectedActors({
+          rows: hierarchy.rows,
+          columns: hierarchy.columns,
+          selectedActorCodes,
+          actors: actorRows,
+        });
+        const dealerRows = mapDealerSeedsToRows(dealerSeedsForSelection, userByCode);
 
+        setHierarchyRows(hierarchy.rows);
+        setHierarchyColumns(hierarchy.columns);
+        setUserByCodeMap(userByCode);
         setActors(actorRows);
         setDealerMddList(dedupeByCode(dealerRows));
       } catch (e) {
         setActors([]);
+        setHierarchyRows([]);
+        setHierarchyColumns([]);
+        setUserByCodeMap({});
         setDealerMddList([]);
         setError("Failed to load flow users/dealer mapping.");
       } finally {
@@ -667,6 +735,38 @@ function BeatSetupModal({
 
     loadActorsAndDealers();
   }, [open, firmCode, flowName, weeklyActorCodeSet]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!open || !firmCode || !flowName || hierarchyRows.length === 0) return;
+
+    const dealerSeedsForSelection = buildDealerSeedsForSelectedActors({
+      rows: hierarchyRows,
+      columns: hierarchyColumns,
+      selectedActorCodes,
+      actors,
+    });
+    const nextDealerRows = dedupeByCode(
+      mapDealerSeedsToRows(dealerSeedsForSelection, userByCodeMap)
+    );
+    const nextDealerSet = new Set(nextDealerRows.map((row) => normalize(row.code)));
+
+    setDealerMddList(nextDealerRows);
+    if (pendingInitialDealerCodes.length === 0) {
+      setSelectedDealerCodes((prev) =>
+        prev.filter((code) => nextDealerSet.has(normalize(code)))
+      );
+    }
+  }, [
+    open,
+    firmCode,
+    flowName,
+    hierarchyRows,
+    hierarchyColumns,
+    selectedActorCodes,
+    actors,
+    userByCodeMap,
+    pendingInitialDealerCodes,
+  ]);
 
   const visibleActors = useMemo(() => {
     const q = normalize(actorSearch);
@@ -1046,6 +1146,9 @@ function BeatSetupModal({
                   setFirmCode(e.target.value);
                   setFlowName("");
                   setActors([]);
+                  setHierarchyRows([]);
+                  setHierarchyColumns([]);
+                  setUserByCodeMap({});
                   setDealerMddList([]);
                   setSelectedActorCodes([]);
                   setSelectedDealerCodes([]);
