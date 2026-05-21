@@ -35,6 +35,49 @@
   min-height: 100vh;
 }
 
+.market-coverage-scope-filter {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin: 14px 0 16px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #e5eef8;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+    .scope-filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 240px;
+
+        label {
+            color: #334155;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        select {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #1f2937;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+
+            &:focus {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+            }
+        }
+    }
+}
+
 
 
 .viewBeatMappingStatus-page {

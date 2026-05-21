@@ -15,6 +15,27 @@ import ReactECharts from "echarts-for-react";
 // import TimelineView from "./timelineView/index.jsx";
 
 const backendUrl = config.backend_url;
+const DEFAULT_FLOW_NAME = "default_sales_flow";
+const DEFAULT_FIRM_MATCH = "siddha";
+
+const normalizeFlowTypes = (flowTypes) => {
+    if (Array.isArray(flowTypes)) return flowTypes;
+    if (typeof flowTypes === "string") {
+        return flowTypes
+            .split(",")
+            .map((flow) => flow.trim())
+            .filter(Boolean);
+    }
+    return [];
+};
+
+const getDefaultFirmCode = (firms = []) => {
+    const siddhaFirm = firms.find((firm) => {
+        const text = `${firm?.name || ""} ${firm?.code || ""}`.toLowerCase();
+        return text.includes(DEFAULT_FIRM_MATCH);
+    });
+    return String((siddhaFirm || firms[0])?.code || "").trim();
+};
 
 const ViewBeatMappingStatus = () => {
     const location = useLocation();
@@ -51,6 +72,10 @@ const ViewBeatMappingStatus = () => {
     const [positionFilter, setPositionFilter] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [topDealerFilter, setTopDealerFilter] = useState("all");
+    const [scopeFirms, setScopeFirms] = useState([]);
+    const [scopeFlows, setScopeFlows] = useState([]);
+    const [scopeFirmCode, setScopeFirmCode] = useState("");
+    const [scopeFlowName, setScopeFlowName] = useState(DEFAULT_FLOW_NAME);
     const [actorMetaByCode, setActorMetaByCode] = useState({});
     const [showBeatSetupModal, setShowBeatSetupModal] = useState(false);
     const [showConfigListModal, setShowConfigListModal] = useState(false);
@@ -112,6 +137,29 @@ const ViewBeatMappingStatus = () => {
         };
     };
 
+    const selectedScopeFirm = useMemo(
+        () => scopeFirms.find((firm) => String(firm?.code || "") === String(scopeFirmCode || "")),
+        [scopeFirms, scopeFirmCode]
+    );
+
+    const scopeFlowOptions = useMemo(() => {
+        const firmFlows = normalizeFlowTypes(selectedScopeFirm?.flowTypes);
+        const source = firmFlows.length > 0 ? firmFlows : scopeFlows;
+        return source
+            .map((flow) => {
+                if (typeof flow === "string") {
+                    return {name: flow, label: flow};
+                }
+                const name = String(flow?.name || flow?.flowName || flow?.value || "").trim();
+                if (!name) return null;
+                return {
+                    name,
+                    label: String(flow?.label || flow?.name || name).trim(),
+                };
+            })
+            .filter(Boolean);
+    }, [selectedScopeFirm, scopeFlows]);
+
     const getBeatMapping = async () => {
         setLoading(true);
         if (!startDay) {
@@ -131,6 +179,8 @@ const ViewBeatMappingStatus = () => {
                         startDate: startDay.toISOString().split("T")[0],
                         endDate: endDay ? endDay.toISOString().split("T")[0] : "",
                         search,
+                        firmCode: scopeFirmCode,
+                        flowName: scopeFlowName,
                     },
                 }
             );
@@ -158,7 +208,55 @@ const ViewBeatMappingStatus = () => {
         if (startDay) {
             getBeatMapping();
         }
-    }, [ search, startDay, endDay]);
+    }, [ search, startDay, endDay, scopeFirmCode, scopeFlowName]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadScopeFilters = async () => {
+            try {
+                const res = await axios.get(`${backendUrl}/super-admin/hierarchy/meta`, {
+                    headers: getAuthHeaders(),
+                });
+                const firms = Array.isArray(res?.data?.data?.firms) ? res.data.data.firms : [];
+                const flows = Array.isArray(res?.data?.data?.flows) ? res.data.data.flows : [];
+                if (cancelled) return;
+
+                setScopeFirms(firms);
+                setScopeFlows(flows);
+
+                const defaultFirmCode = getDefaultFirmCode(firms);
+                const defaultFirm = firms.find((firm) => firm.code === defaultFirmCode);
+                const defaultFirmFlows = normalizeFlowTypes(defaultFirm?.flowTypes);
+                const defaultFlowOptions = defaultFirmFlows.length > 0 ? defaultFirmFlows : flows;
+                const hasDefaultFlow = defaultFlowOptions.some((flow) => {
+                    const name = typeof flow === "string" ? flow : flow?.name;
+                    return String(name || "") === DEFAULT_FLOW_NAME;
+                });
+
+                setScopeFirmCode((prev) => prev || defaultFirmCode);
+                setScopeFlowName((prev) => prev || (hasDefaultFlow ? DEFAULT_FLOW_NAME : String(defaultFlowOptions[0]?.name || defaultFlowOptions[0] || DEFAULT_FLOW_NAME)));
+            } catch (error) {
+                console.warn("Failed to load firm/flow filters for market coverage:", error);
+            }
+        };
+
+        loadScopeFilters();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (scopeFlowOptions.length === 0) return;
+        setScopeFlowName((prev) => {
+            const hasCurrent = scopeFlowOptions.some((flow) => flow.name === prev);
+            if (hasCurrent) return prev;
+            const defaultFlow = scopeFlowOptions.find((flow) => flow.name === DEFAULT_FLOW_NAME);
+            return defaultFlow?.name || scopeFlowOptions[0]?.name || DEFAULT_FLOW_NAME;
+        });
+    }, [scopeFlowOptions]);
 
     useEffect(() => {
         if (expandedRow !== null) {
@@ -375,8 +473,10 @@ const ViewBeatMappingStatus = () => {
         setPositionFilter("");
         setRoleFilter("");
         setTopDealerFilter("all");
+        const defaultFirmCode = getDefaultFirmCode(scopeFirms);
+        setScopeFirmCode(defaultFirmCode);
+        setScopeFlowName(DEFAULT_FLOW_NAME);
         navigate("/marketCoverage", {replace: true});
-        getBeatMapping();
     };
 
     const handleDownloadExcel = () => {
@@ -529,14 +629,24 @@ const ViewBeatMappingStatus = () => {
     });
 
     const overallTotals = useMemo(() => {
-        return filteredData.reduce(
-            (acc, row) => {
-                acc.done += row.done || 0;
-                acc.pending += row.pending || 0;
-                return acc;
-            },
-            {done: 0, pending: 0}
-        );
+        const dealerMap = new Map();
+
+        filteredData.forEach((row) => {
+            (row.schedule || []).forEach((dealer) => {
+                const code = String(dealer?.code || dealer?._id || dealer?.name || "").trim();
+                if (!code) return;
+
+                const existing = dealerMap.get(code) || {done: false};
+                dealerMap.set(code, {
+                    done: existing.done || dealer?.status === "done",
+                });
+            });
+        });
+
+        const done = Array.from(dealerMap.values()).filter((dealer) => dealer.done).length;
+        const total = dealerMap.size;
+
+        return {done, pending: total - done, total};
     }, [filteredData]);
 
     return (
@@ -550,6 +660,42 @@ const ViewBeatMappingStatus = () => {
             )}
             <div className="viewBeatMappingStatus-page-header">
                 Market Coverage
+            </div>
+            <div className="market-coverage-scope-filter">
+                <div className="scope-filter-item">
+                    <label>Firm</label>
+                    <select
+                        value={scopeFirmCode}
+                        onChange={(e) => setScopeFirmCode(e.target.value)}
+                    >
+                        {scopeFirms.length === 0 ? (
+                            <option value="">Siddha</option>
+                        ) : (
+                            scopeFirms.map((firm) => (
+                                <option key={firm.code} value={firm.code}>
+                                    {firm.name} ({firm.code})
+                                </option>
+                            ))
+                        )}
+                    </select>
+                </div>
+                <div className="scope-filter-item">
+                    <label>Flow</label>
+                    <select
+                        value={scopeFlowName}
+                        onChange={(e) => setScopeFlowName(e.target.value)}
+                    >
+                        {scopeFlowOptions.length === 0 ? (
+                            <option value={DEFAULT_FLOW_NAME}>{DEFAULT_FLOW_NAME}</option>
+                        ) : (
+                            scopeFlowOptions.map((flow) => (
+                                <option key={flow.name} value={flow.name}>
+                                    {flow.label}
+                                </option>
+                            ))
+                        )}
+                    </select>
+                </div>
             </div>
 
             <>
@@ -721,7 +867,7 @@ const ViewBeatMappingStatus = () => {
                                             left: "center",
                                             top: "40%",
                                             style: {
-                                                text: `${overallTotals.done + overallTotals.pending}`,
+                                                text: `${overallTotals.total}`,
                                                 fontSize: 24,
                                                 fontWeight: 700,
                                                 fill: "#1f2937",
