@@ -260,7 +260,7 @@ function DynamicExtractionReport() {
   const [endDate, setEndDate] = useState(prevMonthRange.end);
   const [metric, setMetric] = useState("volume");
   const [valueFormat, setValueFormat] = useState("crLac");
-  const view = "default";
+  const [view, setView] = useState("default");
 
   const [groupingOptions, setGroupingOptions] = useState([]);
   const [actorPositions, setActorPositions] = useState([]);
@@ -697,6 +697,7 @@ function DynamicExtractionReport() {
     setStartDate(prev.start);
     setEndDate(prev.end);
     setMetric("volume");
+    setView("default");
     setValueFormat("crLac");
     setGroupBy("price_segment");
     setGroupPosition("");
@@ -1007,6 +1008,12 @@ function DynamicExtractionReport() {
         <div className="toggle-row">
           <div className="toggle-wrap">
             <TextToggle
+              textFirst="default"
+              textSecond="share"
+              setText={setView}
+              selectedText={view}
+            />
+            <TextToggle
               textFirst="crLac"
               textSecond="normal"
               setText={setValueFormat}
@@ -1254,9 +1261,11 @@ function DynamicExtractionReport() {
                                 }}
                             >
                                 {isHeatmapColumn && isNumeric ? (
-                                valueFormat === "normal"
-                                  ? formatNormalNumber(value)
-                                  : formatCrLacNumber(value)
+                                view === "share"
+                                  ? value
+                                  : valueFormat === "normal"
+                                    ? formatNormalNumber(value)
+                                    : formatCrLacNumber(value)
                                 ) : headerKey === "Total" ? (
                                 valueFormat === "normal"
                                   ? formatNormalNumber(value)
