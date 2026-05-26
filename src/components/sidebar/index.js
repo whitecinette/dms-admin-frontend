@@ -118,6 +118,12 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         iconColor: "#2563eb",
       },
       {
+        name: "Actor Dashboard",
+        to: "/actor-dashboard",
+        icon: <TbUsersGroup />,
+        iconColor: "#0f766e",
+      },
+      {
         name: "Sales Report",
         to: "/all-reports",
         icon: <RiBarChartGroupedLine />,

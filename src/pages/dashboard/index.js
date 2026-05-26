@@ -4,6 +4,7 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  ComposedChart,
   XAxis,
   YAxis,
   Tooltip,
@@ -196,6 +197,13 @@ function Dashboard() {
     return rows.map((row) => ({
       ...row,
       label: formatPeriod(row.period, "daily"),
+      planned: Number(row.planned || 0),
+      done: Number(row.done || 0),
+      pending: Number(row.pending || 0),
+      coveragePct:
+        Number(row.planned || 0) > 0
+          ? Number((((Number(row.done || 0) / Number(row.planned || 0)) * 100) || 0).toFixed(2))
+          : 0,
     }));
   }, [overview]);
 
@@ -237,83 +245,251 @@ function Dashboard() {
     }));
   }, [overview]);
 
-  const heatmapOption = useMemo(() => {
-    const salesRows = overview?.charts?.salesRegionHeatmap || [];
-    const coverageRows = overview?.charts?.coverageRegionHeatmap || [];
-    const attendanceRows = overview?.charts?.attendanceGeoHeatmap || [];
-
-    const districtUniverse = salesRows.slice(0, 15).map((item) => item.district);
-    const districts = [...new Set(districtUniverse.filter(Boolean))];
-
-    const coverageMap = new Map(
-      coverageRows.map((row) => [row.district, Number(row.coveragePct || 0)])
+  const regionMatrix = useMemo(() => {
+    const toArray = (value) => (Array.isArray(value) ? value : []);
+    const salesRows = toArray(overview?.charts?.salesRegionHeatmap);
+    const coverageRows = toArray(overview?.charts?.coverageRegionHeatmap);
+    const extractionRows = toArray(
+      overview?.charts?.extractionRegionHeatmap ||
+      overview?.charts?.extractionGeoHeatmap ||
+      overview?.charts?.extractionDistrictHeatmap
     );
 
-    const attendanceMap = new Map(
-      attendanceRows.map((row) => {
-        const totalStatus =
-          Number(row.present || 0) +
-          Number(row.absent || 0) +
-          Number(row.halfDay || 0) +
-          Number(row.leave || 0) +
-          Number(row.pending || 0);
-        const presentPct = totalStatus
-          ? (Number(row.present || 0) / totalStatus) * 100
-          : 0;
-        return [row.district, presentPct];
-      })
-    );
+    const toNum = (value) => {
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      if (typeof value === "string") {
+        const cleaned = value.replace(/,/g, "").replace(/%/g, "").trim();
+        if (!cleaned) return 0;
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+      const parsed = Number(value ?? 0);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
 
-    const maxSales = Math.max(...salesRows.map((row) => Number(row.total || 0)), 0);
+    const getDistrictName = (row) =>
+      String(
+        row?.district ||
+        row?.districtName ||
+        row?.district_name ||
+        row?.town ||
+        row?.townName ||
+        row?.town_name ||
+        row?.city ||
+        row?.cityName ||
+        row?.region ||
+        row?.regionName ||
+        row?.location ||
+        row?.locationName ||
+        row?.name ||
+        ""
+      ).trim();
 
-    const metricRows = ["Sales Strength", "Coverage %", "Attendance %"];
-    const points = [];
+    const readValueWithKey = (row, keys) => {
+      for (const key of keys) {
+        if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== "") {
+          return { key, value: toNum(row[key]) };
+        }
+      }
+      return { key: null, value: 0 };
+    };
 
-    districts.forEach((district, index) => {
-      const sales = salesRows.find((row) => row.district === district);
-      const salesPct = maxSales
-        ? (Number(sales?.total || 0) / maxSales) * 100
-        : 0;
+    const pickBestNumericField = (row, excludedKeys = []) => {
+      const excluded = new Set([
+        "id",
+        "district",
+        "districtName",
+        "district_name",
+        "town",
+        "townName",
+        "town_name",
+        "city",
+        "cityName",
+        "region",
+        "regionName",
+        "location",
+        "locationName",
+        "name",
+        ...excludedKeys,
+      ]);
+      for (const [key, raw] of Object.entries(row || {})) {
+        if (excluded.has(key)) continue;
+        if (typeof raw === "number" && Number.isFinite(raw)) return { key, value: raw };
+        if (typeof raw === "string") {
+          const value = toNum(raw);
+          if (value !== 0 || raw.includes("0")) return { key, value };
+        }
+      }
+      return { key: null, value: 0 };
+    };
 
-      points.push([index, 0, Number(salesPct.toFixed(2))]);
-      points.push([index, 1, Number((coverageMap.get(district) || 0).toFixed(2))]);
-      points.push([index, 2, Number((attendanceMap.get(district) || 0).toFixed(2))]);
+    const salesTotals = new Map();
+    salesRows.forEach((row) => {
+      const district = getDistrictName(row);
+      if (!district) return;
+      const value = toNum(
+        row?.total ?? row?.value ?? row?.sales ?? row?.sellOut ?? row?.sellIn ?? 0
+      );
+      salesTotals.set(district, (salesTotals.get(district) || 0) + value);
     });
 
-    return {
+    const coverageSums = new Map();
+    const coverageCounts = new Map();
+    coverageRows.forEach((row) => {
+      const district = getDistrictName(row);
+      if (!district) return;
+      const { value } = readValueWithKey(row, ["coveragePct", "coverage", "pct", "percentage"]);
+      coverageSums.set(district, (coverageSums.get(district) || 0) + value);
+      coverageCounts.set(district, (coverageCounts.get(district) || 0) + 1);
+    });
+    const coveragePctMap = new Map(
+      Array.from(coverageSums.entries()).map(([district, sum]) => [
+        district,
+        coverageCounts.get(district) ? sum / coverageCounts.get(district) : 0,
+      ])
+    );
+
+    const extractionRawMap = new Map();
+    let extractionLooksLikePct = false;
+    extractionRows.forEach((row) => {
+      const district = getDistrictName(row);
+      if (!district) return;
+      let { key, value } = readValueWithKey(row, [
+        "extractionPct",
+        "extractionPercent",
+        "extraction_percentage",
+        "extractionValue",
+        "extraction_value",
+        "sharePct",
+        "sharePercent",
+        "pct",
+        "percentage",
+        "total",
+        "value",
+        "count",
+        "marketValue",
+        "market_value",
+        "extraction",
+      ]);
+      if (!key) {
+        const fallback = pickBestNumericField(row);
+        key = fallback.key;
+        value = fallback.value;
+      }
+      if (key && /(pct|percent)/i.test(key)) extractionLooksLikePct = true;
+      extractionRawMap.set(district, value);
+    });
+
+    const maxSales = Math.max(...Array.from(salesTotals.values()), 0);
+    const maxExtraction = Math.max(...Array.from(extractionRawMap.values()), 0);
+    const extractionHasUsableValues =
+      extractionRows.length > 0 &&
+      Array.from(extractionRawMap.values()).some((value) => Number(value || 0) > 0);
+    const extractionLooksLikeRatio =
+      !extractionLooksLikePct && maxExtraction > 0 && maxExtraction <= 1;
+    const extractionStrengthMap = new Map(
+      Array.from(extractionRawMap.entries()).map(([district, value]) => [
+        district,
+        extractionLooksLikePct
+          ? value
+          : extractionLooksLikeRatio
+          ? value * 100
+          : (maxExtraction ? (value / maxExtraction) * 100 : 0),
+      ])
+    );
+
+    const districtSet = new Set([
+      ...Array.from(salesTotals.keys()),
+      ...Array.from(coveragePctMap.keys()),
+      ...Array.from(extractionStrengthMap.keys()),
+    ]);
+
+    const districts = Array.from(districtSet).sort((a, b) => {
+      const aSales = salesTotals.get(a) || 0;
+      const bSales = salesTotals.get(b) || 0;
+      return bSales - aSales;
+    });
+
+    const metricColumns = extractionHasUsableValues
+      ? ["Sales Strength", "Coverage %", "Extraction Strength"]
+      : ["Sales Strength", "Coverage %"];
+    const points = [];
+    const allValues = [];
+
+    districts.forEach((district, districtIndex) => {
+      const sales = salesTotals.get(district) || 0;
+      const salesPct = maxSales
+        ? (sales / maxSales) * 100
+        : 0;
+      const coveragePct = coveragePctMap.get(district) || 0;
+      const extractionStrength = extractionStrengthMap.get(district) || 0;
+
+      const values = extractionHasUsableValues
+        ? [salesPct, coveragePct, extractionStrength]
+        : [salesPct, coveragePct];
+      values.forEach((value, metricIndex) => {
+        const normalized = Number(value.toFixed(2));
+        allValues.push(normalized);
+        points.push([metricIndex, districtIndex, normalized]);
+      });
+    });
+
+    const visualMax = Math.max(100, Math.ceil(Math.max(...allValues, 0) / 10) * 10);
+    const startEnd = districts.length > 12 ? Number(((12 / districts.length) * 100).toFixed(2)) : 100;
+    const chartHeight = Math.max(360, Math.min(760, districts.length * 28 + 140));
+
+    const option = {
       tooltip: {
-        position: "top",
         formatter: (params) => {
-          const district = districts[params.data[0]] || "Unknown";
-          const metric = metricRows[params.data[1]];
+          const metric = metricColumns[params.data[0]] || "Metric";
+          const district = districts[params.data[1]] || "Unknown";
           return `${district}<br/>${metric}: ${params.data[2]}%`;
         },
       },
       grid: {
-        left: 100,
-        right: 20,
+        left: 14,
+        right: 38,
         top: 20,
-        bottom: 80,
+        bottom: 70,
+        containLabel: true,
       },
       xAxis: {
         type: "category",
-        data: districts,
+        data: metricColumns,
         axisLabel: {
-          interval: 0,
-          rotate: 35,
           color: "#5f6b7a",
+          fontWeight: 600,
         },
       },
       yAxis: {
         type: "category",
-        data: metricRows,
+        data: districts,
         axisLabel: {
           color: "#5f6b7a",
         },
       },
+      dataZoom: districts.length > 12 ? [
+        {
+          type: "inside",
+          yAxisIndex: 0,
+          start: 0,
+          end: startEnd,
+          zoomLock: true,
+          moveOnMouseMove: true,
+        },
+        {
+          type: "slider",
+          yAxisIndex: 0,
+          right: 6,
+          width: 12,
+          start: 0,
+          end: startEnd,
+          brushSelect: false,
+        },
+      ] : [],
       visualMap: {
         min: 0,
-        max: 100,
+        max: visualMax,
         calculable: true,
         orient: "horizontal",
         left: "center",
@@ -327,7 +503,9 @@ function Dashboard() {
           type: "heatmap",
           data: points,
           label: {
-            show: false,
+            show: true,
+            fontSize: 10,
+            formatter: ({ value }) => `${Number(value?.[2] || 0).toFixed(0)}%`,
           },
           emphasis: {
             itemStyle: {
@@ -337,6 +515,13 @@ function Dashboard() {
           },
         },
       ],
+    };
+    return {
+      option,
+      hasExtractionData: extractionRows.length > 0,
+      hasUsableExtractionData: extractionHasUsableValues,
+      districtCount: districts.length,
+      chartHeight,
     };
   }, [overview]);
 
@@ -447,12 +632,20 @@ function Dashboard() {
           </ResponsiveContainer>
         </section>
 
-        <section className="panel">
+        <section className="panel panel--wide">
           <header>
             <h3>Region Heatmap</h3>
-            <p>District strength across sales, coverage, attendance</p>
+            <p>
+              Scrollable district matrix across sales, coverage
+              {regionMatrix.hasUsableExtractionData ? ", extraction" : ""} ({regionMatrix.districtCount} districts)
+              {!regionMatrix.hasExtractionData
+                ? " (extraction feed missing from API response)"
+                : !regionMatrix.hasUsableExtractionData
+                ? " (extraction feed present but district values are unavailable)"
+                : ""}
+            </p>
           </header>
-          <ReactECharts option={heatmapOption} style={{ height: 320 }} />
+          <ReactECharts option={regionMatrix.option} style={{ height: regionMatrix.chartHeight }} />
         </section>
 
         <section className="panel">
@@ -500,19 +693,69 @@ function Dashboard() {
         <section className="panel">
           <header>
             <h3>Market Coverage Trend</h3>
-            <p>Planned vs done vs pending</p>
+            <p>Execution mix with planned target and coverage % trend</p>
           </header>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={coverageTrendData}>
-              <CartesianGrid strokeDasharray="3 3" />
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={coverageTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
+              <YAxis
+                yAxisId="count"
+                tickFormatter={(value) => numberFormatter.format(Number(value || 0))}
+              />
+              <YAxis
+                yAxisId="pct"
+                orientation="right"
+                domain={[
+                  0,
+                  (maxValue) => Math.max(100, Math.ceil(Number(maxValue || 0) / 10) * 10),
+                ]}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip
+                formatter={(value, name) => {
+                  if (name === "Coverage %") return [`${Number(value || 0).toFixed(2)}%`, name];
+                  return [numberFormatter.format(Number(value || 0)), name];
+                }}
+              />
               <Legend />
-              <Bar dataKey="planned" fill="#94a3b8" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="done" fill="#22c55e" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="pending" fill="#f97316" radius={[6, 6, 0, 0]} />
-            </BarChart>
+              <Bar
+                yAxisId="count"
+                dataKey="done"
+                name="Done"
+                stackId="execution"
+                fill="#22c55e"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={24}
+              />
+              <Bar
+                yAxisId="count"
+                dataKey="pending"
+                name="Pending"
+                stackId="execution"
+                fill="#f97316"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={24}
+              />
+              <Line
+                yAxisId="count"
+                type="monotone"
+                dataKey="planned"
+                name="Planned"
+                stroke="#64748b"
+                strokeWidth={2.5}
+                dot={false}
+              />
+              <Line
+                yAxisId="pct"
+                type="monotone"
+                dataKey="coveragePct"
+                name="Coverage %"
+                stroke="#0ea5e9"
+                strokeWidth={2.5}
+                dot={false}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </section>
 

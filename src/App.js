@@ -57,6 +57,7 @@ import TopSellingSelf from "./pages/SalesReportV2/topSellingSelf";
 import SessionsPage from "./pages/sessions";
 import UserDirectoryPage from "./pages/userDirectoryPage";
 import HierarchyManagerPage from "./pages/hierarchyManagerPage";
+import ActorDashboard from "./pages/actorDashboard";
 
 
 
@@ -143,6 +144,7 @@ function App() {
             <Route path="/sessions" element={<SessionsPage /> } />
             <Route path="/user-directory" element={<UserDirectoryPage /> } />
             <Route path="/hierarchy-manager" element={<HierarchyManagerPage /> } />
+            <Route path="/actor-dashboard" element={<ActorDashboard /> } />
 
             
           </Route>
