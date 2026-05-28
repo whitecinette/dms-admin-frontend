@@ -258,6 +258,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
           { name: "Upload Combined", to: "/combined-upload", icon: <RiUploadCloud2Line /> },
           { name: "Product Master", to: "/product-master", icon: <RiPriceTag3Line /> },
           { name: "Sync Params", to: "/sync-dump-data", icon: <RiRefreshLine /> },
+          { name: "Dealer Shop Profile", to: "/dealer-shop-profiles", icon: <RiBuilding4Line /> },
           ...(role === "super_admin"
             ? [{ name: "Data Manager", to: "/data-police", icon: <RiShieldCheckLine /> }]
             : []),

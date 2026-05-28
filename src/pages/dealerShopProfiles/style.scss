@@ -1,0 +1,601 @@
+.dealer-shop-profiles-page {
+  min-height: 100%;
+  padding: 20px;
+  background:
+    radial-gradient(1100px 500px at 90% -20%, #dbf5ff 0%, rgba(219, 245, 255, 0) 60%),
+    radial-gradient(1000px 420px at -10% -10%, #ffeccf 0%, rgba(255, 236, 207, 0) 55%),
+    #f4f7fc;
+  color: #0f172a;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .dsp-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #111827;
+    }
+
+    p {
+      margin: 8px 0 0;
+      max-width: 860px;
+      line-height: 1.6;
+      color: #475467;
+      font-size: 0.96rem;
+    }
+  }
+
+  .dsp-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    span {
+      border: 1px solid #d9e8ff;
+      background: #eef5ff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #1d4ed8;
+    }
+  }
+
+  .dsp-toast {
+    margin-bottom: 14px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    &.success {
+      border: 1px solid #b5efcd;
+      background: #ecfdf3;
+      color: #166534;
+    }
+
+    &.error {
+      border: 1px solid #ffc7c7;
+      background: #fff1f1;
+      color: #b42318;
+    }
+  }
+
+  .dsp-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 300px minmax(0, 2fr) minmax(0, 1.2fr);
+    grid-template-areas:
+      "dealers main config"
+      "dealers logs config";
+  }
+
+  .dsp-filters-bar {
+    margin-bottom: 16px;
+    padding: 14px;
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #344054;
+      }
+    }
+
+    .flow-preview {
+      border: 1px solid #e7edf7;
+      background: #f9fbff;
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      span {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #667085;
+      }
+
+      strong {
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: #111827;
+      }
+    }
+  }
+
+  .dsp-card {
+    border: 1px solid #e7edf7;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.05);
+    backdrop-filter: blur(6px);
+  }
+
+  .dsp-dealer-selector {
+    grid-area: dealers;
+    padding: 14px;
+  }
+
+  .dsp-main-card {
+    grid-area: main;
+    padding: 16px;
+  }
+
+  .dsp-config-card {
+    grid-area: config;
+    padding: 16px;
+  }
+
+  .dsp-log-card {
+    grid-area: logs;
+    padding: 14px;
+  }
+
+  .dsp-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+
+    h3 {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 0.84rem;
+      line-height: 1.4;
+      color: #667085;
+    }
+  }
+
+  .dsp-input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid #d6deea;
+    background: #f9fbff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    color: #101828;
+    outline: none;
+
+    &:focus {
+      border-color: #f97316;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+      background: #fff;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn,
+  .danger-btn {
+    border: none;
+    cursor: pointer;
+    transition: 0.18s ease;
+    font-weight: 700;
+    border-radius: 12px;
+  }
+
+  .primary-btn {
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    color: #fff;
+    padding: 10px 14px;
+    box-shadow: 0 10px 22px rgba(249, 115, 22, 0.26);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  .secondary-btn {
+    background: #eef2ff;
+    color: #1e3a8a;
+    border: 1px solid #dbe4ff;
+    padding: 9px 12px;
+
+    &:hover:not(:disabled) {
+      background: #e1e9ff;
+    }
+
+    &.small {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+  }
+
+  .ghost-btn {
+    background: #f8fafc;
+    border: 1px solid #dde5f1;
+    color: #334155;
+    padding: 8px 11px;
+
+    &:hover:not(:disabled) {
+      background: #f1f5f9;
+    }
+  }
+
+  .danger-btn {
+    background: #fff1f1;
+    border: 1px solid #ffd2d2;
+    color: #b42318;
+    padding: 9px 12px;
+
+    &:hover:not(:disabled) {
+      background: #ffe7e7;
+    }
+
+    &.small {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+
+    &.subtle {
+      background: #fff;
+      border-style: dashed;
+    }
+  }
+
+  .dsp-dealer-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 620px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .dealer-item {
+    width: 100%;
+    border: 1px solid #e5ebf7;
+    background: #fff;
+    border-radius: 12px;
+    text-align: left;
+    padding: 10px;
+    cursor: pointer;
+
+    strong {
+      display: block;
+      color: #111827;
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+
+    span {
+      color: #667085;
+      font-size: 0.75rem;
+    }
+
+    &:hover {
+      border-color: #ffd1b2;
+      background: #fff9f5;
+    }
+
+    &.active {
+      border-color: #f97316;
+      background: linear-gradient(135deg, #fff2e8 0%, #fffbf8 100%);
+      box-shadow: inset 3px 0 0 #f97316;
+    }
+  }
+
+  .brand-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .brand-card {
+    border: 1px solid #e3e9f3;
+    border-radius: 14px;
+    padding: 10px;
+    background: #fff;
+
+    .brand-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+
+      h4 {
+        margin: 0;
+        font-size: 0.96rem;
+        font-weight: 800;
+        color: #111827;
+      }
+
+      span {
+        font-size: 0.74rem;
+        color: #475467;
+        background: #f8fafc;
+        border-radius: 999px;
+        padding: 5px 8px;
+        border: 1px solid #e4eaf3;
+      }
+    }
+
+    .brand-stats {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      span {
+        font-size: 0.78rem;
+        color: #1f2937;
+        border: 1px solid #e8eef8;
+        background: #f8fbff;
+        border-radius: 999px;
+        padding: 4px 8px;
+      }
+    }
+
+    .finance-chips {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+
+      span {
+        font-size: 0.73rem;
+        color: #055160;
+        border: 1px solid #bde3ec;
+        background: #effbff;
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+    }
+
+    .brand-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  }
+
+  .editor-section {
+    border: 1px solid #e4ebf6;
+    background: #fcfdff;
+    border-radius: 16px;
+    padding: 12px;
+
+    h4 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #1f2937;
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+
+    label {
+      font-size: 0.78rem;
+      color: #344054;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+  }
+
+  .custom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nested-card {
+    margin-top: 12px;
+    border: 1px solid #e6ecf6;
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px;
+
+    h5 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      color: #111827;
+    }
+  }
+
+  .nested-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .finance-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .finance-row {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .editor-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .new-field-form {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr 1fr 130px auto;
+    margin-bottom: 10px;
+  }
+
+  .fields-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow: auto;
+  }
+
+  .field-card {
+    border: 1px solid #e5ecf7;
+    background: #fff;
+    border-radius: 12px;
+    padding: 9px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+
+    strong {
+      font-size: 0.88rem;
+      color: #1f2937;
+    }
+
+    p {
+      margin: 3px 0 0;
+      font-size: 0.74rem;
+      color: #667085;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: #f4f6fb;
+      border-radius: 5px;
+      padding: 1px 5px;
+      color: #334155;
+    }
+  }
+
+  .field-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .logs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 390px;
+    overflow: auto;
+  }
+
+  .log-row {
+    border: 1px solid #e7edf7;
+    border-radius: 10px;
+    padding: 8px;
+    background: #fff;
+
+    .log-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+
+      strong {
+        font-size: 0.84rem;
+        color: #1f2937;
+      }
+
+      span {
+        font-size: 0.72rem;
+        color: #667085;
+      }
+    }
+
+    p {
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      color: #344054;
+    }
+  }
+
+  .empty {
+    margin: 10px 0;
+    color: #667085;
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 1320px) {
+    .dsp-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        "dealers main"
+        "config main"
+        "logs logs";
+    }
+  }
+
+  @media (max-width: 980px) {
+    .dsp-grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "dealers"
+        "main"
+        "config"
+        "logs";
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .new-field-form {
+      grid-template-columns: 1fr;
+    }
+
+    .dsp-filters-bar .filters-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .finance-row {
+      grid-template-columns: 1fr;
+    }
+  }
+}
