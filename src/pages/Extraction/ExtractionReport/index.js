@@ -5,18 +5,23 @@ import TextToggle from "../../../components/toggle";
 import "./style.scss";
 import TableBodyLoading from "../../../components/tableLoading";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import DealerShopInsights from "./DealerShopInsights";
 
 const backend_url = config.backend_url;
 
 function ExtractionReport() {
   const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 2);
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+  const toInputDate = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
-  const [startDate, setStartDate] = useState(
-    firstDay.toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(toInputDate(firstDay));
+  const [endDate, setEndDate] = useState(toInputDate(lastDay));
   const [metric, setMetric] = useState("value");
   const [extractionReport, setExtractionReport] = useState([]);
   const [header, setHeaders] = useState([]);
@@ -679,6 +684,12 @@ function ExtractionReport() {
           )}
         </table>
       </div>
+
+      <DealerShopInsights
+        startDate={startDate}
+        endDate={endDate}
+        dropdownValue={dropdownValue}
+      />
     </>
   );
 }

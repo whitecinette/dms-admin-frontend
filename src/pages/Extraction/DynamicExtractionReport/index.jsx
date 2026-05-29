@@ -11,6 +11,7 @@ import {
   FaLayerGroup,
   FaSyncAlt,
 } from "react-icons/fa";
+import DealerShopInsights from "../ExtractionReport/DealerShopInsights";
 import "./style.scss";
 
 const backend_url = config.backend_url;
@@ -232,10 +233,16 @@ const getDefaultPrevMonthRange = () => {
   const now = new Date();
   const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+  const toInputDate = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   return {
-    start: firstDayPrevMonth.toISOString().split("T")[0],
-    end: lastDayPrevMonth.toISOString().split("T")[0],
+    start: toInputDate(firstDayPrevMonth),
+    end: toInputDate(lastDayPrevMonth),
   };
 };
 
@@ -254,7 +261,7 @@ const decodeJwtPayload = (token) => {
 };
 
 function DynamicExtractionReport() {
-  const prevMonthRange = getDefaultPrevMonthRange();
+  const prevMonthRange = useMemo(() => getDefaultPrevMonthRange(), []);
 
   const [startDate, setStartDate] = useState(prevMonthRange.start);
   const [endDate, setEndDate] = useState(prevMonthRange.end);
@@ -620,6 +627,11 @@ function DynamicExtractionReport() {
   }, []);
 
   useEffect(() => {
+    setStartDate(prevMonthRange.start);
+    setEndDate(prevMonthRange.end);
+  }, [prevMonthRange.start, prevMonthRange.end]);
+
+  useEffect(() => {
     if (!filterPanelOpen || !activeFilterTab) return;
     loadFilterOptionsForTab(activeFilterTab);
   }, [
@@ -866,6 +878,21 @@ function DynamicExtractionReport() {
 
   const currentGroupLabel =
     groupingOptions.find((item) => item.value === groupBy)?.label || "Price Segment";
+
+  const hierarchySelections = useMemo(() => {
+    const rows = [];
+    Object.entries(selectedActorFilters || {}).forEach(([position, selected]) => {
+      (selected || []).forEach((item) => {
+        if (!item?.code) return;
+        rows.push({
+          position: String(position || "").toLowerCase(),
+          code: item.code,
+          name: item.name || item.label || item.code,
+        });
+      });
+    });
+    return rows;
+  }, [selectedActorFilters]);
 
   return (
     <div className="extraction-report-dynamic-page">
@@ -1291,6 +1318,12 @@ function DynamicExtractionReport() {
           </table>
         </div>
       </div>
+
+      <DealerShopInsights
+        startDate={startDate}
+        endDate={endDate}
+        dropdownValue={hierarchySelections}
+      />
     </div>
   );
 }
