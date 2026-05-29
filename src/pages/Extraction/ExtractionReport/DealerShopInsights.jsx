@@ -169,16 +169,113 @@ const authHeaders = () => {
 };
 
 const positionFieldMap = {
-  smd: "smd_code",
-  zsm: "zsm_code",
-  asm: "asm_code",
-  mdd: "mdd_code",
-  tse: "tse_code",
-  so: "so_code",
-  dealer: "dealer_code",
+  smd: ["smd", "smd_code"],
+  zsm: ["zsm", "zsm_code"],
+  asm: ["asm", "asm_code"],
+  mdd: ["mdd", "mdd_code"],
+  tse: ["tse", "tse_code"],
+  so: ["so", "so_code"],
+  dealer: ["dealer", "dealer_code", "code"],
 };
 
-function DealerShopInsights({ startDate, endDate, dropdownValue = [] }) {
+const extractActorValuesByPosition = (dealer = {}, position = "") => {
+  const keys = positionFieldMap[position] || [position, `${position}_code`];
+  const sources = [dealer || {}, dealer?.hierarchy || {}];
+
+  const values = [];
+  sources.forEach((src) => {
+    keys.forEach((key) => {
+      values.push(toCode(src?.[key]));
+    });
+  });
+
+  return values.filter(Boolean);
+};
+
+const extractDealerValuesByFilterType = (dealer = {}, type = "") => {
+  const d = dealer || {};
+  const hierarchy = d.hierarchy || {};
+  const byTypeCandidates = {
+    zone: [d.zone, d.zone_name, d.zone_code, hierarchy.zone, hierarchy.zone_name, hierarchy.zone_code],
+    district: [
+      d.district,
+      d.district_name,
+      d.district_code,
+      hierarchy.district,
+      hierarchy.district_name,
+      hierarchy.district_code,
+    ],
+    town: [d.town, d.town_name, d.town_code, hierarchy.town, hierarchy.town_name, hierarchy.town_code],
+    category: [
+      d.category,
+      d.outlet_category,
+      d.dealer_category,
+      hierarchy.category,
+      hierarchy.outlet_category,
+    ],
+    top_outlet: [d.top_outlet, d.topOutlet, d.code, d.dealer_code, hierarchy.top_outlet],
+  };
+
+  return (byTypeCandidates[type] || [])
+    .map((v) => toCode(v))
+    .filter(Boolean);
+};
+
+const parseDealerCodeFromText = (text = "") => {
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+  const bracketMatch = raw.match(/\(([A-Za-z0-9_/-]+)\)\s*$/);
+  if (bracketMatch?.[1]) return toCode(bracketMatch[1]);
+  const codeLike = raw.match(/[A-Za-z]{2,}[A-Za-z0-9_/-]*/g);
+  if (codeLike?.length) {
+    return toCode(codeLike[codeLike.length - 1]);
+  }
+  return toCode(raw);
+};
+
+const extractDealerCodeFromFilterItem = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return parseDealerCodeFromText(item);
+
+  const directCandidates = [
+    item.value,
+    item.code,
+    item.dealer,
+    item.dealer_code,
+    item.system_code,
+    item.id,
+  ];
+  for (const candidate of directCandidates) {
+    const normalized = toCode(candidate);
+    if (normalized) return normalized;
+  }
+
+  const textCandidates = [item.label, item.name, item.title];
+  for (const candidate of textCandidates) {
+    const parsed = parseDealerCodeFromText(candidate);
+    if (parsed) return parsed;
+  }
+
+  return "";
+};
+
+const isLikelyDealerCode = (code = "") => {
+  const v = toCode(code);
+  if (!v) return false;
+  if (["TRUE", "FALSE", "YES", "NO", "ALL DEALERS", "ALL_DEALERS"].includes(v)) return false;
+  // dealer codes in this system are alpha-numeric and include digits.
+  if (!/[0-9]/.test(v)) return false;
+  if (v.length < 5) return false;
+  return true;
+};
+
+function DealerShopInsights({
+  startDate,
+  endDate,
+  dropdownValue = [],
+  dealerFilters = {},
+  scopedDealerCodes = [],
+}) {
   const [metaLoading, setMetaLoading] = useState(false);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [dealersLoading, setDealersLoading] = useState(false);
@@ -228,6 +325,19 @@ function DealerShopInsights({ startDate, endDate, dropdownValue = [] }) {
     });
     return grouped;
   }, [dropdownValue]);
+
+  const groupedDealerFilterValues = useMemo(() => {
+    const grouped = {};
+    Object.entries(dealerFilters || {}).forEach(([type, selected]) => {
+      const values = new Set(
+        (selected || [])
+          .map((item) => toCode(item?.value ?? item?.code ?? item?.label))
+          .filter(Boolean)
+      );
+      grouped[type] = values;
+    });
+    return grouped;
+  }, [dealerFilters]);
 
   const brandKpiHeatmapStats = useMemo(() => {
     const rows = summary.brandKpiRows || [];
@@ -547,28 +657,69 @@ function DealerShopInsights({ startDate, endDate, dropdownValue = [] }) {
       try {
         setInsightsLoading(true);
 
+        const hasActorFilterSelections = Object.values(groupedPositionCodes).some(
+          (codes) => codes?.size
+        );
+        const hasDealerFilterSelections = Object.values(groupedDealerFilterValues).some(
+          (codes) => codes?.size
+        );
+        const hasAnyExtractionScopeFilter = hasActorFilterSelections || hasDealerFilterSelections;
+        const scopedDealerCodesFromExtraction = new Set(
+          (scopedDealerCodes || [])
+            .map((code) => toCode(code))
+            .filter((code) => isLikelyDealerCode(code))
+        );
+        const canUseUnscopedAdminFallback =
+          isAdminLike &&
+          !selectedDealerCode &&
+          !hasAnyExtractionScopeFilter;
+
+        const dealerCodesFromFilterApi = hasAnyExtractionScopeFilter
+          ? scopedDealerCodesFromExtraction
+          : null;
+
         let scopedDealers = [...dealers];
 
         if (selectedDealerCode) {
           scopedDealers = scopedDealers.filter((dealer) => dealer.code === selectedDealerCode);
         }
 
-        if (!isAdminLike) {
+        if (dealerCodesFromFilterApi) {
+          if (selectedDealerCode) {
+            dealerCodesFromFilterApi = new Set(
+              Array.from(dealerCodesFromFilterApi).filter(
+                (code) => code === toCode(selectedDealerCode)
+              )
+            );
+          }
+
+          const matchedFromLoadedDealers = scopedDealers.filter((dealer) =>
+            dealerCodesFromFilterApi.has(dealer.code)
+          );
+
+          if (matchedFromLoadedDealers.length) {
+            scopedDealers = matchedFromLoadedDealers;
+          } else {
+            // Build minimal scope from filter API output even when dealer master list
+            // did not return records (e.g. firm scoped list issue).
+            scopedDealers = Array.from(dealerCodesFromFilterApi).map((code) => ({
+              code,
+              name: code,
+            }));
+          }
+        } else if (hasActorFilterSelections) {
           Object.entries(groupedPositionCodes).forEach(([position, codes]) => {
-            const hierarchyField = positionFieldMap[position];
-            if (!hierarchyField || !codes?.size) return;
+            if (!codes?.size) return;
 
             const dealersWithField = scopedDealers.filter((dealer) =>
-              Boolean(toCode(dealer?.hierarchy?.[hierarchyField] || dealer?.[hierarchyField]))
+              extractActorValuesByPosition(dealer, position).length > 0
             );
 
             if (!dealersWithField.length) return;
 
             scopedDealers = dealersWithField.filter((dealer) => {
-              const codeValue = toCode(
-                dealer?.hierarchy?.[hierarchyField] || dealer?.[hierarchyField]
-              );
-              return Boolean(codeValue && codes.has(codeValue));
+              const codeValues = extractActorValuesByPosition(dealer, position);
+              return codeValues.some((value) => codes.has(value));
             });
           });
         }
@@ -608,8 +759,13 @@ function DealerShopInsights({ startDate, endDate, dropdownValue = [] }) {
 
               if (applyDealerScope) return allowedDealerCodes.has(dealerCode);
 
-              // Fallback for admin/super_admin when dealer list API is temporarily empty.
-              if (isAdminLike) return true;
+              // Fallback: keep default admin/super_admin visibility when no
+              // extraction filters are selected and scoped dealer list is empty.
+              if (canUseUnscopedAdminFallback) return true;
+
+              // Fallback: if dealer API list is empty but user selected a specific dealer
+              // in this insights panel, allow that dealer's rows.
+              if (selectedDealerCode) return dealerCode === toCode(selectedDealerCode);
 
               return false;
             });
@@ -808,9 +964,11 @@ function DealerShopInsights({ startDate, endDate, dropdownValue = [] }) {
     flowFilter,
     selectedDealerCode,
     groupedPositionCodes,
+    groupedDealerFilterValues,
     dealers,
     isAdminLike,
     seedRefreshTick,
+    scopedDealerCodes,
   ]);
 
   const hasFilters = Boolean(startDate && endDate && flowFilter);

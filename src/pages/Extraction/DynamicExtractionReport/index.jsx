@@ -300,6 +300,7 @@ function DynamicExtractionReport() {
   const [reportRows, setReportRows] = useState([]);
   const [header, setHeader] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [scopedDealerCodes, setScopedDealerCodes] = useState([]);
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState("zone");
@@ -560,6 +561,9 @@ function DynamicExtractionReport() {
 
       const rows = res.data.data || [];
       setReportRows(rows);
+      setScopedDealerCodes(
+        Array.isArray(res.data?.dealerFilter) ? res.data.dealerFilter : []
+      );
 
       if (rows.length > 0) {
         const keys = Object.keys(rows[0]);
@@ -617,6 +621,7 @@ function DynamicExtractionReport() {
     } catch (error) {
       console.error("Error fetching extraction report:", error);
       setReportRows([]);
+      setScopedDealerCodes([]);
     } finally {
       setIsLoading(false);
     }
@@ -1323,6 +1328,8 @@ function DynamicExtractionReport() {
         startDate={startDate}
         endDate={endDate}
         dropdownValue={hierarchySelections}
+        dealerFilters={selectedDealerFilters}
+        scopedDealerCodes={scopedDealerCodes}
       />
     </div>
   );
