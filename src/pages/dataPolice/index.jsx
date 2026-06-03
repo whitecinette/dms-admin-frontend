@@ -30,6 +30,10 @@ function DataPolice() {
   const [downloadYear, setDownloadYear] = useState(today.getFullYear());
   const [isDownloadingMarketSales, setIsDownloadingMarketSales] =
     useState(false);
+  const [
+    isDownloadingDealerShopInsightsCsv,
+    setIsDownloadingDealerShopInsightsCsv,
+  ] = useState(false);
   const [duplicateMonth, setDuplicateMonth] = useState(today.getMonth() + 1);
   const [duplicateYear, setDuplicateYear] = useState(today.getFullYear());
   const [dealerCodesInput, setDealerCodesInput] = useState("");
@@ -86,6 +90,33 @@ function DataPolice() {
       .map((code) => code.trim())
       .filter(Boolean);
 
+  const getReadableTimestamp = () => {
+    const now = new Date();
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mon = months[now.getMonth()];
+    const yyyy = now.getFullYear();
+    let hh = now.getHours();
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const ampm = hh >= 12 ? "PM" : "AM";
+    hh = hh % 12 || 12;
+    const hh12 = String(hh).padStart(2, "0");
+    return `${dd}-${mon}-${yyyy}_${hh12}-${mm}${ampm}`;
+  };
+
   const downloadMarketSalesData = async () => {
     setIsDownloadingMarketSales(true);
     setError("");
@@ -131,7 +162,7 @@ function DataPolice() {
         link.download = `Market_Sales_Data_${String(downloadMonth).padStart(
           2,
           "0"
-        )}_${downloadYear}.xlsx`;
+        )}_${downloadYear}_${getReadableTimestamp()}.xlsx`;
 
         document.body.appendChild(link);
         link.click();
@@ -148,6 +179,83 @@ function DataPolice() {
       setError("Network error");
     } finally {
       setIsDownloadingMarketSales(false);
+    }
+  };
+
+  const downloadDealerShopInsightsCsvData = async () => {
+    setIsDownloadingDealerShopInsightsCsv(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `${backendUrl}/download-dealer-shop-insights-month-wise`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            month: Number(downloadMonth),
+            year: Number(downloadYear),
+            format: "csv",
+          }),
+        }
+      );
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!res.ok) {
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          setError(data.message || "Download failed");
+        } else {
+          setError("Download failed");
+        }
+        return;
+      }
+
+      if (contentType.includes("text/csv")) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Dealer_Shop_Insights_${String(downloadMonth).padStart(
+          2,
+          "0"
+        )}_${downloadYear}_${getReadableTimestamp()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else if (
+        contentType.includes(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+      ) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Dealer_Shop_Insights_${String(downloadMonth).padStart(
+          2,
+          "0"
+        )}_${downloadYear}_${getReadableTimestamp()}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else if (contentType.includes("application/json")) {
+        const data = await res.json();
+        setError(data.message || "No data found");
+      } else {
+        setError("Unexpected response received");
+      }
+    } catch (err) {
+      console.error("Error downloading dealer shop insights CSV:", err);
+      setError("Network error");
+    } finally {
+      setIsDownloadingDealerShopInsightsCsv(false);
     }
   };
 
@@ -528,6 +636,15 @@ function DataPolice() {
               {isDownloadingMarketSales
                 ? "Downloading..."
                 : "Download Market Sales"}
+            </button>
+
+            <button
+              onClick={downloadDealerShopInsightsCsvData}
+              disabled={isDownloadingDealerShopInsightsCsv}
+            >
+              {isDownloadingDealerShopInsightsCsv
+                ? "Downloading..."
+                : "Download Dealer Shop Insights CSV"}
             </button>
           </div>
         </div>
