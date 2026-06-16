@@ -4,12 +4,32 @@
   min-height: 100vh;
 }
 
+.sessions-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 /* ================= HEADER ================= */
 .page-title {
   font-size: 22px;
   font-weight: 600;
-  margin-bottom: 16px;
   color: #1f2937;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.sync-indicator {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+  padding-top: 6px;
 }
 
 /* ================= FILTERS ================= */
@@ -46,13 +66,28 @@
     &:hover {
       background: #1d4ed8;
     }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
   }
+}
+
+.sessions-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
 }
 
 /* ================= USER CARD ================= */
 .user-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   margin-bottom: 18px;
   padding: 16px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
@@ -78,17 +113,38 @@
   }
 }
 
+.devices-list {
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 999px;
+  }
+}
+
 /* ================= DEVICE CARD ================= */
 .device-card {
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
-  margin-top: 12px;
-  background: #fafafa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #ffffff;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
+    border-color: #cbd5e1;
+    background: #f8fafc;
   }
 }
 
@@ -96,21 +152,70 @@
 .device-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 12px;
+}
+
+.device-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.device-toggle {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  color: #3730a3;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 92px;
+  padding: 6px 8px;
+
+  &:hover {
+    background: #e0e7ff;
+  }
 }
 
 .device-id {
+  appearance: none;
+  background: transparent;
+  border: none;
+  display: block;
   font-size: 13px;
-  font-weight: 500;
+  font-family: monospace;
+  font-weight: 600;
   color: #111827;
-  word-break: break-all;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
 }
 
 .device-info {
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-counts {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 3px;
 }
 
 /* ================= ACTIONS ================= */
@@ -130,6 +235,11 @@
 
     &:hover {
       opacity: 0.9;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
   }
 
@@ -192,6 +302,7 @@
   border-radius: 8px;
   background: #f8fafc;
   border-left: 4px solid transparent;
+  gap: 12px;
 }
 
 /* highlight active */
@@ -211,6 +322,7 @@
   font-size: 12px;
   color: #111827;
   cursor: pointer;
+  word-break: break-word;
 
   &:hover {
     text-decoration: underline;
@@ -252,6 +364,11 @@
     &:hover {
       background: #dc2626;
     }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
   }
 }
 
@@ -283,6 +400,28 @@
 }
 .refresh-btn:disabled {
   animation: spin 0.8s linear infinite;
+}
+
+@media screen and (max-width: 720px) {
+  .sessions-title-row,
+  .device-header,
+  .session {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .device-main {
+    grid-template-columns: 1fr;
+  }
+
+  .device-toggle {
+    width: fit-content;
+  }
+
+  .actions,
+  .session .right {
+    justify-content: flex-start;
+  }
 }
 
 @keyframes spin {

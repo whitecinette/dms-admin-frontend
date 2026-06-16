@@ -13,13 +13,17 @@ const getAuthHeader = () => {
 
 export default function SessionsPage() {
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState([]);
+  const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
   const [deviceStatus, setDeviceStatus] = useState("");
   const [sessionStatus, setSessionStatus] = useState("");
 
   const [showRevoked, setShowRevoked] = useState({});
+  const [expandedDevices, setExpandedDevices] = useState({});
+  const [pendingActions, setPendingActions] = useState({});
 
   const toggleRevoked = (deviceId) => {
     setShowRevoked((prev) => ({
@@ -28,9 +32,41 @@ export default function SessionsPage() {
     }));
   };
 
-  const fetchData = async () => {
+  const toggleDevice = (deviceId) => {
+    setExpandedDevices((prev) => ({
+      ...prev,
+      [deviceId]: !prev[deviceId],
+    }));
+  };
+
+  const setActionPending = (key, value) => {
+    setPendingActions((prev) => {
+      if (value) return { ...prev, [key]: true };
+
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const copyText = async (text) => {
+    if (!text) return;
+
     try {
-      setLoading(true);
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchData = async ({ silent = false } = {}) => {
+    try {
+      setError("");
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
 
       const res = await axios.get(`${backendUrl}/admin/devices-sessions`, {
         params: {
@@ -44,23 +80,53 @@ export default function SessionsPage() {
       setData(res.data?.data || []);
     } catch (e) {
       console.error(e);
-      setData([]);
+      setError("Unable to load devices and sessions. Please try again.");
     } finally {
-      setLoading(false);
+      if (silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    // Initial load only; filters are applied with the Apply button.
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
+
+    if (!q) return data;
 
     return data.filter((u) => {
+      const devices = u.devices || [];
+
       return (
         u.code?.toLowerCase().includes(q) ||
-        u.user?.name?.toLowerCase().includes(q)
+        u.user?.name?.toLowerCase().includes(q) ||
+        u.user?.position?.toLowerCase().includes(q) ||
+        u.user?.role?.toLowerCase().includes(q) ||
+        devices.some((d) => {
+          const deviceInfo = d.deviceInfo || {};
+          const sessions = d.sessions || [];
+
+          return (
+            d.deviceId?.toLowerCase().includes(q) ||
+            deviceInfo.brand?.toLowerCase().includes(q) ||
+            deviceInfo.model?.toLowerCase().includes(q) ||
+            deviceInfo.os?.toLowerCase().includes(q) ||
+            sessions.some((s) => {
+              return (
+                s._id?.toLowerCase().includes(q) ||
+                s.ip?.toLowerCase().includes(q) ||
+                s.status?.toLowerCase().includes(q)
+              );
+            })
+          );
+        })
       );
     });
   }, [data, search]);
@@ -68,53 +134,165 @@ export default function SessionsPage() {
   const deleteDevice = async (code, deviceId) => {
     if (!window.confirm("Delete this device?")) return;
 
-    await axios.post(
-      `${backendUrl}/admin/delete-device`,
-      { code, deviceId },
-      { headers: getAuthHeader() }
-    );
+    const actionKey = `device:${deviceId}:delete`;
 
-    fetchData();
+    try {
+      setActionPending(actionKey, true);
+      await axios.post(
+        `${backendUrl}/admin/delete-device`,
+        { code, deviceId },
+        { headers: getAuthHeader() }
+      );
+
+      setData((prev) =>
+        prev
+          .map((user) =>
+            user.code === code
+              ? {
+                  ...user,
+                  devices: (user.devices || []).filter(
+                    (d) => d.deviceId !== deviceId
+                  ),
+                }
+              : user
+          )
+          .filter((user) => (user.devices || []).length > 0)
+      );
+
+      fetchData({ silent: true });
+    } catch (e) {
+      console.error(e);
+      setError("Unable to delete device. Please try again.");
+    } finally {
+      setActionPending(actionKey, false);
+    }
   };
 
   const updateDevice = async (code, deviceId, status) => {
-    await axios.post(
-      `${backendUrl}/admin/update-device-status`,
-      { code, deviceId, status },
-      { headers: getAuthHeader() }
-    );
+    const actionKey = `device:${deviceId}:status`;
 
-    fetchData();
+    try {
+      setActionPending(actionKey, true);
+      await axios.post(
+        `${backendUrl}/admin/update-device-status`,
+        { code, deviceId, status },
+        { headers: getAuthHeader() }
+      );
+
+      setData((prev) =>
+        prev.map((user) =>
+          user.code === code
+            ? {
+                ...user,
+                devices: (user.devices || []).map((d) =>
+                  d.deviceId === deviceId ? { ...d, status } : d
+                ),
+              }
+            : user
+        )
+      );
+
+      fetchData({ silent: true });
+    } catch (e) {
+      console.error(e);
+      setError("Unable to update device status. Please try again.");
+    } finally {
+      setActionPending(actionKey, false);
+    }
   };
 
   const revokeSession = async (sessionId) => {
-    await axios.post(
-      `${backendUrl}/admin/revoke-session`,
-      { sessionId },
-      { headers: getAuthHeader() }
-    );
+    const actionKey = `session:${sessionId}:revoke`;
 
-    fetchData();
+    try {
+      setActionPending(actionKey, true);
+      await axios.post(
+        `${backendUrl}/admin/revoke-session`,
+        { sessionId },
+        { headers: getAuthHeader() }
+      );
+
+      setData((prev) =>
+        prev.map((user) => ({
+          ...user,
+          devices: (user.devices || []).map((device) => ({
+            ...device,
+            sessions: (device.sessions || []).map((session) =>
+              session._id === sessionId
+                ? { ...session, status: "revoked" }
+                : session
+            ),
+          })),
+        }))
+      );
+
+      fetchData({ silent: true });
+    } catch (e) {
+      console.error(e);
+      setError("Unable to logout session. Please try again.");
+    } finally {
+      setActionPending(actionKey, false);
+    }
   };
 
-const formatSessionId = (id) => {
-  if (!id) return "";
+  const formatSessionId = (id) => {
+    if (!id) return "";
 
-  const MAX = 30;
+    const MAX = 30;
 
-  if (id.length <= MAX) return id;
+    if (id.length <= MAX) return id;
 
-  return id.slice(0, MAX) + "...";
-};
+    return id.slice(0, MAX) + "...";
+  };
+
+  const formatDeviceId = (id) => {
+    if (!id) return "Unknown device";
+
+    const MAX = 22;
+    if (id.length <= MAX) return id;
+
+    return `${id.slice(0, 10)}...${id.slice(-8)}`;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "Unknown time";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Unknown time";
+
+    return date.toLocaleString();
+  };
+
+  const getDeviceLabel = (deviceInfo = {}) => {
+    const parts = [deviceInfo.brand, deviceInfo.model, deviceInfo.os].filter(
+      Boolean
+    );
+
+    return parts.length ? parts.join(" • ") : "Unknown device details";
+  };
 
   return (
     <div className="sessions-page">
-      <div className="page-title">Devices & Sessions</div>
+      <div className="sessions-title-row">
+        <div>
+          <div className="page-title">Devices & Sessions</div>
+          <div className="page-subtitle">
+            {filtered.length} users •{" "}
+            {filtered.reduce(
+              (count, user) => count + (user.devices || []).length,
+              0
+            )}{" "}
+            devices
+          </div>
+        </div>
+
+        {refreshing && <div className="sync-indicator">Syncing...</div>}
+      </div>
 
       {/* FILTERS */}
         <div className="filters">
         <input
-            placeholder="Search code / name"
+            placeholder="Search user, device, IP, session"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
         />
@@ -140,19 +318,21 @@ const formatSessionId = (id) => {
 
         <button onClick={fetchData}>Apply</button>
 
-        {/* 🔥 NEW REFRESH BUTTON */}
         <button
         className="refresh-btn"
-        onClick={fetchData}
-        disabled={loading}
+        onClick={() => fetchData({ silent: data.length > 0 })}
+        disabled={loading || refreshing}
+        title="Refresh"
         >
-        {loading ? "⟳" : "⟳"}
+        ⟳
         </button>
         </div>
 
+      {error && <div className="sessions-error">{error}</div>}
+
       {/* LIST */}
       <div className="list">
-        {loading ? (
+        {loading && !data.length ? (
           <div className="empty">Loading...</div>
         ) : filtered.length ? (
           filtered.map((user) => (
@@ -168,21 +348,49 @@ const formatSessionId = (id) => {
               </div>
 
               {/* DEVICES */}
-              {user.devices.map((d, i) => {
+              <div className="devices-list">
+              {(user.devices || []).map((d) => {
                 const activeSessions =
                   d.sessions?.filter((s) => s.status === "active") || [];
 
                 const revokedSessions =
                   d.sessions?.filter((s) => s.status === "revoked") || [];
 
+                const isExpanded = !!expandedDevices[d.deviceId];
+                const statusActionPending =
+                  pendingActions[`device:${d.deviceId}:status`];
+                const deleteActionPending =
+                  pendingActions[`device:${d.deviceId}:delete`];
+                const deviceActionPending =
+                  statusActionPending || deleteActionPending;
+
                 return (
-                  <div key={i} className="device-card">
+                  <div key={d.deviceId} className="device-card">
                     <div className="device-header">
-                      <div>
-                        <div className="device-id">{d.deviceId}</div>
-                        <div className="device-info">
-                          {d.deviceInfo?.brand} • {d.deviceInfo?.model} •{" "}
-                          {d.deviceInfo?.os}
+                      <div className="device-main">
+                        <button
+                          className="device-toggle"
+                          onClick={() => toggleDevice(d.deviceId)}
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded ? "Hide" : "View"} sessions
+                        </button>
+
+                        <div>
+                          <button
+                            className="device-id"
+                            title={d.deviceId}
+                            onClick={() => copyText(d.deviceId)}
+                          >
+                            {formatDeviceId(d.deviceId)}
+                          </button>
+                          <div className="device-info">
+                            {getDeviceLabel(d.deviceInfo)}
+                          </div>
+                          <div className="device-counts">
+                            {activeSessions.length} active •{" "}
+                            {revokedSessions.length} revoked
+                          </div>
                         </div>
                       </div>
 
@@ -191,35 +399,42 @@ const formatSessionId = (id) => {
                           {d.status}
                         </span>
 
-                        <button
-                          onClick={() =>
-                            updateDevice(user.code, d.deviceId, "approved")
-                          }
-                        >
-                          Approve
-                        </button>
+                        {d.status !== "approved" && (
+                          <button
+                            onClick={() =>
+                              updateDevice(user.code, d.deviceId, "approved")
+                            }
+                            disabled={deviceActionPending}
+                          >
+                            {statusActionPending ? "Saving..." : "Approve"}
+                          </button>
+                        )}
 
-                        <button
-                          onClick={() =>
-                            updateDevice(user.code, d.deviceId, "blocked")
-                          }
-                        >
-                          Block
-                        </button>
+                        {d.status !== "blocked" && (
+                          <button
+                            onClick={() =>
+                              updateDevice(user.code, d.deviceId, "blocked")
+                            }
+                            disabled={deviceActionPending}
+                          >
+                            {statusActionPending ? "Saving..." : "Block"}
+                          </button>
+                        )}
 
                         <button
                           className="danger"
                           onClick={() =>
                             deleteDevice(user.code, d.deviceId)
                           }
+                          disabled={deviceActionPending}
                         >
-                          Delete
+                          {deleteActionPending ? "Deleting..." : "Delete"}
                         </button>
                       </div>
                     </div>
 
                     {/* SESSIONS */}
-                    <div className="sessions">
+                    {isExpanded && <div className="sessions">
                       {/* ACTIVE */}
                       {activeSessions.length ? (
                         activeSessions.map((s) => (
@@ -227,15 +442,14 @@ const formatSessionId = (id) => {
                             <div className="left">
                              <div
                                 className="session-id"
-                                title={s._id} // 👈 full ID on hover
-                                onClick={() => navigator.clipboard.writeText(s._id)}
+                                title={s._id}
+                                onClick={() => copyText(s._id)}
                                 >
                                 {formatSessionId(s._id)}
                                 </div>
 
                               <div className="session-meta">
-                                {new Date(s.loginTime).toLocaleString()} •{" "}
-                                {s.ip}
+                                {formatDate(s.loginTime)} • {s.ip || "No IP"}
                               </div>
                             </div>
 
@@ -246,8 +460,13 @@ const formatSessionId = (id) => {
 
                               <button
                                 onClick={() => revokeSession(s._id)}
+                                disabled={
+                                  pendingActions[`session:${s._id}:revoke`]
+                                }
                               >
-                                Logout
+                                {pendingActions[`session:${s._id}:revoke`]
+                                  ? "Logging out..."
+                                  : "Logout"}
                               </button>
                             </div>
                           </div>
@@ -288,9 +507,7 @@ const formatSessionId = (id) => {
                               </div>
 
                               <div className="session-meta">
-                                {new Date(
-                                  s.loginTime
-                                ).toLocaleString()}
+                                {formatDate(s.loginTime)}
                               </div>
                             </div>
 
@@ -301,10 +518,11 @@ const formatSessionId = (id) => {
                             </div>
                           </div>
                         ))}
-                    </div>
+                    </div>}
                   </div>
                 );
               })}
+              </div>
             </div>
           ))
         ) : (
