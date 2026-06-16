@@ -3,8 +3,58 @@ import "./style.scss";
 import config from "../../config";
 import axios from "axios";
 import { UAParser } from "ua-parser-js";
+import { LogIn, RotateCcw } from "lucide-react";
 
 const backend_url = config.backend_url;
+
+const getErrorMessage = (error, fallback) => {
+  const genericLoginError = /invalid (email|code).*password/i;
+
+  const collectMessages = (value) => {
+    if (!value) return [];
+    if (typeof value === "string") return [value];
+    if (Array.isArray(value)) {
+      return value.flatMap(collectMessages);
+    }
+    if (typeof value !== "object") return [];
+
+    const messages = [];
+    const seenKeys = new Set();
+    const messageKeys = [
+      "deviceMessage",
+      "deviceError",
+      "authorizationMessage",
+      "authMessage",
+      "detail",
+      "reason",
+      "message",
+      "error",
+      "msg",
+      "data",
+      "errors",
+    ];
+    for (const key of messageKeys) {
+      seenKeys.add(key);
+      messages.push(...collectMessages(value[key]));
+    }
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      if (seenKeys.has(key)) continue;
+      if (/message|error|reason|detail|device|auth/i.test(key)) {
+        messages.push(...collectMessages(nestedValue));
+      }
+    }
+
+    return messages;
+  };
+
+  const messages = collectMessages(error?.response?.data).filter(Boolean);
+  return (
+    messages.find((message) => !genericLoginError.test(message)) ||
+    messages[0] ||
+    fallback
+  );
+};
 
 const LoginAdmin = () => {
   const [error, setError] = useState("");
@@ -114,7 +164,7 @@ const LoginAdmin = () => {
         window.location.href = "/dashboard";
       }
     } catch (error) {
-      setError(error.response?.data?.message || "Invalid email or password.");
+      setError(getErrorMessage(error, "Invalid email or password."));
     }
   };
 
@@ -149,8 +199,7 @@ const LoginAdmin = () => {
       }
     } catch (error) {
       setError(
-        error.response?.data?.message ||
-          "Failed to reset password. Please try again."
+        getErrorMessage(error, "Failed to reset password. Please try again.")
       );
     }
   };
@@ -167,13 +216,19 @@ const LoginAdmin = () => {
         <div className="logo-container">
           <div className="company-logo">
             <img src="./sc.jpg" alt="Company Logo" />
-            <h2 style={{ fontFamily: "revert" }}>Welcome To Siddha Connect</h2>
+            <div>
+              <p className="brand-kicker">Siddha Connect</p>
+              <h1>Admin Console</h1>
+            </div>
           </div>
         </div>
         <div className="form-container login-active">
           {!showForgotPassword ? (
             <form onSubmit={handleLoginSubmit} className="login-form">
-              <h2>Login</h2>
+              <div className="form-heading">
+                <p className="form-kicker">Welcome back</p>
+                <h2>Login</h2>
+              </div>
               <input
                 className="form-input"
                 type="text"
@@ -196,8 +251,9 @@ const LoginAdmin = () => {
                 <span onClick={toggleForgotPassword}>Forgot Password?</span>
               </p>
               {error && <p className="error-message">{error}</p>}
-              <div>
+              <div className="form-actions">
                 <button className="form-login-button" type="submit">
+                  <LogIn size={18} />
                   Login
                 </button>
               </div>
@@ -207,7 +263,10 @@ const LoginAdmin = () => {
               onSubmit={handleForgotPasswordSubmit}
               className="forgot-password-form"
             >
-              <h2>Reset Password</h2>
+              <div className="form-heading">
+                <p className="form-kicker">Account access</p>
+                <h2>Reset Password</h2>
+              </div>
               <input
                 className="form-input"
                 type="text"
@@ -249,8 +308,9 @@ const LoginAdmin = () => {
               </p>
               {error && <p className="error-message">{error}</p>}
               {successMsg && <p className="success">{successMsg}</p>}
-              <div>
+              <div className="form-actions">
                 <button className="form-login-button" type="submit">
+                  <RotateCcw size={18} />
                   Reset Password
                 </button>
               </div>
