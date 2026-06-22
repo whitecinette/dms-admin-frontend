@@ -4,6 +4,7 @@ import CsvUploadModal from "./CsvUploadModal";
 import "./style.scss";
 import BeatMappingSyncModal from "./BeatMappingSyncModal";
 import SalesSnapshotRecalcModal from "./SalesSnapshotRecalcModal";
+import StockUploadModal from "./StockUploadModal";
 
 const backendUrl = config.backend_url;
 
@@ -48,6 +49,7 @@ function DataPolice() {
   const [segmentRecalcResult, setSegmentRecalcResult] = useState(null);
 
   const [showSalesSnapshotModal, setShowSalesSnapshotModal] = useState(false);
+  const [showStockUploadModal, setShowStockUploadModal] = useState(false);
 
 
   const monthOptions = [
@@ -588,6 +590,22 @@ function DataPolice() {
           >
             Update Users From CSV
           </button>
+
+          <div className="data-police-header-actions">
+          <button
+            className="primary-action-btn"
+            onClick={() => setShowStockUploadModal(true)}
+          >
+            Upload Stock Report
+          </button>
+
+          <button
+            className="primary-action-btn"
+            onClick={() => setShowUserCsvModal(true)}
+          >
+            Update Users From CSV
+          </button>
+        </div>
         </div>
 
         <div className="date-controls">
@@ -733,6 +751,25 @@ function DataPolice() {
               onClick={() => setShowUserCsvModal(true)}
             >
               Open Upload Tool
+            </button>
+          </div>
+
+          <div className="tool-card feature-card">
+            <div className="tool-card-top">
+              <h3>Stock Report Upload</h3>
+              <span className="pill">Excel</span>
+            </div>
+
+            <p>
+              Upload latest stock report with IMEI/serial data, run dry preview, and replace
+              the latest stock snapshot.
+            </p>
+
+            <button
+              className="feature-btn"
+              onClick={() => setShowStockUploadModal(true)}
+            >
+              Open Stock Upload
             </button>
           </div>
 
@@ -914,6 +951,16 @@ function DataPolice() {
         title="Update Users From CSV"
         subtitle="Match by user code, preview with dry run, and optionally create new fields in user documents."
         endpoint={`${backendUrl}/master/update-users-from-csv`}
+        fileFieldName="file"
+        onSuccess={() => {
+          setError("");
+        }}
+      />
+
+      <StockUploadModal
+        open={showStockUploadModal}
+        onClose={() => setShowStockUploadModal(false)}
+        endpoint={`${backendUrl}/stock/upload`}
         fileFieldName="file"
         onSuccess={() => {
           setError("");
