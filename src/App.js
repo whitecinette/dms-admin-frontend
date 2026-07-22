@@ -59,6 +59,7 @@ import UserDirectoryPage from "./pages/userDirectoryPage";
 import HierarchyManagerPage from "./pages/hierarchyManagerPage";
 import ActorDashboard from "./pages/actorDashboard";
 import DealerShopProfilesPage from "./pages/dealerShopProfiles";
+import MasterMarketCoverage from "./pages/masterMarketCoverage";
 
 
 
@@ -91,6 +92,10 @@ function App() {
             <Route
               path="/marketCoverage"
               element={<ViewBeatMappingStatus />}
+            />
+            <Route
+              path="/master-market-coverage"
+              element={<MasterMarketCoverage />}
             />
             <Route
               path="/actorTypeHierarchy"

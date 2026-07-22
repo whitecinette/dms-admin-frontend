@@ -995,7 +995,7 @@ const ViewBeatMappingStatus = () => {
                         >
                             <label className="browse-btn">
                                 <FaFileUpload/>
-                                Edit Config
+                                Plan Beats
                             </label>
                         </div>
                         <div

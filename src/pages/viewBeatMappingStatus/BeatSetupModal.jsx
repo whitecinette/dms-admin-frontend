@@ -38,6 +38,62 @@ const getZoneFromRow = (row = {}) =>
 const getDistrictFromRow = (row = {}) =>
   String(row.district || row?.metadata?.district || row?.user?.district || "").trim();
 
+const getTalukaFromRow = (row = {}) =>
+  String(row.taluka || row?.metadata?.taluka || row?.user?.taluka || "").trim();
+
+const getTownFromRow = (row = {}) =>
+  String(row.town || row?.metadata?.town || row?.user?.town || "").trim();
+
+const toDateKey = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateKey = (value) => {
+  if (!value) return null;
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const addDays = (date, days) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
+const getDateRangeKeys = (startKey, endKey) => {
+  const start = parseDateKey(startKey);
+  const end = parseDateKey(endKey || startKey);
+  if (!start || !end) return [];
+
+  const first = start <= end ? start : end;
+  const last = start <= end ? end : start;
+  const keys = [];
+  const cursor = new Date(first);
+
+  while (cursor <= last && keys.length < 370) {
+    keys.push(toDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return keys;
+};
+
+const formatDisplayDate = (dateKey) => {
+  const date = parseDateKey(dateKey);
+  if (!date) return "";
+  return date.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+};
+
 const parseCodesFromValue = (value) => {
   if (value === null || value === undefined) return [];
   if (Array.isArray(value)) {
@@ -220,6 +276,8 @@ const mapDealerSeedsToRows = (dealerSeeds = [], userByCode = {}) =>
         position: getPosition(row) || seed.position || "",
         zone: getZoneFromRow(row),
         district: getDistrictFromRow(row),
+        taluka: getTalukaFromRow(row),
+        town: getTownFromRow(row),
         topDealer: boolTopDealer(row),
       };
     })
@@ -272,17 +330,59 @@ function BeatSetupModal({
   const [dealerSearch, setDealerSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
+  const [talukaFilter, setTalukaFilter] = useState("");
+  const [townFilter, setTownFilter] = useState("");
   const [topDealerFilter, setTopDealerFilter] = useState("all");
 
   const [configByActorCode, setConfigByActorCode] = useState({});
   const [startDate, setStartDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [pendingInitialDealerCodes, setPendingInitialDealerCodes] = useState([]);
   const [actorDealerLoading, setActorDealerLoading] = useState(false);
 
   const selectedFirm = useMemo(
     () => firms.find((f) => String(f.code || "") === String(firmCode || "")),
     [firms, firmCode]
+  );
+
+  const selectedPlanDates = useMemo(
+    () => getDateRangeKeys(startDate, expiryDate),
+    [startDate, expiryDate]
+  );
+
+  const calendarCells = useMemo(() => {
+    const monthStart = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+    const firstDayOffset = (monthStart.getDay() + 6) % 7;
+    const totalCells = Math.ceil((firstDayOffset + monthEnd.getDate()) / 7) * 7;
+    const gridStart = addDays(monthStart, -firstDayOffset);
+    const todayKey = toDateKey(new Date());
+    const selectedSet = new Set(selectedPlanDates);
+
+    return Array.from({ length: totalCells }, (_, index) => {
+      const date = addDays(gridStart, index);
+      const key = toDateKey(date);
+      return {
+        key,
+        label: date.getDate(),
+        weekday: date.toLocaleDateString("en-IN", { weekday: "short" }),
+        isCurrentMonth: date.getMonth() === calendarMonth.getMonth(),
+        isToday: key === todayKey,
+        isSelected: selectedSet.has(key),
+        isRangeStart: key === startDate,
+        isRangeEnd: key === (expiryDate || startDate),
+      };
+    });
+  }, [calendarMonth, selectedPlanDates, startDate, expiryDate]);
+
+  const calendarMonthLabel = useMemo(
+    () =>
+      calendarMonth.toLocaleDateString("en-IN", {
+        month: "long",
+        year: "numeric",
+      }),
+    [calendarMonth]
   );
 
   const flowOptions = useMemo(() => {
@@ -346,10 +446,13 @@ function BeatSetupModal({
     setDealerSearch("");
     setZoneFilter("");
     setDistrictFilter("");
+    setTalukaFilter("");
+    setTownFilter("");
     setTopDealerFilter("all");
     setConfigByActorCode({});
     setStartDate("");
     setExpiryDate("");
+    setCalendarMonth(new Date());
     setPendingInitialDealerCodes([]);
   };
 
@@ -586,16 +689,27 @@ function BeatSetupModal({
     setPendingInitialDealerCodes(
       initDealerCodes.map((code) => String(code || "").trim()).filter(Boolean)
     );
-    setStartDate(
-      toDateInputValue(
-        initialConfig.startDate || initialConfig.fromDate || initialConfig.validFrom || ""
-      )
+    const initStartDate = toDateInputValue(
+      initialConfig.startDate ||
+        initialConfig.planDate ||
+        initialConfig.fromDate ||
+        initialConfig.validFrom ||
+        ""
     );
-    setExpiryDate(
-      toDateInputValue(
-        initialConfig.expiryDate || initialConfig.endDate || initialConfig.validTill || ""
-      )
+    const initExpiryDate = toDateInputValue(
+      initialConfig.expiryDate ||
+        initialConfig.endDate ||
+        initialConfig.validTill ||
+        initialConfig.planDate ||
+        ""
     );
+
+    setStartDate(initStartDate);
+    setExpiryDate(initExpiryDate);
+    const monthSource = parseDateKey(initStartDate);
+    if (monthSource) {
+      setCalendarMonth(new Date(monthSource.getFullYear(), monthSource.getMonth(), 1));
+    }
   }, [open, initialConfig]);
 
   useEffect(() => {
@@ -792,19 +906,36 @@ function BeatSetupModal({
     return dealerMddList.filter((item) => {
       const searchMatch =
         !q ||
-        [item.name, item.code, item.position, item.role, item.zone, item.district].some((v) =>
-          normalize(v).includes(q)
-        );
+        [
+          item.name,
+          item.code,
+          item.position,
+          item.role,
+          item.zone,
+          item.district,
+          item.taluka,
+          item.town,
+        ].some((v) => normalize(v).includes(q));
       const zoneMatch = !zoneFilter || normalize(item.zone) === normalize(zoneFilter);
       const districtMatch =
         !districtFilter || normalize(item.district) === normalize(districtFilter);
+      const talukaMatch = !talukaFilter || normalize(item.taluka) === normalize(talukaFilter);
+      const townMatch = !townFilter || normalize(item.town) === normalize(townFilter);
       const topMatch =
         topDealerFilter === "all" ||
         (topDealerFilter === "yes" && item.topDealer) ||
         (topDealerFilter === "no" && !item.topDealer);
-      return searchMatch && zoneMatch && districtMatch && topMatch;
+      return searchMatch && zoneMatch && districtMatch && talukaMatch && townMatch && topMatch;
     });
-  }, [dealerMddList, dealerSearch, zoneFilter, districtFilter, topDealerFilter]);
+  }, [
+    dealerMddList,
+    dealerSearch,
+    zoneFilter,
+    districtFilter,
+    talukaFilter,
+    townFilter,
+    topDealerFilter,
+  ]);
 
   const zoneOptions = useMemo(
     () =>
@@ -817,6 +948,22 @@ function BeatSetupModal({
   const districtOptions = useMemo(
     () =>
       Array.from(new Set(dealerMddList.map((row) => row.district).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [dealerMddList]
+  );
+
+  const talukaOptions = useMemo(
+    () =>
+      Array.from(new Set(dealerMddList.map((row) => row.taluka).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [dealerMddList]
+  );
+
+  const townOptions = useMemo(
+    () =>
+      Array.from(new Set(dealerMddList.map((row) => row.town).filter(Boolean))).sort((a, b) =>
         a.localeCompare(b)
       ),
     [dealerMddList]
@@ -891,6 +1038,47 @@ function BeatSetupModal({
     if (actorCodes.length === 0) return;
 
     try {
+      if (selectedPlanDates.length > 0) {
+        try {
+          const planRes = await axios.post(
+            `${backendUrl}/admin/beat-mapping/plans/get`,
+            { actorCodes, dates: selectedPlanDates },
+            { headers: { "Content-Type": "application/json", ...tokenHeaders() } }
+          );
+          const plans = Array.isArray(planRes?.data?.plans) ? planRes.data.plans : [];
+          if (plans.length > 0) {
+            const planMap = {};
+            actorCodes.forEach((actorCode) => {
+              const actorPlans = plans.filter(
+                (plan) => normalize(plan.actorCode || plan.code) === normalize(actorCode)
+              );
+              const planSets = actorPlans.map((plan) => {
+                const dealerCodes = Array.isArray(plan.dealerCodes)
+                  ? plan.dealerCodes
+                  : Array.isArray(plan.dealers)
+                  ? plan.dealers.map((dealer) => dealer.code)
+                  : [];
+                return new Set(dealerCodes.map((code) => normalize(code)).filter(Boolean));
+              });
+              if (planSets.length === 0) return;
+              const intersection = new Set(planSets[0]);
+              planSets.slice(1).forEach((setRef) => {
+                Array.from(intersection).forEach((value) => {
+                  if (!setRef.has(value)) intersection.delete(value);
+                });
+              });
+              planMap[normalize(actorCode)] = intersection;
+            });
+
+            setConfigByActorCode((prev) => ({ ...prev, ...planMap }));
+            hydrateFromExistingConfig(actorCodes, planMap);
+            return;
+          }
+        } catch (planError) {
+          // Fall back to the legacy config source.
+        }
+      }
+
       const res = await axios.post(
         `${backendUrl}/admin/beat-mapping/config/get`,
         { actorCodes },
@@ -931,11 +1119,15 @@ function BeatSetupModal({
         const selectedActor = normalize(actorCodes[0]);
         const cfg = activeConfigs.find((item) => normalize(item.actorCode || item.code) === selectedActor);
         if (cfg) {
-          setStartDate(toDateInputValue(cfg.startDate || cfg.fromDate || cfg.validFrom || ""));
-          setExpiryDate(toDateInputValue(cfg.expiryDate || cfg.endDate || cfg.validTill || ""));
+          if (selectedPlanDates.length === 0) {
+            setStartDate(toDateInputValue(cfg.startDate || cfg.fromDate || cfg.validFrom || ""));
+            setExpiryDate(toDateInputValue(cfg.expiryDate || cfg.endDate || cfg.validTill || ""));
+          }
         } else if (!initialConfig) {
-          setStartDate("");
-          setExpiryDate("");
+          if (selectedPlanDates.length === 0) {
+            setStartDate("");
+            setExpiryDate("");
+          }
         }
       }
 
@@ -951,6 +1143,8 @@ function BeatSetupModal({
             position: getPosition(row) || "",
             zone: getZoneFromRow(row),
             district: getDistrictFromRow(row),
+            taluka: getTalukaFromRow(row),
+            town: getTownFromRow(row),
             topDealer: boolTopDealer(row),
           }))
           .filter((row) => row.code);
@@ -972,7 +1166,7 @@ function BeatSetupModal({
 
     fetchSavedConfigForActors(selectedActorCodes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedActorCodes.join("|"), dealerMddList.length]);
+  }, [open, selectedActorCodes.join("|"), selectedPlanDates.join("|"), dealerMddList.length]);
 
   const toggleActor = (code) => {
     setSelectedActorCodes((prev) =>
@@ -1014,6 +1208,32 @@ function BeatSetupModal({
     });
   };
 
+  const handleCalendarDateSelect = (dateKey) => {
+    if (!dateKey) return;
+    if (!startDate || (startDate && expiryDate)) {
+      setStartDate(dateKey);
+      setExpiryDate("");
+      return;
+    }
+    if (dateKey < startDate) {
+      setExpiryDate(startDate);
+      setStartDate(dateKey);
+      return;
+    }
+    setExpiryDate(dateKey);
+  };
+
+  const moveCalendarMonth = (direction) => {
+    setCalendarMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + direction, 1)
+    );
+  };
+
+  const clearCalendarSelection = () => {
+    setStartDate("");
+    setExpiryDate("");
+  };
+
   const selectedDealerRows = useMemo(() => {
     const selectedSet = new Set(selectedDealerCodes.map((code) => normalize(code)));
     return dealerMddList.filter((item) => selectedSet.has(normalize(item.code)));
@@ -1025,6 +1245,14 @@ function BeatSetupModal({
   }, [visibleDealerMdds, selectedDealerCodes]);
 
   const handleSaveAndApply = async () => {
+    if (selectedPlanDates.length === 0) {
+      setError("Please select at least one plan date.");
+      return;
+    }
+    if (selectedPlanDates.length >= 370) {
+      setError("Please keep a plan range below one year.");
+      return;
+    }
     if (!firmCode) {
       setError("Please select a firm.");
       return;
@@ -1041,70 +1269,58 @@ function BeatSetupModal({
       setError("Please select at least one dealer/MDD.");
       return;
     }
-    if (!startDate) {
-      setError("Please select config start date.");
-      return;
-    }
-    if (!expiryDate) {
-      setError("Please select config expiry date.");
-      return;
-    }
-    if (new Date(expiryDate) < new Date(new Date().toDateString())) {
-      setError("Config expiry date has already passed.");
-      return;
-    }
-    if (new Date(expiryDate) < new Date(startDate)) {
-      setError("Expiry date cannot be before start date.");
-      return;
-    }
 
     setSaving(true);
     setError("");
 
     try {
+      const todayKey = toDateKey(new Date());
+      const shouldApplyToday = selectedPlanDates.includes(todayKey);
       const setupPayload = {
         firmCode,
         flowName,
-        startDate,
-        expiryDate,
+        dates: selectedPlanDates,
+        startDate: selectedPlanDates[0],
+        expiryDate: selectedPlanDates[selectedPlanDates.length - 1],
         actorCodes: selectedActorCodes,
         dealers: selectedDealerRows.map((row) => ({
           name: row.name,
           code: row.code,
           zone: row.zone || "",
           district: row.district || "",
+          taluka: row.taluka || "",
+          town: row.town || "",
           top_dealer: row.topDealer === true,
           role: row.role || "",
           position: row.position || "",
         })),
       };
 
-      let setupSaved = false;
-      try {
-        const setupRes = await axios.put(
-          `${backendUrl}/admin/beat-mapping/config/upsert`,
-          setupPayload,
-          { headers: { "Content-Type": "application/json", ...tokenHeaders() } }
-        );
-        setupSaved = setupRes?.data?.success !== false;
-      } catch (setupErr) {
-        setupSaved = false;
-      }
-
-      const applyRes = await axios.put(
-        `${backendUrl}/add-daily-beat-mapping`,
-        {
-          mode: "from_setup",
-          ...setupPayload,
-        },
+      const planRes = await axios.put(
+        `${backendUrl}/admin/beat-mapping/plans/upsert`,
+        setupPayload,
         { headers: { "Content-Type": "application/json", ...tokenHeaders() } }
       );
 
-      const msg =
-        applyRes?.data?.message ||
-        (setupSaved
-          ? "Setup saved and daily beat mapping applied."
-          : "Daily beat mapping applied from setup selection.");
+      let applyMessage = "";
+      if (shouldApplyToday) {
+        const applyRes = await axios.put(
+          `${backendUrl}/add-daily-beat-mapping`,
+          {
+            mode: "from_setup",
+            ...setupPayload,
+          },
+          { headers: { "Content-Type": "application/json", ...tokenHeaders() } }
+        );
+        applyMessage = applyRes?.data?.message || "";
+      }
+
+      const savedCount = Number(planRes?.data?.updatedPlans || 0);
+      const msg = shouldApplyToday
+        ? applyMessage || "Beat plans saved and today's mapping applied."
+        : `Beat plans saved for ${selectedPlanDates.length} day${
+            selectedPlanDates.length === 1 ? "" : "s"
+          }${savedCount ? ` (${savedCount} actor-day plans).` : "."}`;
 
       onApplied?.({
         type: "success",
@@ -1129,7 +1345,7 @@ function BeatSetupModal({
         <div className="beat-setup-modal__header">
           <div>
             <h2>Beat Setup</h2>
-            <p>Select firm, flow, actors and dealer/MDD mapping for beat config.</p>
+            <p>Plan beat trips by date, actor and dealer/MDD coverage.</p>
           </div>
           <button type="button" onClick={onClose}>
             ×
@@ -1137,6 +1353,73 @@ function BeatSetupModal({
         </div>
 
         <div className="beat-setup-modal__body">
+          <div className="beat-plan-calendar-card">
+            <div className="calendar-copy">
+              <span>Calendar Planner</span>
+              <h3>
+                {selectedPlanDates.length > 0
+                  ? `${selectedPlanDates.length} day${
+                      selectedPlanDates.length === 1 ? "" : "s"
+                    } selected`
+                  : "Pick trip date or range"}
+              </h3>
+              <p>
+                {selectedPlanDates.length > 0
+                  ? `${formatDisplayDate(selectedPlanDates[0])}${
+                      selectedPlanDates.length > 1
+                        ? ` to ${formatDisplayDate(
+                            selectedPlanDates[selectedPlanDates.length - 1]
+                          )}`
+                        : ""
+                    }`
+                  : "Click a date once for single-day planning, then another date for a range."}
+              </p>
+              <div className="calendar-actions">
+                <button type="button" onClick={() => moveCalendarMonth(-1)}>
+                  ‹
+                </button>
+                <strong>{calendarMonthLabel}</strong>
+                <button type="button" onClick={() => moveCalendarMonth(1)}>
+                  ›
+                </button>
+                <button type="button" onClick={clearCalendarSelection}>
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className="beat-calendar">
+              <div className="weekday-row">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                  <span key={day}>{day}</span>
+                ))}
+              </div>
+              <div className="calendar-grid">
+                {calendarCells.map((cell) => (
+                  <button
+                    key={cell.key}
+                    type="button"
+                    className={[
+                      "calendar-day",
+                      cell.isCurrentMonth ? "" : "muted",
+                      cell.isToday ? "today" : "",
+                      cell.isSelected ? "selected" : "",
+                      cell.isRangeStart ? "range-start" : "",
+                      cell.isRangeEnd ? "range-end" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => handleCalendarDateSelect(cell.key)}
+                    disabled={saving}
+                  >
+                    <span>{cell.label}</span>
+                    <small>{cell.weekday}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="beat-setup-top-row double">
             <div>
               <label>Firm</label>
@@ -1156,6 +1439,8 @@ function BeatSetupModal({
                   setDealerSearch("");
                   setZoneFilter("");
                   setDistrictFilter("");
+                  setTalukaFilter("");
+                  setTownFilter("");
                   setTopDealerFilter("all");
                 }}
                 disabled={loadingBase || saving}
@@ -1182,27 +1467,6 @@ function BeatSetupModal({
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          <div className="beat-setup-date-row">
-            <div>
-              <label>Config Start</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                disabled={loadingBase || saving}
-              />
-            </div>
-            <div>
-              <label>Config Expiry</label>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                disabled={loadingBase || saving}
-              />
             </div>
           </div>
 
@@ -1256,7 +1520,7 @@ function BeatSetupModal({
               <div className="dealer-filters">
                 <input
                   type="text"
-                  placeholder="Search name, code, position, role"
+                  placeholder="Search name, code, geo, role"
                   value={dealerSearch}
                   onChange={(e) => setDealerSearch(e.target.value)}
                   disabled={saving}
@@ -1282,6 +1546,30 @@ function BeatSetupModal({
                   {districtOptions.map((district) => (
                     <option key={district} value={district}>
                       {district}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={talukaFilter}
+                  onChange={(e) => setTalukaFilter(e.target.value)}
+                  disabled={saving}
+                >
+                  <option value="">All Talukas</option>
+                  {talukaOptions.map((taluka) => (
+                    <option key={taluka} value={taluka}>
+                      {taluka}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={townFilter}
+                  onChange={(e) => setTownFilter(e.target.value)}
+                  disabled={saving}
+                >
+                  <option value="">All Towns</option>
+                  {townOptions.map((town) => (
+                    <option key={town} value={town}>
+                      {town}
                     </option>
                   ))}
                 </select>
@@ -1316,7 +1604,8 @@ function BeatSetupModal({
                     <div>
                       <strong>{item.name || "N/A"}</strong>
                       <span>
-                        {item.code} • {item.zone || "NA"} • {item.district || "NA"} • Top:{" "}
+                        {item.code} • {item.zone || "NA"} • {item.district || "NA"} •{" "}
+                        {item.taluka || item.town || "NA"} • Top:{" "}
                         {item.topDealer ? "Yes" : "No"}
                       </span>
                     </div>
@@ -1337,7 +1626,7 @@ function BeatSetupModal({
               Cancel
             </button>
             <button type="button" onClick={handleSaveAndApply} disabled={saving || loadingBase}>
-              {saving ? "Applying..." : "Save & Apply"}
+              {saving ? "Saving..." : "Save Plan"}
             </button>
           </div>
         </div>

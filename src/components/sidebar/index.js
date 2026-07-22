@@ -193,6 +193,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         iconColor: "#0891b2",
         children: [
           { name: "Route Plans", to: "/routePlan", icon: <MdOutlineRoute /> },
+          { name: "Master Coverage", to: "/master-market-coverage", icon: <FaCalendarAlt /> },
           { name: "Market Coverage", to: "/marketCoverage", icon: <TbTargetArrow /> },
           { name: "Attendance Geo", to: "/attendance-geo-dashboard", icon: <TbMapPinCheck /> },
           { name: "Geo Tagging", to: "/geoTagging", icon: <RiPinDistanceFill /> },

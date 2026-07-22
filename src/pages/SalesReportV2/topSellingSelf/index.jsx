@@ -208,10 +208,15 @@ const buildFamilyGroupedRows = (rows = []) => {
   return [...buckets.values()].map((bucket) => {
     const { _ratioCount, ...rest } = bucket;
     const ratioCount = safeNum(_ratioCount) || 1;
+    const ads = safeNum(rest.ADS) / ratioCount;
+    const totalStock =
+      safeNum(rest.RETAIL_STK) || safeNum(rest.MDD_STK) || safeNum(rest.SPD_STK);
+    const weeklySales = ads * 7;
+
     return {
       ...rest,
-      ADS: safeNum(rest.ADS) / ratioCount,
-      WOS: safeNum(rest.WOS) / ratioCount,
+      ADS: ads,
+      WOS: weeklySales ? totalStock / weeklySales : 0,
       GR: safeNum(rest.GR) / ratioCount,
       minDp:
         rest.minDp === Number.POSITIVE_INFINITY
@@ -331,6 +336,14 @@ const normalizeRow = (row = {}, segmentKey = "", d1Date = "") => {
   const wos = pickFirst(row, ["WOS", "wos"]);
   const total = pickFirst(row, ["total", "Total", "qty", "quantity", "sales"]);
   const totalValue = pickFirst(row, ["totalValue", "total_value", "value", "salesValue", "sales_value"]);
+  const spdStk = pickFirst(row, ["SPD_STK", "spdStock", "spd_stk", "spd_stock"]);
+  const mddStk = pickFirst(row, ["MDD_STK", "mddStock", "mdd_stk", "mdd_stock"]);
+  const retailStk = pickFirst(row, [
+    "RETAIL_STK",
+    "retailStock",
+    "retail_stk",
+    "retail_stock",
+  ]);
 
   return {
     rowType: row.rowType || "item",
@@ -347,9 +360,9 @@ const normalizeRow = (row = {}, segmentKey = "", d1Date = "") => {
     MTD: safeNum(mtd),
     FTD: safeNum(ftd),
     D1: d1,
-    SPD_STK: 0,
-    MDD_STK: 0,
-    RETAIL_STK: 0,
+    SPD_STK: safeNum(spdStk),
+    MDD_STK: safeNum(mddStk),
+    RETAIL_STK: safeNum(retailStk),
     GR: safeNum(gr),
     ADS: safeNum(ads),
     WOS: safeNum(wos),
