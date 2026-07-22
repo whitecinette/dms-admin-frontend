@@ -154,6 +154,10 @@ function MasterMarketCoverage() {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestActionId, setRequestActionId] = useState("");
   const [requestDeskOpen, setRequestDeskOpen] = useState(false);
+  const [actorDetail, setActorDetail] = useState(null);
+  const [actorDetailSearch, setActorDetailSearch] = useState("");
+  const [actorDetailStatus, setActorDetailStatus] = useState("all");
+  const [actorCoverageView, setActorCoverageView] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -221,12 +225,71 @@ function MasterMarketCoverage() {
     });
   }, [requestStatus, requests]);
 
+  const actorDealerRowsByCode = useMemo(() => {
+    const map = new Map();
+    (data.rows || []).forEach((row) => {
+      const code = String(row.actorCode || "").trim();
+      if (!code) return;
+      if (!map.has(code)) map.set(code, []);
+      map.get(code).push(row);
+    });
+    return map;
+  }, [data.rows]);
+
+  const actorDetailRows = useMemo(() => {
+    if (!actorDetail?.actorCode) return [];
+    const rows = actorDealerRowsByCode.get(actorDetail.actorCode) || [];
+    const query = actorDetailSearch.trim().toLowerCase();
+    return rows.filter((row) => {
+      const rowStatus = String(row.status || "planned").toLowerCase();
+      const isTopDealer = Boolean(row.topDealer || row.top_dealer);
+      if (actorDetailStatus === "done" && rowStatus !== "done") return false;
+      if (actorDetailStatus === "pending" && rowStatus === "done") return false;
+      if (actorDetailStatus === "top" && !isTopDealer) return false;
+      if (!query) return true;
+      return [
+        row.date,
+        row.actorCode,
+        row.actorName,
+        row.actorPosition,
+        row.dealerCode,
+        row.dealerName,
+        row.status,
+        row.zone,
+        row.district,
+        row.taluka,
+        row.town,
+        row.position,
+        row.source,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
+  }, [actorDealerRowsByCode, actorDetail, actorDetailSearch, actorDetailStatus]);
+
   const pendingRequestCount = useMemo(
     () => (requests || []).filter((request) => request.status === "pending").length,
     [requests]
   );
 
   const completionRate = numberValue(data.totals?.completionRate);
+
+  const getActorRows = (actorCode) => actorDealerRowsByCode.get(actorCode) || [];
+
+  const getActorTopStats = (actorCode) => {
+    const topRows = getActorRows(actorCode).filter((row) => row.topDealer || row.top_dealer);
+    return {
+      total: topRows.length,
+      done: topRows.filter((row) => String(row.status || "").toLowerCase() === "done").length,
+      pending: topRows.filter((row) => String(row.status || "").toLowerCase() !== "done").length,
+    };
+  };
+
+  const openActorDetail = (actor) => {
+    setActorDetail(actor);
+    setActorDetailSearch("");
+    setActorDetailStatus(actorCoverageView === "top" ? "top" : "all");
+  };
 
   const fetchCoverage = async () => {
     setLoading(true);
@@ -936,7 +999,25 @@ function MasterMarketCoverage() {
                 <span>People Coverage</span>
                 <h2>Actor Plans</h2>
               </div>
-              {loading ? <div className="mc-loading">Loading...</div> : null}
+              <div className="mc-actor-actions">
+                <div className="mc-actor-toggle" aria-label="Actor coverage view">
+                  <button
+                    type="button"
+                    className={actorCoverageView === "all" ? "active" : ""}
+                    onClick={() => setActorCoverageView("all")}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={actorCoverageView === "top" ? "active" : ""}
+                    onClick={() => setActorCoverageView("top")}
+                  >
+                    Top Dealers
+                  </button>
+                </div>
+                {loading ? <div className="mc-loading">Loading...</div> : null}
+              </div>
             </div>
 
             <div className="mc-actor-list">
@@ -948,10 +1029,32 @@ function MasterMarketCoverage() {
               ) : (
                 data.actorSummaries.map((actor) => {
                   const color = actorColorMap[actor.actorCode] || "#0f172a";
-                  const total = numberValue(actor.total);
-                  const donePct = total ? Math.round((numberValue(actor.done) / total) * 100) : 0;
+                  const topStats = getActorTopStats(actor.actorCode);
+                  const cardStats =
+                    actorCoverageView === "top"
+                      ? topStats
+                      : {
+                          total: numberValue(actor.total),
+                          done: numberValue(actor.done),
+                          pending: numberValue(actor.pending),
+                        };
+                  const donePct = cardStats.total
+                    ? Math.round((cardStats.done / cardStats.total) * 100)
+                    : 0;
                   return (
-                    <article key={actor.actorCode} className="mc-actor-card">
+                    <article
+                      key={actor.actorCode}
+                      className={`mc-actor-card ${actorCoverageView === "top" ? "top-view" : ""}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openActorDetail(actor)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openActorDetail(actor);
+                        }
+                      }}
+                    >
                       <div className="mc-actor-top">
                         <i style={{ backgroundColor: color }} />
                         <div>
@@ -960,16 +1063,18 @@ function MasterMarketCoverage() {
                             {actor.actorCode} · {actor.actorPosition || "Field actor"}
                           </span>
                         </div>
-                        <b>{donePct}%</b>
+                        <div className="mc-actor-score">
+                          <b>{donePct}%</b>
+                          {actorCoverageView === "top" ? <small>top dealers</small> : null}
+                        </div>
                       </div>
                       <div className="mc-actor-bar">
                         <span style={{ width: `${donePct}%`, backgroundColor: color }} />
                       </div>
                       <div className="mc-actor-meta">
-                        <span>{numberValue(actor.total)} visits</span>
-                        <span>{numberValue(actor.done)} done</span>
-                        <span>{numberValue(actor.pending)} pending</span>
-                        <span>{numberValue(actor.topDealers)} top</span>
+                        <span className="total">{cardStats.total} total</span>
+                        <span className="done">{cardStats.done} done</span>
+                        <span className="pending">{cardStats.pending} pending</span>
                       </div>
                       <p>
                         {[...(actor.zones || []), ...(actor.towns || [])]
@@ -984,6 +1089,99 @@ function MasterMarketCoverage() {
           </section>
         </main>
       </section>
+
+      {actorDetail ? (
+        <div className="mc-employee-modal-backdrop" role="presentation" onClick={() => setActorDetail(null)}>
+          <section
+            className="mc-employee-modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mc-employee-modal-head">
+              <div>
+                <h2>Employee Schedule</h2>
+                <p>
+                  {actorDetail.actorName || actorDetail.actorCode} · {actorDetail.actorCode} ·{" "}
+                  {formatLongDate(fromDate)} - {formatLongDate(toDate || fromDate)}
+                </p>
+              </div>
+              <button type="button" onClick={() => setActorDetail(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mc-employee-toolbar">
+              <div className="mc-employee-search">
+                <Search size={15} />
+                <input
+                  type="text"
+                  value={actorDetailSearch}
+                  onChange={(event) => setActorDetailSearch(event.target.value)}
+                  placeholder="Search by code, name, district, taluka, zone or position"
+                />
+              </div>
+              <select
+                value={actorDetailStatus}
+                onChange={(event) => setActorDetailStatus(event.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="done">Done</option>
+                <option value="pending">Pending / Planned</option>
+                <option value="top">Top Dealers</option>
+              </select>
+            </div>
+
+            <div className="mc-employee-grid">
+              {actorDetailRows.length === 0 ? (
+                <div className="mc-empty">
+                  <MapPinned size={28} />
+                  No matching dealer/MDD rows for this actor.
+                </div>
+              ) : (
+                actorDetailRows.map((row, index) => {
+                  const rowStatus = String(row.status || "planned").toLowerCase();
+                  const isDone = rowStatus === "done";
+                  const isTopDealer = Boolean(row.topDealer || row.top_dealer);
+                  return (
+                    <article
+                      key={`${row.date}-${row.actorCode}-${row.dealerCode}-${index}`}
+                      className={`mc-employee-card ${isDone ? "done" : "pending"}`}
+                    >
+                      <div className="mc-employee-card-top">
+                        <strong>{row.dealerCode || "N/A"}</strong>
+                        <span className={`mc-employee-status ${isDone ? "done" : "pending"}`}>
+                          {isDone ? "Done" : rowStatus || "Pending"}
+                        </span>
+                      </div>
+                      <h3>{row.dealerName || row.dealerCode || "Unnamed dealer"}</h3>
+                      <div className="mc-employee-tags">
+                        {[row.zone, row.district, row.taluka, row.town, row.position || row.dealerPosition]
+                          .filter(Boolean)
+                          .slice(0, 6)
+                          .map((tag) => (
+                            <span key={tag}>{tag}</span>
+                          ))}
+                        {isTopDealer ? <b>Top dealer</b> : null}
+                      </div>
+                      <div className="mc-employee-card-bottom">
+                        <span>
+                          <MapPin size={16} />
+                          {formatShortDate(getDateKeyFromValue(row.date))}
+                        </span>
+                        <span>
+                          <LocateFixed size={16} />
+                          {row.distance ? `${String(row.distance).slice(0, 4)} Km` : "N/A"}
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
