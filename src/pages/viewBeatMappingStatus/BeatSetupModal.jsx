@@ -1605,7 +1605,7 @@ function BeatSetupModal({
                       <strong>{item.name || "N/A"}</strong>
                       <span>
                         {item.code} • {item.zone || "NA"} • {item.district || "NA"} •{" "}
-                        {item.taluka || item.town || "NA"} • Top:{" "}
+                        {item.taluka || "NA"} • {item.town || "NA"} • Top:{" "}
                         {item.topDealer ? "Yes" : "No"}
                       </span>
                     </div>
