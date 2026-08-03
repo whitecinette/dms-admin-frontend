@@ -10,12 +10,28 @@ import {
   FaTimes,
   FaLayerGroup,
   FaSyncAlt,
+  FaDownload,
 } from "react-icons/fa";
 import DealerShopInsights from "../ExtractionReport/DealerShopInsights";
 import "./style.scss";
 
 const backend_url = config.backend_url;
 const FLOW_NAME = "default_sales_flow";
+
+const MONTH_OPTIONS = [
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
+];
 
 const DEALER_FILTER_TYPES = [
   { key: "zone", label: "Zone" },
@@ -262,9 +278,16 @@ const decodeJwtPayload = (token) => {
 
 function DynamicExtractionReport() {
   const prevMonthRange = useMemo(() => getDefaultPrevMonthRange(), []);
+  const defaultDownloadParts = useMemo(() => {
+    const [year, month] = prevMonthRange.start.split("-").map(Number);
+    return { month, year };
+  }, [prevMonthRange.start]);
 
   const [startDate, setStartDate] = useState(prevMonthRange.start);
   const [endDate, setEndDate] = useState(prevMonthRange.end);
+  const [downloadMonth, setDownloadMonth] = useState(defaultDownloadParts.month);
+  const [downloadYear, setDownloadYear] = useState(defaultDownloadParts.year);
+  const [isDownloadingCombinedReport, setIsDownloadingCombinedReport] = useState(false);
   const [metric, setMetric] = useState("volume");
   const [valueFormat, setValueFormat] = useState("crLac");
   const [view, setView] = useState("default");
@@ -334,6 +357,11 @@ function DynamicExtractionReport() {
     () => ["admin", "super_admin"].includes(authContext.role),
     [authContext.role]
   );
+
+  const downloadYearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, index) => currentYear - 3 + index);
+  }, []);
 
   const actorPositionItems = useMemo(() => {
     if (actorPositions?.length) return actorPositions;
@@ -627,6 +655,71 @@ function DynamicExtractionReport() {
     }
   };
 
+  const downloadCombinedExtractionReport = async () => {
+    if (!isAdminLikeUser) return;
+
+    try {
+      setIsDownloadingCombinedReport(true);
+
+      const res = await fetch(
+        `${backend_url}/download-combined-extraction-report-month-wise`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("authToken"),
+          },
+          body: JSON.stringify({
+            month: Number(downloadMonth),
+            year: Number(downloadYear),
+          }),
+        }
+      );
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!res.ok) {
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          window.alert(data.message || "Combined extraction report download failed");
+        } else {
+          window.alert("Combined extraction report download failed");
+        }
+        return;
+      }
+
+      if (
+        !contentType.includes(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+      ) {
+        window.alert("Unexpected response while downloading combined extraction report");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("content-disposition") || "";
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+      const filename =
+        filenameMatch?.[1] ||
+        `extraction_full_report_${String(downloadMonth).padStart(2, "0")}_${downloadYear}.xlsx`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading combined extraction report:", error);
+      window.alert("Network error while downloading combined extraction report");
+    } finally {
+      setIsDownloadingCombinedReport(false);
+    }
+  };
+
   useEffect(() => {
     fetchGroupingOptions();
   }, []);
@@ -908,6 +1001,46 @@ function DynamicExtractionReport() {
         </div>
 
         <div className="topbar-actions">
+          {isAdminLikeUser && (
+            <div className="combined-download-controls">
+              <select
+                value={downloadMonth}
+                onChange={(event) => setDownloadMonth(Number(event.target.value))}
+                disabled={isDownloadingCombinedReport}
+                aria-label="Combined report month"
+              >
+                {MONTH_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={downloadYear}
+                onChange={(event) => setDownloadYear(Number(event.target.value))}
+                disabled={isDownloadingCombinedReport}
+                aria-label="Combined report year"
+              >
+                {downloadYearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className="download-btn"
+                onClick={downloadCombinedExtractionReport}
+                disabled={isDownloadingCombinedReport}
+              >
+                <FaDownload />
+                {isDownloadingCombinedReport ? "Preparing..." : "Combined Excel"}
+              </button>
+            </div>
+          )}
+
           <button type="button" className="ghost-btn" onClick={resetAllFilters}>
             <FaSyncAlt />
             Reset

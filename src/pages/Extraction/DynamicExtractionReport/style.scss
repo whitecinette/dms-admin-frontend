@@ -30,11 +30,13 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .primary-btn,
   .ghost-btn,
-  .icon-btn {
+  .icon-btn,
+  .download-btn {
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -43,6 +45,53 @@
     gap: 8px;
     font-weight: 700;
     transition: all 0.2s ease;
+  }
+
+  .combined-download-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+
+    select {
+      height: 38px;
+      min-width: 116px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 0 10px;
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 700;
+      outline: none;
+
+      &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+    }
+  }
+
+  .download-btn {
+    min-height: 38px;
+    background: #111827;
+    color: #fff;
+    padding: 0 13px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: #0f172a;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.68;
+      box-shadow: none;
+    }
   }
 
   .primary-btn {
@@ -612,6 +661,16 @@
     .group-actor-header {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .combined-download-controls {
+      width: 100%;
+      flex-wrap: wrap;
+
+      select,
+      .download-btn {
+        flex: 1 1 140px;
+      }
     }
 
     .filter-sidebar {
