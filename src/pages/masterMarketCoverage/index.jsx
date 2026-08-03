@@ -129,6 +129,8 @@ function FitBounds({ points }) {
 }
 
 function MasterMarketCoverage() {
+  const userRole = String(localStorage.getItem("role") || "").toLowerCase();
+  const isSuperAdmin = userRole === "super_admin";
   const todayKey = toDateKey(new Date());
   const [fromDate, setFromDate] = useState(todayKey);
   const [toDate, setToDate] = useState(todayKey);
@@ -158,6 +160,7 @@ function MasterMarketCoverage() {
   const [actorDetailSearch, setActorDetailSearch] = useState("");
   const [actorDetailStatus, setActorDetailStatus] = useState("all");
   const [actorCoverageView, setActorCoverageView] = useState("all");
+  const [statusActionKey, setStatusActionKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -459,6 +462,38 @@ function MasterMarketCoverage() {
       setError(err?.response?.data?.message || `Failed to ${action} request.`);
     } finally {
       setRequestActionId("");
+    }
+  };
+
+  const updateEmployeeScheduleStatus = async (row, nextStatus) => {
+    const normalizedNextStatus = String(nextStatus || "").toLowerCase();
+    const currentStatus = String(row.status || "planned").toLowerCase();
+    const currentComparableStatus = currentStatus === "done" ? "done" : "pending";
+    if (!isSuperAdmin || !["done", "pending"].includes(normalizedNextStatus)) return;
+    if (currentComparableStatus === normalizedNextStatus) return;
+
+    const actionKey = row.id || `${row.actorCode}-${row.dealerCode}-${row.date}`;
+    setStatusActionKey(actionKey);
+    setError("");
+
+    try {
+      await axios.post(
+        `${backendUrl}/super-admin/update-weekly-beat-status`,
+        {
+          scheduleId: row.scheduleId || "",
+          entryId: row.entryId || "",
+          actorCode: row.actorCode,
+          dealerCode: row.dealerCode,
+          date: getDateKeyFromValue(row.date),
+          status: normalizedNextStatus,
+        },
+        { headers: tokenHeaders() }
+      );
+      await Promise.all([fetchCoverage(), fetchCalendarOverview()]);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to update dealer status.");
+    } finally {
+      setStatusActionKey("");
     }
   };
 
@@ -1142,6 +1177,9 @@ function MasterMarketCoverage() {
                 actorDetailRows.map((row, index) => {
                   const rowStatus = String(row.status || "planned").toLowerCase();
                   const isDone = rowStatus === "done";
+                  const actionKey = row.id || `${row.actorCode}-${row.dealerCode}-${row.date}`;
+                  const statusBusy = statusActionKey === actionKey;
+                  const statusSelectValue = isDone ? "done" : "pending";
                   const isTopDealer = Boolean(row.topDealer || row.top_dealer);
                   return (
                     <article
@@ -1150,9 +1188,23 @@ function MasterMarketCoverage() {
                     >
                       <div className="mc-employee-card-top">
                         <strong>{row.dealerCode || "N/A"}</strong>
-                        <span className={`mc-employee-status ${isDone ? "done" : "pending"}`}>
-                          {isDone ? "Done" : rowStatus || "Pending"}
-                        </span>
+                        {isSuperAdmin ? (
+                          <div className={`mc-employee-status-edit ${isDone ? "done" : "pending"}`}>
+                            {statusBusy ? <Loader2 size={13} className="spin" /> : null}
+                            <select
+                              value={statusSelectValue}
+                              disabled={statusBusy}
+                              onChange={(event) => updateEmployeeScheduleStatus(row, event.target.value)}
+                            >
+                              <option value="done">Done</option>
+                              <option value="pending">Pending / Planned</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <span className={`mc-employee-status ${isDone ? "done" : "pending"}`}>
+                            {isDone ? "Done" : rowStatus || "Pending"}
+                          </span>
+                        )}
                       </div>
                       <h3>{row.dealerName || row.dealerCode || "Unnamed dealer"}</h3>
                       <div className="mc-employee-tags">

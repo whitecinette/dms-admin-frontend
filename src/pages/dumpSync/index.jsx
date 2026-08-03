@@ -24,6 +24,71 @@ const DUMP_APIS = [
     ],
   },
   {
+    key: "user_field_sync",
+    title: "User Field Sync",
+    subtitle:
+      "Updates existing users by code; unknown columns are added as custom user fields.",
+    endpoint: "/dump-sync/users/fields/upload",
+    accept: [".csv", ".xlsx", ".xls"],
+    hint:
+      "Required header: code. Add any user field as a column. Arrays: use labels[] with values like Top Dealer|D To D or [\"Top Dealer\",\"D To D\"]. Empty cells are ignored.",
+    templateHeaders: [
+      "code",
+      "name",
+      "status",
+      "role",
+      "position",
+      "category",
+      "district",
+      "taluka",
+      "town",
+      "labels[]",
+      "owner_details.phone",
+      "credit_limit",
+      "custom_note",
+    ],
+    templateRows: [
+      [
+        "RAJD015735",
+        "Unique Mobile Gallery",
+        "active",
+        "dealer",
+        "dealer",
+        "DCM",
+        "Jaipur",
+        "WALL CITY",
+        "Kishangarh",
+        "Top Dealer|D To D",
+        "9876543210",
+        "0",
+        "Any new column becomes a user field",
+      ],
+      [
+        "RAJD018152",
+        "Shree Shyam Telecom",
+        "active",
+        "dealer",
+        "dealer",
+        "DCM",
+        "Jaipur",
+        "",
+        "",
+        "[\"Market Coverage\",\"Jaipur\"]",
+        "",
+        "5000",
+        "JSON arrays also work",
+      ],
+    ],
+    guide: [
+      "The code column matches User.code.",
+      "Existing fields are updated; unknown headers are added as new fields on that user.",
+      "Use [] in the header for arrays, for example labels[]. Pipe-separated values are easiest in CSV: Top Dealer|D To D.",
+      "Use dot columns for nested fields, for example owner_details.phone.",
+      "Empty cells do not overwrite existing data. Use null or __NULL__ only when you intentionally want null.",
+      "Protected fields are skipped: code, password, _id, __v, createdAt, updatedAt.",
+    ],
+  },
+  {
     key: "samsung_products",
     title: "Samsung Dump → Product Master",
     subtitle: "Creates only missing products (brand+samsung, product_code).",
@@ -224,7 +289,19 @@ function DumpSyncUpload() {
         </div>
 
         <div className="dumpsync-result__grid">
-        {selectedApiKey === "samsung_product_tags" ? (
+        {selectedApiKey === "user_field_sync" ? (
+            <>
+            <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Valid Rows</div><div className="kpi__value">{result.validRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Unique Codes</div><div className="kpi__value">{result.uniqueCodesInFile ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Changed Users</div><div className="kpi__value">{result.changed ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Updated Users</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Updated Fields</div><div className="kpi__value">{result.updatedFieldChanges ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Added Fields</div><div className="kpi__value">{result.addedFieldChanges ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Not In DB</div><div className="kpi__value">{result.notFoundInDb ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Invalid Rows</div><div className="kpi__value">{result.invalidRows ?? "-"}</div></div>
+            </>
+        ) : selectedApiKey === "samsung_product_tags" ? (
             <>
             <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Valid Rows</div><div className="kpi__value">{result.validRows ?? "-"}</div></div>
@@ -268,6 +345,43 @@ function DumpSyncUpload() {
             </>
           ) : null}
         </div>
+
+        {Array.isArray(result.sampleUserFieldUpdates) && result.sampleUserFieldUpdates.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Sample User Field Changes</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["code", "name", "role", "position", "field", "action", "oldValue", "newValue", "rowNumbers"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.sampleUserFieldUpdates.slice(0, 15).flatMap((user, userIndex) =>
+                    (user.changes || []).map((change, changeIndex) => (
+                      <tr key={`${userIndex}-${changeIndex}`}>
+                        <td>{user.code}</td>
+                        <td>{user.name}</td>
+                        <td>{user.role}</td>
+                        <td>{user.position}</td>
+                        <td>{change.field}</td>
+                        <td>{change.action}</td>
+                        <td>{Array.isArray(change.oldValue) ? change.oldValue.join(", ") : String(change.oldValue ?? "")}</td>
+                        <td>{Array.isArray(change.newValue) ? change.newValue.join(", ") : String(change.newValue ?? "")}</td>
+                        <td>{Array.isArray(user.rowNumbers) ? user.rowNumbers.join(", ") : ""}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="dumpsync-muted">
+              Dry run shows field-level changes. Turn Dry Run OFF to apply them.
+            </div>
+          </div>
+        )}
 
         {Array.isArray(result.sampleChangedProducts) && result.sampleChangedProducts.length > 0 && (
           <div className="dumpsync-result__sample">
@@ -317,6 +431,31 @@ function DumpSyncUpload() {
                     <tr key={index}>
                       <td>{product.code}</td>
                       <td>{Array.isArray(product.rowNumbers) ? product.rowNumbers.join(", ") : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {Array.isArray(result.notFoundUsers) && result.notFoundUsers.length > 0 && (
+          <div className="dumpsync-result__sample">
+            <div className="dumpsync-result__title2">Users Not Found In DB</div>
+            <div className="dumpsync-result__tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    {["code", "rowNumbers"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.notFoundUsers.slice(0, 15).map((user, index) => (
+                    <tr key={index}>
+                      <td>{user.code}</td>
+                      <td>{Array.isArray(user.rowNumbers) ? user.rowNumbers.join(", ") : ""}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -554,6 +693,17 @@ function DumpSyncUpload() {
             <li>Turn Dry Run OFF to apply actual changes.</li>
           </ul>
         </div>
+
+        {Array.isArray(selectedApi.guide) && selectedApi.guide.length > 0 ? (
+          <div className="dumpsync-guide">
+            <div className="dumpsync-guide__title">How this file works</div>
+            <ul>
+              {selectedApi.guide.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         {/* API Select */}
         <div className="dumpsync-controls">
