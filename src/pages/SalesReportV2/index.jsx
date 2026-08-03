@@ -25,6 +25,19 @@ const DETAIL_ENDPOINT_CANDIDATES = [
   "/reports/dashboard-summary",
 ];
 
+const MONTH_SHORT_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const getWodTagCellValue = (row, column) => {
+  if (Object.prototype.hasOwnProperty.call(row, column)) return row[column];
+
+  const match = String(column || "").match(/^\d{4}-(\d{2})$/);
+  if (!match) return row[column];
+
+  const monthIndex = Number(match[1]) - 1;
+  const monthLabel = MONTH_SHORT_LABELS[monthIndex];
+  return monthLabel ? row[monthLabel] : row[column];
+};
+
 const ShimmerBlock = ({ height = 14, width = "100%", style = {} }) => (
   <div
     className="shimmer"
@@ -1064,6 +1077,7 @@ function SalesReportV2() {
       metricColumns = [],
       firstColumnLabel = "Tag",
       formatCell = (value) => formatValue(value, false),
+      getCellValue = (row, column) => row[column],
       sourceKey = "",
     } = {}
   ) => {
@@ -1099,7 +1113,7 @@ function SalesReportV2() {
             </div>
           </td>
           {resolvedColumns.map((column) => (
-            <td key={column}>{formatCell(row[column], column)}</td>
+            <td key={column}>{formatCell(getCellValue(row, column), column)}</td>
           ))}
         </tr>
       );
@@ -1444,6 +1458,7 @@ function SalesReportV2() {
                   metricColumns: columns,
                   firstColumnLabel: "Tag WOD",
                   sourceKey: "sellInWOD",
+                  getCellValue: getWodTagCellValue,
                   formatCell: (value, column) =>
                     String(column).includes("%")
                       ? formatPercent(value)
@@ -1456,6 +1471,7 @@ function SalesReportV2() {
                   metricColumns: columns,
                   firstColumnLabel: "Tag WOD",
                   sourceKey: "sellOutWOD",
+                  getCellValue: getWodTagCellValue,
                   formatCell: (value, column) =>
                     String(column).includes("%")
                       ? formatPercent(value)
@@ -1555,7 +1571,7 @@ function SalesReportV2() {
                 fetchPriceSegmentReports();
               }}
             >
-              Fetch Reports
+              Fetch Reports/Apply
             </button>
 
             <button
