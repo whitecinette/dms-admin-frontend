@@ -89,6 +89,37 @@ const DUMP_APIS = [
     ],
   },
   {
+    key: "product_simple_sync",
+    title: "Product Master Simple Sync",
+    subtitle:
+      "Creates or updates products using brand, product name, category and price.",
+    endpoint: "/dump-sync/products/simple/upload",
+    accept: [".csv", ".xlsx", ".xls"],
+    hint:
+      "Required headers: brand, product_name, product_category, price. Optional: model_code, product_code. Segment is auto-created from price.",
+    templateHeaders: [
+      "brand",
+      "product_name",
+      "product_category",
+      "price",
+      "model_code",
+      "product_code",
+    ],
+    templateRows: [
+      ["xiaomi", "Redmi 14C 5G (6+128)", "smart_phone", "11999", "", ""],
+      ["vivo", "Y Series Demo (4+64)", "smart_phone", "9999", "VIVOYDEMO", ""],
+      ["oneplus", "Nord Demo Buds", "wearable", "5499", "", "oneplus_nord_demo_buds"],
+    ],
+    guide: [
+      "Only brand, product_name, product_category and price are required.",
+      "Brand is saved in lowercase automatically.",
+      "Segment is calculated from price: 0-6, 6-10, 10-20, 20-30, 30-40, 40-70, 70-100, 100-120 or 120.",
+      "Leave model_code blank when it is not available.",
+      "Leave product_code blank when it is not available; the system generates a stable product code from brand and product name.",
+      "Dry Run previews inserts and updates. Turn Dry Run OFF only after checking the result.",
+    ],
+  },
+  {
     key: "samsung_products",
     title: "Samsung Dump → Product Master",
     subtitle: "Creates only missing products (brand+samsung, product_code).",
@@ -312,6 +343,18 @@ function DumpSyncUpload() {
             <div className="kpi"><div className="kpi__label">Inactive In List</div><div className="kpi__value">{result.inactiveInList ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Not In DB</div><div className="kpi__value">{result.notFoundInDb ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">New Tags Added</div><div className="kpi__value">{result.totalNewTagsAdded ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Invalid Rows</div><div className="kpi__value">{result.invalidRows ?? "-"}</div></div>
+            </>
+        ) : selectedApiKey === "product_simple_sync" ? (
+            <>
+            <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Valid Rows</div><div className="kpi__value">{result.validRows ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Unique Products</div><div className="kpi__value">{result.uniqueProductsInFile ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Existing In DB</div><div className="kpi__value">{result.existingInDb ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">New To Insert</div><div className="kpi__value">{result.toInsert ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Product Updates</div><div className="kpi__value">{result.toUpdate ?? result.updated ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Inserted</div><div className="kpi__value">{result.inserted ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Updated</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Invalid Rows</div><div className="kpi__value">{result.invalidRows ?? "-"}</div></div>
             </>
         ) : selectedApiKey === "samsung_products" ? (
@@ -564,12 +607,25 @@ function DumpSyncUpload() {
 
         {Array.isArray(result.sampleUpdates) && result.sampleUpdates.length > 0 && (
           <div className="dumpsync-result__sample">
-            <div className="dumpsync-result__title2">Sample Price / Segment Updates</div>
+            <div className="dumpsync-result__title2">
+              {selectedApiKey === "product_simple_sync"
+                ? "Sample Product Updates"
+                : "Sample Price / Segment Updates"}
+            </div>
             <div className="dumpsync-result__tableWrap">
               <table>
                 <thead>
                   <tr>
-                    {["product_code", "oldPrice", "newPrice", "oldSegment", "newSegment"].map((h) => (
+                    {[
+                      "product_code",
+                      "product_name",
+                      "oldPrice",
+                      "newPrice",
+                      "oldSegment",
+                      "newSegment",
+                      "changedFields",
+                      "rowNumbers",
+                    ].map((h) => (
                       <th key={h}>{h}</th>
                     ))}
                   </tr>
@@ -578,16 +634,21 @@ function DumpSyncUpload() {
                   {result.sampleUpdates.slice(0, 10).map((item, i) => (
                     <tr key={i}>
                       <td>{item.product_code}</td>
+                      <td>{item.product_name || ""}</td>
                       <td>{item.oldPrice}</td>
                       <td>{item.newPrice}</td>
                       <td>{item.oldSegment}</td>
                       <td>{item.newSegment}</td>
+                      <td>{Array.isArray(item.changedFields) ? item.changedFields.join(", ") : ""}</td>
+                      <td>{Array.isArray(item.rowNumbers) ? item.rowNumbers.join(", ") : ""}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="dumpsync-muted">Dry run shows which existing products will get price and segment changes.</div>
+            <div className="dumpsync-muted">
+              Dry run shows which existing products will be updated.
+            </div>
           </div>
         )}
 
