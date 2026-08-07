@@ -102,6 +102,10 @@ export default function HierarchyManagerPage() {
   const [bulkForm, setBulkForm] = useState({});
   const [bulkError, setBulkError] = useState("");
   const [bulkWarning, setBulkWarning] = useState("");
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({});
+  const [createError, setCreateError] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const [appliedFilters, setAppliedFilters] = useState({
     firm_code: "",
@@ -181,6 +185,23 @@ export default function HierarchyManagerPage() {
     if (!selectedFlowColumns.length) return "No flow structure selected";
     return selectedFlowColumns.join(" → ");
   }, [selectedFlowColumns]);
+
+  const createColumns = useMemo(() => {
+    return selectedFlowColumns.length ? selectedFlowColumns : columns;
+  }, [selectedFlowColumns, columns]);
+
+  const createRequiredField = useMemo(() => {
+    if (!createColumns.length) return "";
+    return (
+      createColumns.find((field) => String(field).toLowerCase() === "dealer") ||
+      createColumns[createColumns.length - 1]
+    );
+  }, [createColumns]);
+
+  const createFilledCount = useMemo(() => {
+    return createColumns.filter((field) => String(createForm?.[field] || "").trim())
+      .length;
+  }, [createColumns, createForm]);
 
   const fetchMeta = async () => {
     try {
@@ -294,6 +315,7 @@ export default function HierarchyManagerPage() {
   const applyFilters = async () => {
     closeDrawer();
     closeBulkModal();
+    closeCreateModal();
     await fetchRows();
   };
 
@@ -311,6 +333,7 @@ export default function HierarchyManagerPage() {
     setAppliedFilters(nextFilters);
     closeDrawer();
     closeBulkModal();
+    closeCreateModal();
     setRows([]);
     setColumns([]);
     setSelectedIds([]);
@@ -408,6 +431,107 @@ export default function HierarchyManagerPage() {
     setBulkForm(buildBulkForm(columns));
     setBulkError("");
     setBulkWarning("");
+  };
+
+  const openCreateModal = () => {
+    if (!filters.hierarchy_name) {
+      alert("Please select a flow before adding a hierarchy entry.");
+      return;
+    }
+
+    const activeColumns = selectedFlowColumns.length ? selectedFlowColumns : columns;
+
+    if (!activeColumns.length) {
+      alert("Selected flow does not have any hierarchy fields configured.");
+      return;
+    }
+
+    closeDrawer();
+    closeBulkModal();
+    setCreateForm(buildEditForm({}, activeColumns));
+    setCreateError("");
+    setCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    if (creating) return;
+    setCreateModalOpen(false);
+    setCreateForm({});
+    setCreateError("");
+  };
+
+  const handleCreateChange = (field, value) => {
+    setCreateForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const validateCreatePayload = () => {
+    if (!filters.hierarchy_name) {
+      return "Please select a hierarchy flow first.";
+    }
+
+    if (!createColumns.length) {
+      return "Selected flow does not have any hierarchy fields configured.";
+    }
+
+    if (
+      createRequiredField &&
+      !String(createForm?.[createRequiredField] || "").trim()
+    ) {
+      return `${prettifyLabel(createRequiredField)} is required.`;
+    }
+
+    const hasAnyValue = createColumns.some((field) =>
+      String(createForm?.[field] || "").trim()
+    );
+
+    if (!hasAnyValue) {
+      return "Please enter at least one hierarchy value.";
+    }
+
+    return "";
+  };
+
+  const saveNewEntry = async () => {
+    const validationError = validateCreatePayload();
+    if (validationError) {
+      setCreateError(validationError);
+      return;
+    }
+
+    const entry = {};
+    createColumns.forEach((field) => {
+      entry[field] = String(createForm?.[field] || "").trim();
+    });
+
+    try {
+      setCreating(true);
+      setCreateError("");
+
+      const res = await axios.post(
+        `${backendUrl}/super-admin/hierarchy`,
+        {
+          hierarchy_name: filters.hierarchy_name,
+          entry,
+        },
+        {
+          headers: getAuthHeader(),
+        }
+      );
+
+      await fetchRows();
+      closeCreateModal();
+      alert(res.data?.message || "Hierarchy entry created successfully");
+    } catch (error) {
+      console.error("Failed to create hierarchy entry:", error);
+      setCreateError(
+        error?.response?.data?.message || "Failed to create hierarchy entry"
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
   const openBulkModal = () => {
@@ -616,6 +740,14 @@ export default function HierarchyManagerPage() {
           </div>
 
           <div className="hm-actions">
+            <button
+              className="hm-btn hm-btn-ghost"
+              onClick={openCreateModal}
+              disabled={metaLoading || !filters.hierarchy_name}
+            >
+              Add New Entry
+            </button>
+
             <button
               className="hm-btn hm-btn-secondary"
               onClick={resetFilters}
@@ -1009,6 +1141,105 @@ export default function HierarchyManagerPage() {
           )}
         </div>
       </div>
+
+      {createModalOpen && (
+        <div className="hm-modal-overlay" onClick={closeCreateModal}>
+          <div className="hm-modal hm-create-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="hm-modal-head">
+              <div>
+                <div className="hm-modal-title">Add Hierarchy Entry</div>
+                <div className="hm-modal-subtitle">
+                  {filters.hierarchy_name} • {createColumns.length} flow fields
+                </div>
+              </div>
+
+              <button className="hm-drawer-close" onClick={closeCreateModal}>
+                ×
+              </button>
+            </div>
+
+            <div className="hm-modal-body">
+              <div className="hm-bulk-summary-grid">
+                <div className="summary-chip">
+                  <span>Flow</span>
+                  <strong>{filters.hierarchy_name || "—"}</strong>
+                </div>
+
+                <div className="summary-chip">
+                  <span>Required Field</span>
+                  <strong>{prettifyLabel(createRequiredField || "—")}</strong>
+                </div>
+
+                <div className="summary-chip">
+                  <span>Filled Fields</span>
+                  <strong>
+                    {createFilledCount} / {createColumns.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="hm-create-flow-preview">
+                <span className="preview-label">Flow Structure:</span>
+                <span className="preview-value">{hierarchyPreview}</span>
+              </div>
+
+              {createError ? (
+                <div className="hm-alert hm-alert-error">{createError}</div>
+              ) : null}
+
+              <div className="hm-form-grid hm-create-grid">
+                {createColumns.map((field) => {
+                  const isRequired = field === createRequiredField;
+
+                  return (
+                    <div className="hm-field" key={field}>
+                      <label>
+                        {prettifyLabel(field)}
+                        {isRequired ? (
+                          <span className="required-badge">Required</span>
+                        ) : null}
+                      </label>
+
+                      <input
+                        value={createForm?.[field] ?? ""}
+                        onChange={(e) =>
+                          handleCreateChange(field, e.target.value)
+                        }
+                        placeholder={`Enter ${prettifyLabel(field)} code`}
+                        autoFocus={isRequired}
+                      />
+
+                      <div className="hm-field-hint">
+                        {isRequired
+                          ? "Used to prevent duplicate entries in this flow."
+                          : "Optional if this level is not available yet."}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="hm-modal-footer">
+              <button
+                className="hm-btn hm-btn-secondary"
+                onClick={closeCreateModal}
+                disabled={creating}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="hm-btn hm-btn-primary"
+                onClick={saveNewEntry}
+                disabled={creating}
+              >
+                {creating ? "Creating..." : "Create Entry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {bulkModalOpen && (
         <div className="hm-modal-overlay" onClick={closeBulkModal}>

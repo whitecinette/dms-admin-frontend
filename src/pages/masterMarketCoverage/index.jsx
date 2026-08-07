@@ -116,6 +116,54 @@ const uniqueCount = (rows, key) =>
       .filter(Boolean)
   ).size;
 
+const parseDateTime = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatVisitTime = (value) => {
+  const date = parseDateTime(value);
+  if (!date) return "";
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const joinValues = (values) =>
+  Array.from(new Set((values || []).map((value) => String(value || "").trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b))
+    .join(", ");
+
+const formatGapMinutes = (value) => {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) return "";
+  if (minutes < 60) return `+${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  return rem ? `+${hours}h ${rem}m` : `+${hours}h`;
+};
+
+const getCell = (sheet, row, col) => {
+  const address = XLSX.utils.encode_cell({ r: row, c: col });
+  if (!sheet[address]) sheet[address] = { t: "s", v: "" };
+  return sheet[address];
+};
+
+const styleRange = (sheet, range, styleFn) => {
+  for (let row = range.s.r; row <= range.e.r; row += 1) {
+    for (let col = range.s.c; col <= range.e.c; col += 1) {
+      const cell = getCell(sheet, row, col);
+      cell.s = { ...(cell.s || {}), ...styleFn(row, col, cell) };
+    }
+  }
+};
+
 function FitBounds({ points }) {
   const map = useMap();
 
@@ -161,6 +209,7 @@ function MasterMarketCoverage() {
   const [actorDetailStatus, setActorDetailStatus] = useState("all");
   const [actorCoverageView, setActorCoverageView] = useState("all");
   const [statusActionKey, setStatusActionKey] = useState("");
+  const [timelineDownloading, setTimelineDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -269,6 +318,131 @@ function MasterMarketCoverage() {
         .some((value) => String(value).toLowerCase().includes(query));
     });
   }, [actorDealerRowsByCode, actorDetail, actorDetailSearch, actorDetailStatus]);
+
+  const timelineRows = useMemo(() => {
+    const groups = new Map();
+
+    (data.rows || []).forEach((row, index) => {
+      const actorCode = String(row.actorCode || "").trim();
+      const dealerCode = String(row.dealerCode || "").trim();
+      if (!actorCode || !dealerCode) return;
+
+      const key = `${actorCode}|${dealerCode}`;
+      const rowDate = getDateKeyFromValue(row.date);
+      const statusValue = String(row.status || "planned").toLowerCase();
+      const isDone = statusValue === "done";
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          actorCode,
+          actorName: row.actorName || actorCode,
+          actorPosition: row.actorPosition || row.actorRole || "",
+          dealerCode,
+          dealerName: row.dealerName || dealerCode,
+          topDealer: Boolean(row.topDealer || row.top_dealer),
+          latitude: row.latitude,
+          longitude: row.longitude,
+          mddCode: row.mddCode || "",
+          mddName: row.mddName || "",
+          category: row.category || "",
+          plannedCount: 0,
+          visitCount: 0,
+          pendingCount: 0,
+          dates: new Set(),
+          doneDates: new Set(),
+          zones: new Set(),
+          districts: new Set(),
+          talukas: new Set(),
+          towns: new Set(),
+          firstVisitedAt: null,
+          lastVisitedAt: null,
+          eventKeys: new Set(),
+          doneEventKeys: new Set(),
+        });
+      }
+
+      const group = groups.get(key);
+      group.actorName = group.actorName || row.actorName || actorCode;
+      group.actorPosition = group.actorPosition || row.actorPosition || row.actorRole || "";
+      group.dealerName = group.dealerName || row.dealerName || dealerCode;
+      group.topDealer = group.topDealer || Boolean(row.topDealer || row.top_dealer);
+      group.latitude = group.latitude || row.latitude;
+      group.longitude = group.longitude || row.longitude;
+      group.mddCode = group.mddCode || row.mddCode || "";
+      group.mddName = group.mddName || row.mddName || "";
+      group.category = group.category || row.category || "";
+
+      [row.zone].filter(Boolean).forEach((value) => group.zones.add(value));
+      [row.district].filter(Boolean).forEach((value) => group.districts.add(value));
+      [row.taluka].filter(Boolean).forEach((value) => group.talukas.add(value));
+      [row.town].filter(Boolean).forEach((value) => group.towns.add(value));
+      if (rowDate) group.dates.add(rowDate);
+
+      const eventKey = row.id || `${actorCode}|${rowDate}|${dealerCode}|${index}`;
+      if (!group.eventKeys.has(eventKey)) {
+        group.eventKeys.add(eventKey);
+        group.plannedCount += 1;
+      }
+
+      if (isDone) {
+        const doneEventKey = row.id || `${eventKey}|done`;
+        if (!group.doneEventKeys.has(doneEventKey)) {
+          group.doneEventKeys.add(doneEventKey);
+          group.visitCount += 1;
+          if (rowDate) group.doneDates.add(rowDate);
+        }
+
+        const visitedAt =
+          parseDateTime(row.markedDoneAt) ||
+          parseDateTime(row.markedDoneAtIST) ||
+          parseDateTime(row.updatedAt);
+        if (visitedAt && (!group.firstVisitedAt || visitedAt < group.firstVisitedAt)) {
+          group.firstVisitedAt = visitedAt;
+        }
+        if (visitedAt && (!group.lastVisitedAt || visitedAt > group.lastVisitedAt)) {
+          group.lastVisitedAt = visitedAt;
+        }
+      }
+    });
+
+    return Array.from(groups.values())
+      .map((group) => {
+        const plannedCount = numberValue(group.plannedCount);
+        const visitCount = numberValue(group.visitCount);
+        const pendingCount = Math.max(plannedCount - visitCount, 0);
+        return {
+          ...group,
+          pendingCount,
+          coveragePct: plannedCount ? Math.round((visitCount / plannedCount) * 100) : 0,
+          dates: Array.from(group.dates).sort(),
+          doneDates: Array.from(group.doneDates).sort(),
+          zones: Array.from(group.zones).sort(),
+          districts: Array.from(group.districts).sort(),
+          talukas: Array.from(group.talukas).sort(),
+          towns: Array.from(group.towns).sort(),
+          firstVisitedAtText: formatVisitTime(group.firstVisitedAt),
+          lastVisitedAtText: formatVisitTime(group.lastVisitedAt),
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.visitCount - a.visitCount ||
+          b.plannedCount - a.plannedCount ||
+          String(a.actorName || "").localeCompare(String(b.actorName || "")) ||
+          String(a.dealerName || "").localeCompare(String(b.dealerName || ""))
+      );
+  }, [data.rows]);
+
+  const timelineSummary = useMemo(
+    () => ({
+      actors: uniqueCount(timelineRows, "actorCode"),
+      dealers: timelineRows.length,
+      visitedDealers: timelineRows.filter((row) => row.visitCount > 0).length,
+      untouchedDealers: timelineRows.filter((row) => row.visitCount === 0).length,
+      visits: timelineRows.reduce((sum, row) => sum + numberValue(row.visitCount), 0),
+    }),
+    [timelineRows]
+  );
 
   const pendingRequestCount = useMemo(
     () => (requests || []).filter((request) => request.status === "pending").length,
@@ -437,8 +611,12 @@ function MasterMarketCoverage() {
       Taluka: row.taluka,
       Town: row.town,
       "Top Dealer": row.topDealer ? "Yes" : "No",
+      Category: row.category,
+      "MDD Code": row.mddCode,
+      "MDD Name": row.mddName,
       Latitude: row.latitude,
       Longitude: row.longitude,
+      "Marked Done At": row.markedDoneAtIST || formatVisitTime(row.markedDoneAt),
       Source: row.source,
     }));
 
@@ -446,6 +624,333 @@ function MasterMarketCoverage() {
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, "Market Coverage");
     XLSX.writeFile(book, `master-market-coverage-${fromDate}-to-${toDate || fromDate}.xlsx`);
+  };
+
+  const downloadTimelineRows = async () => {
+    if (!timelineRows.length || timelineDownloading) return;
+    setTimelineDownloading(true);
+
+    try {
+      const XLSXModule = await import("xlsx-js-style");
+      const XLSXStyled = XLSXModule?.default || XLSXModule;
+      const dateRangeLabel = `${formatLongDate(fromDate)} - ${formatLongDate(toDate || fromDate)}`;
+      const plannedTotal = timelineRows.reduce((sum, row) => sum + numberValue(row.plannedCount), 0);
+      const pendingTotal = timelineRows.reduce((sum, row) => sum + numberValue(row.pendingCount), 0);
+      const topRows = timelineRows.filter((row) => row.topDealer);
+      const topDone = topRows.filter((row) => row.visitCount > 0).length;
+      const coveragePct = plannedTotal ? Math.round((timelineSummary.visits / plannedTotal) * 100) : 0;
+
+      const actorOverview = Array.from(
+        timelineRows.reduce((map, row) => {
+          const key = row.actorCode || "unknown";
+          if (!map.has(key)) {
+            map.set(key, {
+              actorCode: row.actorCode,
+              actorName: row.actorName,
+              actorPosition: row.actorPosition,
+              totalDealers: 0,
+              doneDealers: 0,
+              pendingDealers: 0,
+              plannedEvents: 0,
+              totalVisits: 0,
+              topDealers: 0,
+              topDone: 0,
+              topPending: 0,
+              zones: new Set(),
+              towns: new Set(),
+            });
+          }
+          const actor = map.get(key);
+          actor.totalDealers += 1;
+          actor.plannedEvents += numberValue(row.plannedCount);
+          actor.totalVisits += numberValue(row.visitCount);
+          if (row.visitCount > 0) actor.doneDealers += 1;
+          else actor.pendingDealers += 1;
+          if (row.topDealer) {
+            actor.topDealers += 1;
+            if (row.visitCount > 0) actor.topDone += 1;
+            else actor.topPending += 1;
+          }
+          (row.zones || []).forEach((value) => actor.zones.add(value));
+          (row.towns || []).forEach((value) => actor.towns.add(value));
+          return map;
+        }, new Map()).values()
+      ).sort((a, b) => b.doneDealers - a.doneDealers || b.totalDealers - a.totalDealers);
+
+      const overviewRows = [
+        ["Market Coverage Timeline Overview"],
+        ["Date Range", dateRangeLabel],
+        ["Applied Filters", `Status: ${status}; Top Dealer: ${topDealer}; Zone: ${zone || "All"}; District: ${district || "All"}; Taluka: ${taluka || "All"}; Town: ${town || "All"}; Search: ${search || "None"}`],
+        [],
+        ["Metric", "Value"],
+        ["Actors", timelineSummary.actors],
+        ["Grouped Dealer Rows", timelineSummary.dealers],
+        ["Visited Dealer Rows", timelineSummary.visitedDealers],
+        ["Untouched Dealer Rows", timelineSummary.untouchedDealers],
+        ["Planned Appearances", plannedTotal],
+        ["Total Visits", timelineSummary.visits],
+        ["Pending Appearances", pendingTotal],
+        ["Coverage %", `${coveragePct}%`],
+        ["Top Dealer Rows", topRows.length],
+        ["Top Dealer Done", topDone],
+        ["Top Dealer Pending", topRows.length - topDone],
+        [],
+        [
+          "Actor Code",
+          "Actor Name",
+          "Position",
+          "Dealers",
+          "Done Dealers",
+          "Pending Dealers",
+          "Planned",
+          "Visits",
+          "Coverage %",
+          "Top Dealers",
+          "Top Done",
+          "Top Pending",
+          "Zones",
+          "Towns",
+        ],
+        ...actorOverview.map((actor) => [
+          actor.actorCode,
+          actor.actorName,
+          actor.actorPosition,
+          actor.totalDealers,
+          actor.doneDealers,
+          actor.pendingDealers,
+          actor.plannedEvents,
+          actor.totalVisits,
+          actor.plannedEvents ? `${Math.round((actor.totalVisits / actor.plannedEvents) * 100)}%` : "0%",
+          actor.topDealers,
+          actor.topDone,
+          actor.topPending,
+          joinValues(Array.from(actor.zones)),
+          joinValues(Array.from(actor.towns)),
+        ]),
+      ];
+
+      const groupedVisitCount = new Map(
+        timelineRows.map((row) => [`${row.actorCode}|${row.dealerCode}`, row.visitCount])
+      );
+      const timelineEvents = [...(data.rows || [])]
+        .map((row, index) => ({
+          ...row,
+          index,
+          dateKey: getDateKeyFromValue(row.date),
+          statusValue: String(row.status || "planned").toLowerCase() === "done" ? "done" : "pending",
+          visitDate: parseDateTime(row.markedDoneAt) || parseDateTime(row.markedDoneAtIST),
+        }))
+        .sort((a, b) => {
+          const actorCompare = String(a.actorName || a.actorCode || "").localeCompare(
+            String(b.actorName || b.actorCode || "")
+          );
+          if (actorCompare) return actorCompare;
+          const dateCompare = String(a.dateKey || "").localeCompare(String(b.dateKey || ""));
+          if (dateCompare) return dateCompare;
+          return (a.visitDate?.getTime?.() || 0) - (b.visitDate?.getTime?.() || 0);
+        });
+
+      const actorDayDoneRows = new Map();
+      timelineEvents.forEach((row) => {
+        if (row.statusValue !== "done") return;
+        const key = `${row.actorCode}|${row.dateKey}`;
+        if (!actorDayDoneRows.has(key)) actorDayDoneRows.set(key, []);
+        actorDayDoneRows.get(key).push(row);
+      });
+      actorDayDoneRows.forEach((rows) => {
+        rows.sort((a, b) => (a.visitDate?.getTime?.() || 0) - (b.visitDate?.getTime?.() || 0));
+        rows.forEach((row, index) => {
+          row.isFirstVisit = index === 0;
+          row.isLastVisit = index === rows.length - 1;
+          const previous = index > 0 ? rows[index - 1] : null;
+          row.gapFromPrevMinutes =
+            previous && row.visitDate && previous.visitDate
+              ? Math.max(0, Math.round((row.visitDate.getTime() - previous.visitDate.getTime()) / 60000))
+              : null;
+        });
+      });
+
+      const timelineSheetRows = [
+        [
+          "Date",
+          "Day",
+          "Actor",
+          "Actor Code",
+          "Dealer",
+          "Dealer Code",
+          "Status",
+          "Visit Time",
+          "Visit Count",
+          "Badges",
+          "Gap From Previous",
+          "MDD",
+          "Category",
+          "Town",
+          "Taluka",
+          "District",
+          "Zone",
+          "Top Dealer",
+          "Distance",
+          "Latitude",
+          "Longitude",
+        ],
+        ...timelineEvents.map((row) => {
+          const badges = [
+            row.isFirstVisit ? "FIRST" : "",
+            row.isLastVisit ? "LAST" : "",
+            row.topDealer || row.top_dealer ? "TOP" : "",
+          ].filter(Boolean);
+          const visitCount = groupedVisitCount.get(`${row.actorCode}|${row.dealerCode}`) || 0;
+          return [
+            formatLongDate(row.dateKey),
+            parseDateKey(row.dateKey)?.toLocaleDateString("en-IN", { weekday: "short" }) || "",
+            row.actorName || row.actorCode,
+            row.actorCode,
+            row.dealerName || row.dealerCode,
+            row.dealerCode,
+            row.statusValue === "done" ? "Done" : "Pending / Planned",
+            row.statusValue === "done" ? formatVisitTime(row.visitDate || row.markedDoneAtIST) : "",
+            visitCount,
+            badges.join(", "),
+            formatGapMinutes(row.gapFromPrevMinutes),
+            [row.mddCode, row.mddName].filter(Boolean).join(" "),
+            row.category || "",
+            row.town || "",
+            row.taluka || "",
+            row.district || "",
+            row.zone || "",
+            row.topDealer || row.top_dealer ? "Yes" : "No",
+            row.distance || "",
+            row.latitude || "",
+            row.longitude || "",
+          ];
+        }),
+      ];
+
+      const overviewSheet = XLSXStyled.utils.aoa_to_sheet(overviewRows);
+      const timelineSheet = XLSXStyled.utils.aoa_to_sheet(timelineSheetRows);
+      const overviewRange = XLSXStyled.utils.decode_range(overviewSheet["!ref"]);
+      const timelineRange = XLSXStyled.utils.decode_range(timelineSheet["!ref"]);
+
+      const titleStyle = {
+        font: { bold: true, sz: 16, color: { rgb: "0F172A" } },
+        fill: { patternType: "solid", fgColor: { rgb: "EAF0FF" } },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+      const sectionHeaderStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "CBD5E1" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+          left: { style: "thin", color: { rgb: "CBD5E1" } },
+          right: { style: "thin", color: { rgb: "CBD5E1" } },
+        },
+      };
+      const baseCellStyle = {
+        alignment: { vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "E2E8F0" } },
+          bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+          left: { style: "thin", color: { rgb: "E2E8F0" } },
+          right: { style: "thin", color: { rgb: "E2E8F0" } },
+        },
+      };
+
+      styleRange(overviewSheet, overviewRange, (row, col) => {
+        if (row === 0) return titleStyle;
+        if (row === 4 || row === 17) return sectionHeaderStyle;
+        const metricRows = row >= 5 && row <= 15;
+        if (metricRows && col === 0) {
+          return { ...baseCellStyle, font: { bold: true, color: { rgb: "334155" } }, fill: { patternType: "solid", fgColor: { rgb: "F8FAFC" } } };
+        }
+        if (row > 17 && [4, 10].includes(col)) {
+          return { ...baseCellStyle, fill: { patternType: "solid", fgColor: { rgb: "ECFDF5" } }, font: { color: { rgb: "15803D" }, bold: true } };
+        }
+        if (row > 17 && [5, 11].includes(col)) {
+          return { ...baseCellStyle, fill: { patternType: "solid", fgColor: { rgb: "FFF7ED" } }, font: { color: { rgb: "C2410C" }, bold: true } };
+        }
+        return baseCellStyle;
+      });
+
+      styleRange(timelineSheet, timelineRange, (row, col, cell) => {
+        if (row === 0) return sectionHeaderStyle;
+        const statusCell = timelineSheet[XLSXStyled.utils.encode_cell({ r: row, c: 6 })];
+        const statusText = String(statusCell?.v || "").toLowerCase();
+        const isDone = statusText === "done";
+        const isTopCol = col === 17 && String(cell?.v || "").toLowerCase() === "yes";
+        if (col === 6) {
+          return {
+            ...baseCellStyle,
+            fill: { patternType: "solid", fgColor: { rgb: isDone ? "DDF2E5" : "FFEBEF" } },
+            font: { color: { rgb: isDone ? "15803D" : "BE123C" }, bold: true },
+          };
+        }
+        if (isTopCol) {
+          return {
+            ...baseCellStyle,
+            fill: { patternType: "solid", fgColor: { rgb: "FFF2CC" } },
+            font: { color: { rgb: "A16207" }, bold: true },
+          };
+        }
+        return {
+          ...baseCellStyle,
+          fill: { patternType: "solid", fgColor: { rgb: isDone ? "F3FBF6" : "FFF7F8" } },
+        };
+      });
+
+      overviewSheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+      overviewSheet["!cols"] = [
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 13 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 13 },
+        { wch: 30 },
+        { wch: 34 },
+      ];
+      timelineSheet["!cols"] = [
+        { wch: 13 },
+        { wch: 8 },
+        { wch: 24 },
+        { wch: 14 },
+        { wch: 30 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 11 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 30 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 11 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+      ];
+      timelineSheet["!autofilter"] = { ref: timelineSheet["!ref"] };
+      timelineSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+      overviewSheet["!freeze"] = { xSplit: 0, ySplit: 18 };
+
+      const book = XLSXStyled.utils.book_new();
+      XLSXStyled.utils.book_append_sheet(book, overviewSheet, "Overview");
+      XLSXStyled.utils.book_append_sheet(book, timelineSheet, "Timeline");
+      XLSXStyled.writeFile(book, `market-coverage-timeline-${fromDate}-to-${toDate || fromDate}.xlsx`);
+    } finally {
+      setTimelineDownloading(false);
+    }
   };
 
   const reviewRequest = async (requestId, action) => {
@@ -527,6 +1032,14 @@ function MasterMarketCoverage() {
           <button type="button" onClick={downloadRows} disabled={!data.rows?.length}>
             <Download size={16} />
             Download
+          </button>
+          <button
+            type="button"
+            onClick={downloadTimelineRows}
+            disabled={!timelineRows.length || timelineDownloading}
+          >
+            {timelineDownloading ? <Loader2 size={16} className="spin" /> : <ClipboardList size={16} />}
+            {timelineDownloading ? "Preparing..." : "Timeline XLSX"}
           </button>
         </div>
       </section>
@@ -828,6 +1341,90 @@ function MasterMarketCoverage() {
                 Dealer details open in popup
               </span>
             </div>
+          </section>
+
+          <section className="mc-timeline-panel">
+            <div className="mc-section-head">
+              <div>
+                <span>Timeline Export</span>
+                <h2>Dealer Visit Grouping</h2>
+                <p className="mc-section-subtitle">
+                  One row per actor and dealer for the selected date range.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="mc-open-requests"
+                onClick={downloadTimelineRows}
+                disabled={!timelineRows.length || timelineDownloading}
+              >
+                {timelineDownloading ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
+                {timelineDownloading ? "Preparing Workbook" : "Download Timeline"}
+              </button>
+            </div>
+
+            <div className="mc-timeline-stats">
+              <span>
+                <Users size={14} />
+                {timelineSummary.actors} actor(s)
+              </span>
+              <span>
+                <MapPin size={14} />
+                {timelineSummary.dealers} grouped dealer rows
+              </span>
+              <span>
+                <CheckCircle2 size={14} />
+                {timelineSummary.visits} visit(s)
+              </span>
+              <span>
+                <CalendarDays size={14} />
+                {timelineSummary.untouchedDealers} untouched
+              </span>
+            </div>
+
+            <div className="mc-timeline-table">
+              <div className="mc-timeline-head">
+                <span>Actor</span>
+                <span>Dealer</span>
+                <span>Visits</span>
+                <span>Dates</span>
+                <span>Last Visit</span>
+                <span>Geo</span>
+              </div>
+              {timelineRows.length === 0 ? (
+                <div className="mc-timeline-empty">No timeline rows for this selection.</div>
+              ) : (
+                timelineRows.slice(0, 8).map((row) => (
+                  <div className="mc-timeline-row" key={`${row.actorCode}-${row.dealerCode}`}>
+                    <strong>
+                      {row.actorName || row.actorCode}
+                      <small>
+                        {row.actorCode}
+                        {row.actorPosition ? ` · ${row.actorPosition}` : ""}
+                      </small>
+                    </strong>
+                    <strong>
+                      {row.dealerName || row.dealerCode}
+                      <small>
+                        {row.dealerCode}
+                        {row.topDealer ? " · Top dealer" : ""}
+                      </small>
+                    </strong>
+                    <span className={row.visitCount ? "done" : "pending"}>
+                      {row.visitCount} / {row.plannedCount}
+                    </span>
+                    <span>{row.dates.map(formatShortDate).slice(0, 4).join(", ") || "-"}</span>
+                    <span>{row.lastVisitedAtText || "-"}</span>
+                    <span>{joinValues([...row.zones, ...row.towns]) || "-"}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {timelineRows.length > 8 ? (
+              <p className="mc-timeline-note">
+                Showing first 8 grouped rows. Download includes all {timelineRows.length} rows.
+              </p>
+            ) : null}
           </section>
 
           {requestDeskOpen ? (
