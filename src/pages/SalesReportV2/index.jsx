@@ -321,6 +321,7 @@ function SalesReportV2() {
   const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
     useState(false);
 
+  const [loadingCoreTagRows, setLoadingCoreTagRows] = useState(false);
   const [loadingYtdTagRows, setLoadingYtdTagRows] = useState(false);
 
   const formatCompact = (num, isCurrency = false) => {
@@ -822,6 +823,10 @@ function SalesReportV2() {
     setLoadingWod(true);
     setLoadingPriceSegment(true);
     setLoadingPriceSegmentSplit40k(true);
+    setTagGroupedReports((old) => {
+      const { activation, tertiary, secondary, wod, ...rest } = old;
+      return rest;
+    });
 
     try {
       const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
@@ -832,7 +837,7 @@ function SalesReportV2() {
         },
         body: JSON.stringify({
           ...getRequestBody("batch"),
-          include_tag_grouped: true,
+          include_tag_grouped: false,
           report_types: [
             "activation",
             "tertiary",
@@ -856,6 +861,10 @@ function SalesReportV2() {
         ...old,
         ...(data.tag_grouped || {}),
       }));
+
+      setTimeout(() => {
+        fetchCoreTagGroupedReports();
+      }, 0);
     } catch (error) {
       console.error("Core fetch error:", error);
     } finally {
@@ -863,6 +872,45 @@ function SalesReportV2() {
       setLoadingTertiary(false);
       setLoadingSecondary(false);
       setLoadingWod(false);
+    }
+  };
+
+  const fetchCoreTagGroupedReports = async () => {
+    setLoadingCoreTagRows(true);
+
+    try {
+      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("authToken"),
+        },
+        body: JSON.stringify({
+          ...getRequestBody("batch"),
+          include_tag_grouped: true,
+          only_tag_grouped: true,
+          report_types: [
+            "activation",
+            "tertiary",
+            "secondary",
+            "wod",
+          ],
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Core tag fetch failed");
+
+      const data = result.data || {};
+
+      setTagGroupedReports((old) => ({
+        ...old,
+        ...(data.tag_grouped || {}),
+      }));
+    } catch (error) {
+      console.error("Core tag-grouped fetch error:", error);
+    } finally {
+      setLoadingCoreTagRows(false);
     }
   };
 
@@ -950,6 +998,7 @@ function SalesReportV2() {
         body: JSON.stringify({
           ...getRequestBody("batch"),
           include_tag_grouped: true,
+          only_tag_grouped: true,
           report_types: [
             "activation_vol_ytd",
             "tertiary_vol_ytd",
@@ -1219,6 +1268,10 @@ function SalesReportV2() {
                   ? formatPercent(value)
                   : formatValue(value, false),
             })}
+
+            {!tagGroupedReports[reportType] && loadingCoreTagRows
+              ? renderTagRowShimmer(columns)
+              : null}
           </tbody>
         </table>
       </div>
@@ -1464,6 +1517,9 @@ function SalesReportV2() {
                       ? formatPercent(value)
                       : formatValue(value, false),
                 })}
+                {!groupedWod.sellInWOD && loadingCoreTagRows
+                  ? renderTagRowShimmer(columns)
+                  : null}
                 {renderWodRow("Sell-Out WOD", sellOut, columns, "sell-out")}
                 {renderInlineTagRows(groupedWod.sellOutWOD, {
                   reportType,
@@ -1477,6 +1533,9 @@ function SalesReportV2() {
                       ? formatPercent(value)
                       : formatValue(value, false),
                 })}
+                {!groupedWod.sellOutWOD && loadingCoreTagRows
+                  ? renderTagRowShimmer(columns)
+                  : null}
               </tbody>
             </table>
           </div>
