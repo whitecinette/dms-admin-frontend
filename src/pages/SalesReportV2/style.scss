@@ -88,6 +88,21 @@
       align-items: center;
       gap: 8px;
     }
+
+    .apply-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 112px;
+      justify-content: center;
+      background: #16a34a;
+      box-shadow: 0 10px 20px rgba(22, 163, 74, 0.22);
+
+      &:hover {
+        background: #15803d;
+        transform: translateY(-1px);
+      }
+    }
   }
 }
 
@@ -129,7 +144,7 @@
 
 .sales-filter-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  grid-template-columns: minmax(380px, 2fr) repeat(2, minmax(180px, 1fr));
   gap: 14px;
 }
 
@@ -151,6 +166,66 @@
     border: 1px solid #d9e1ec;
     font-size: 14px;
     background: #fff;
+  }
+}
+
+.sales-date-range {
+  min-width: 0;
+}
+
+.sales-date-range__box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d9e1ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sales-date-range__inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+
+  input {
+    width: 100%;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  span {
+    font-size: 12px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+  }
+}
+
+.sales-date-range__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid #dbe4ff;
+    border-radius: 999px;
+    background: #f8fbff;
+    color: #3451d1;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+
+    &:hover {
+      background: #eef3ff;
+      border-color: #b8c7ff;
+    }
   }
 }
 
@@ -823,6 +898,12 @@
       background: #fff;
       cursor: pointer;
     }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 
   &__body {

@@ -92,30 +92,38 @@ const DUMP_APIS = [
     key: "product_simple_sync",
     title: "Product Master Simple Sync",
     subtitle:
-      "Creates or updates products using brand, product name, category and price.",
+      "Creates or updates products and tags in one upload.",
     endpoint: "/dump-sync/products/simple/upload",
     accept: [".csv", ".xlsx", ".xls"],
     hint:
-      "Required headers: brand, product_name, product_category, price. Optional: model_code, product_code. Segment is auto-created from price.",
+      "Required headers: brand, product_category, price, plus product_name or model_code/product_code. Add one or more tag columns to sync product tags.",
     templateHeaders: [
       "brand",
+      "model_code",
+      "product_code",
       "product_name",
       "product_category",
       "price",
-      "model_code",
-      "product_code",
+      "tag",
+      "tag",
+      "tag",
     ],
     templateRows: [
-      ["xiaomi", "Redmi 14C 5G (6+128)", "smart_phone", "11999", "", ""],
-      ["vivo", "Y Series Demo (4+64)", "smart_phone", "9999", "VIVOYDEMO", ""],
-      ["oneplus", "Nord Demo Buds", "wearable", "5499", "", "oneplus_nord_demo_buds"],
+      ["sample rows", "CODE01", "SM-CODE01", "name1", "smart_phone", "120000", "4G", "", ""],
+      ["samsung", "CODE02", "SM-CODE02", "name2", "smart_phone", "120000", "5G", "Innovative 5G", ""],
+      ["samsung", "CODE03", "SM-CODE03", "name3", "smart_phone", "120000", "5G", "Flagship 5G", ""],
+      ["samsung", "CODE04", "SM-CODE04", "name4", "tab", "10000", "tab", "", ""],
+      ["samsung", "CODE05", "SM-CODE05", "name5", "wearable", "2000", "wearable", "", ""],
     ],
     guide: [
-      "Only brand, product_name, product_category and price are required.",
+      "Download the format, remove all sample rows, then paste or insert your actual product data.",
+      "Only brand, product_category and price are required when model_code or product_code is available; product_name is recommended.",
       "Brand is saved in lowercase automatically.",
+      "Every column named tag is saved into the product tags list. Add more tag columns when a product needs multiple tags.",
       "Segment is calculated from price: 0-6, 6-10, 10-20, 20-30, 30-40, 40-70, 70-100, 100-120 or 120.",
       "Leave model_code blank when it is not available.",
-      "Leave product_code blank when it is not available; the system generates a stable product code from brand and product name.",
+      "When product_code is blank, model_code is used as the product code so sales reports can match it.",
+      "If both product_code and model_code are blank, the system generates a stable product code from brand and product name.",
       "Dry Run previews inserts and updates. Turn Dry Run OFF only after checking the result.",
     ],
   },
@@ -163,8 +171,63 @@ function DumpSyncUpload() {
 
   const fileRef = useRef();
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     if (!selectedApi?.templateHeaders?.length) return;
+
+    if (selectedApi.key === "product_simple_sync") {
+      const xlsxStyleModule = await import("xlsx-js-style");
+      const XLSXStyle = xlsxStyleModule.default || xlsxStyleModule;
+      const rows = [
+        selectedApi.templateHeaders,
+        ...(selectedApi.templateRows || []),
+      ];
+      const worksheet = XLSXStyle.utils.aoa_to_sheet(rows);
+      const range = XLSXStyle.utils.decode_range(worksheet["!ref"]);
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "D9D9D9" } },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+      const sampleStyle = {
+        fill: { fgColor: { rgb: "F4CCCC" } },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+
+      for (let row = range.s.r; row <= range.e.r; row += 1) {
+        for (let col = range.s.c; col <= range.e.c; col += 1) {
+          const address = XLSXStyle.utils.encode_cell({ r: row, c: col });
+          if (!worksheet[address]) continue;
+          worksheet[address].s = row === 0 ? headerStyle : sampleStyle;
+        }
+      }
+
+      worksheet["!cols"] = [
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 20 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+      ];
+
+      const workbook = XLSXStyle.utils.book_new();
+      XLSXStyle.utils.book_append_sheet(workbook, worksheet, "Product Sync Format");
+      XLSXStyle.writeFile(workbook, `${selectedApi.key}-format.xlsx`);
+      return;
+    }
 
     const csv = Papa.unparse({
       fields: selectedApi.templateHeaders,
@@ -353,6 +416,7 @@ function DumpSyncUpload() {
             <div className="kpi"><div className="kpi__label">Existing In DB</div><div className="kpi__value">{result.existingInDb ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">New To Insert</div><div className="kpi__value">{result.toInsert ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Product Updates</div><div className="kpi__value">{result.toUpdate ?? result.updated ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Products With Tags</div><div className="kpi__value">{result.productsWithTags ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Inserted</div><div className="kpi__value">{result.inserted ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Updated</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Invalid Rows</div><div className="kpi__value">{result.invalidRows ?? "-"}</div></div>
@@ -575,6 +639,7 @@ function DumpSyncUpload() {
                       "category",
                       "price",
                       "segment",
+                      "tags",
                       "source",
                       "extraction_active",
                     ].map((h) => (
@@ -592,6 +657,7 @@ function DumpSyncUpload() {
                       <td>{p.category}</td>
                       <td>{p.price}</td>
                       <td>{p.segment}</td>
+                      <td>{Array.isArray(p.tags) ? p.tags.join(", ") : ""}</td>
                       <td>{p.source}</td>
                       <td>{p.extraction_active}</td>
                     </tr>

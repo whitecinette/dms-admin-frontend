@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import config from "../../config";
 import "./style.scss";
@@ -70,6 +70,36 @@ const buildBulkForm = (columns = []) => {
   return form;
 };
 
+const escapeCsvValue = (value) => {
+  const text =
+    value === undefined || value === null ? "" : String(value).replace(/\r?\n/g, " ");
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+const downloadCsvFile = (filename, headers = [], dataRows = []) => {
+  const csv = [
+    headers.map(escapeCsvValue).join(","),
+    ...dataRows.map((row) => headers.map((header) => escapeCsvValue(row?.[header])).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const buildSampleHierarchyRows = (fields = []) => {
+  return [1, 2].map((index) => {
+    const row = {};
+    fields.forEach((field) => {
+      row[field] = `${String(field).toUpperCase()}_CODE_${index}`;
+    });
+    return row;
+  });
+};
+
 export default function HierarchyManagerPage() {
   const [metaLoading, setMetaLoading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -102,10 +132,20 @@ export default function HierarchyManagerPage() {
   const [bulkForm, setBulkForm] = useState({});
   const [bulkError, setBulkError] = useState("");
   const [bulkWarning, setBulkWarning] = useState("");
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadFlowName, setUploadFlowName] = useState("");
+  const [uploadMode, setUploadMode] = useState("upsert");
+  const [uploadDryRun, setUploadDryRun] = useState(true);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState({});
   const [createError, setCreateError] = useState("");
   const [creating, setCreating] = useState(false);
+
+  const uploadFileRef = useRef(null);
 
   const [appliedFilters, setAppliedFilters] = useState({
     firm_code: "",
@@ -202,6 +242,21 @@ export default function HierarchyManagerPage() {
     return createColumns.filter((field) => String(createForm?.[field] || "").trim())
       .length;
   }, [createColumns, createForm]);
+
+  const uploadFlowColumns = useMemo(() => {
+    if (uploadFlowName && flowMap[uploadFlowName]) {
+      return flowMap[uploadFlowName] || [];
+    }
+    return [];
+  }, [uploadFlowName, flowMap]);
+
+  const uploadLowestField = useMemo(() => {
+    if (!uploadFlowColumns.length) return "";
+    return (
+      uploadFlowColumns.find((field) => String(field).toLowerCase() === "dealer") ||
+      uploadFlowColumns[uploadFlowColumns.length - 1]
+    );
+  }, [uploadFlowColumns]);
 
   const fetchMeta = async () => {
     try {
@@ -316,6 +371,7 @@ export default function HierarchyManagerPage() {
     closeDrawer();
     closeBulkModal();
     closeCreateModal();
+    closeUploadModal();
     await fetchRows();
   };
 
@@ -334,9 +390,178 @@ export default function HierarchyManagerPage() {
     closeDrawer();
     closeBulkModal();
     closeCreateModal();
+    closeUploadModal();
     setRows([]);
     setColumns([]);
     setSelectedIds([]);
+  };
+
+  const openUploadModal = () => {
+    const defaultFlow = filters.hierarchy_name || flows[0]?.name || "";
+    setUploadFlowName(defaultFlow);
+    setUploadMode("upsert");
+    setUploadDryRun(true);
+    setUploadFile(null);
+    setUploadResult(null);
+    setUploadError(null);
+    if (uploadFileRef.current) uploadFileRef.current.value = "";
+    closeDrawer();
+    closeBulkModal();
+    closeCreateModal();
+    setUploadModalOpen(true);
+  };
+
+  const closeUploadModal = () => {
+    if (uploading) return;
+    setUploadModalOpen(false);
+    setUploadFile(null);
+    setUploadResult(null);
+    setUploadError(null);
+    if (uploadFileRef.current) uploadFileRef.current.value = "";
+  };
+
+  const downloadUploadFormat = () => {
+    if (!uploadFlowName || !uploadFlowColumns.length) {
+      setUploadError({
+        message: "Select a flow before downloading the format.",
+      });
+      return;
+    }
+
+    downloadCsvFile(
+      `${uploadFlowName}-hierarchy-upload-format.csv`,
+      uploadFlowColumns,
+      buildSampleHierarchyRows(uploadFlowColumns)
+    );
+  };
+
+  const downloadExistingMapping = async () => {
+    if (!uploadFlowName) {
+      setUploadError({
+        message: "Select a flow before downloading existing mapping.",
+      });
+      return;
+    }
+
+    try {
+      setUploadError(null);
+      const res = await axios.get(`${backendUrl}/super-admin/hierarchy`, {
+        params: {
+          hierarchy_name: uploadFlowName,
+          all: true,
+        },
+        headers: getAuthHeader(),
+      });
+
+      const exportColumns = Array.isArray(res.data?.columns)
+        ? res.data.columns
+        : uploadFlowColumns;
+      const exportRows = Array.isArray(res.data?.rows) ? res.data.rows : [];
+
+      downloadCsvFile(
+        `${uploadFlowName}-existing-hierarchy-mapping.csv`,
+        exportColumns,
+        exportRows
+      );
+    } catch (error) {
+      console.error("Failed to download hierarchy mapping:", error);
+      setUploadError({
+        message:
+          error?.response?.data?.message || "Failed to download existing mapping.",
+      });
+    }
+  };
+
+  const downloadMissingActorCodes = () => {
+    const missingActorCodes =
+      uploadError?.details?.missingActorCodes || uploadResult?.missingActorCodes || [];
+
+    if (!missingActorCodes.length) return;
+
+    const headers = [
+      "row_numbers",
+      "position",
+      "actor_code",
+      "missing_in_actor_code",
+      "missing_in_user",
+      "action_needed",
+    ];
+    const rows = missingActorCodes.map((item) => ({
+      row_numbers: Array.isArray(item.rowNumbers)
+        ? item.rowNumbers.join(", ")
+        : item.rowNumber || "",
+      position: item.field || "",
+      actor_code: item.code || "",
+      missing_in_actor_code: item.missingInActorCode ? "yes" : "no",
+      missing_in_user: item.missingInUser ? "yes" : "no",
+      action_needed: "Create this code in Actor Codes or Users, then upload again",
+    }));
+
+    downloadCsvFile(
+      `${uploadFlowName || "hierarchy"}-missing-actor-codes.csv`,
+      headers,
+      rows
+    );
+  };
+
+  const handleUploadFileChange = (file) => {
+    setUploadFile(file || null);
+    setUploadResult(null);
+    setUploadError(null);
+  };
+
+  const submitHierarchyUpload = async () => {
+    if (!uploadFlowName) {
+      setUploadError({ message: "Please select a flow." });
+      return;
+    }
+
+    if (!uploadFile) {
+      setUploadError({ message: "Please choose a CSV or Excel file." });
+      return;
+    }
+
+    const lowerName = String(uploadFile.name || "").toLowerCase();
+    if (![".csv", ".xlsx", ".xls"].some((ext) => lowerName.endsWith(ext))) {
+      setUploadError({ message: "Only .csv, .xlsx or .xls files are allowed." });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadResult(null);
+      setUploadError(null);
+
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("hierarchy_name", uploadFlowName);
+      formData.append("mode", uploadMode);
+
+      const res = await axios.post(
+        `${backendUrl}/super-admin/hierarchy/bulk-upload${
+          uploadDryRun ? "?dryRun=true" : ""
+        }`,
+        formData,
+        {
+          headers: getAuthHeader(),
+        }
+      );
+
+      setUploadResult(res.data);
+
+      if (!uploadDryRun && filters.hierarchy_name === uploadFlowName) {
+        await fetchRows();
+      }
+    } catch (error) {
+      console.error("Failed to upload hierarchy mapping:", error);
+      setUploadError({
+        message:
+          error?.response?.data?.message || "Failed to upload hierarchy mapping.",
+        details: error?.response?.data || null,
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const openDrawer = (row) => {
@@ -741,6 +966,14 @@ export default function HierarchyManagerPage() {
 
           <div className="hm-actions">
             <button
+              className="hm-btn hm-btn-primary"
+              onClick={openUploadModal}
+              disabled={metaLoading || !flows.length}
+            >
+              Bulk Upload
+            </button>
+
+            <button
               className="hm-btn hm-btn-ghost"
               onClick={openCreateModal}
               disabled={metaLoading || !filters.hierarchy_name}
@@ -1141,6 +1374,307 @@ export default function HierarchyManagerPage() {
           )}
         </div>
       </div>
+
+      {uploadModalOpen && (
+        <div className="hm-modal-overlay" onClick={closeUploadModal}>
+          <div
+            className="hm-modal hm-upload-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="hm-modal-head">
+              <div>
+                <div className="hm-modal-title">Bulk Upload Hierarchy</div>
+                <div className="hm-modal-subtitle">
+                  Upload mappings by flow. Dry run checks the file before any DB
+                  change.
+                </div>
+              </div>
+
+              <button className="hm-drawer-close" onClick={closeUploadModal}>
+                ×
+              </button>
+            </div>
+
+            <div className="hm-modal-body">
+              <div className="hm-upload-grid">
+                <div className="hm-upload-panel">
+                  <div className="hm-field">
+                    <label>Flow Name</label>
+                    <select
+                      value={uploadFlowName}
+                      onChange={(e) => {
+                        setUploadFlowName(e.target.value);
+                        setUploadResult(null);
+                        setUploadError(null);
+                      }}
+                      disabled={uploading}
+                    >
+                      <option value="">Select Flow</option>
+                      {flows.map((flow) => (
+                        <option key={flow.name} value={flow.name}>
+                          {flow.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="hm-upload-position-card">
+                    <div className="hm-upload-position-head">
+                      <span>Positions Under Flow</span>
+                      <strong>
+                        {uploadLowestField
+                          ? `${prettifyLabel(uploadLowestField)} is matching key`
+                          : "Select flow"}
+                      </strong>
+                    </div>
+
+                    <div className="hm-upload-levels">
+                      {uploadFlowColumns.length ? (
+                        uploadFlowColumns.map((field, index) => (
+                          <span
+                            key={field}
+                            className={`hm-level-chip ${
+                              field === uploadLowestField ? "key" : ""
+                            }`}
+                          >
+                            {index + 1}. {prettifyLabel(field)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="hm-muted-text">No flow selected</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="hm-upload-mode-card">
+                    <label className="hm-radio-card">
+                      <input
+                        type="radio"
+                        name="uploadMode"
+                        value="upsert"
+                        checked={uploadMode === "upsert"}
+                        onChange={() => setUploadMode("upsert")}
+                        disabled={uploading}
+                      />
+                      <span>
+                        <strong>Upsert from sheet</strong>
+                        <small>
+                          Update matching {prettifyLabel(uploadLowestField || "lowest level")} rows and keep existing rows not present in file.
+                        </small>
+                      </span>
+                    </label>
+
+                    <label className="hm-radio-card danger">
+                      <input
+                        type="radio"
+                        name="uploadMode"
+                        value="replace_flow"
+                        checked={uploadMode === "replace_flow"}
+                        onChange={() => setUploadMode("replace_flow")}
+                        disabled={uploading}
+                      />
+                      <span>
+                        <strong>Delete previous and upload new</strong>
+                        <small>
+                          Delete all existing rows for this flow, then insert only the uploaded sheet.
+                        </small>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="hm-upload-panel">
+                  <div className="hm-upload-instructions">
+                    <div className="hm-inline-preview-label">Instructions</div>
+                    <ul>
+                      <li>Download the format for the selected flow.</li>
+                      <li>Keep the same headers and remove the two sample rows.</li>
+                      <li>
+                        Fill {prettifyLabel(uploadLowestField || "lowest level")} on every row; it is used to detect duplicates.
+                      </li>
+                      <li>Run Dry Sync first, then turn it off to apply changes.</li>
+                    </ul>
+                  </div>
+
+                  <div className="hm-upload-actions-grid">
+                    <button
+                      className="hm-btn hm-btn-secondary"
+                      onClick={downloadUploadFormat}
+                      disabled={!uploadFlowColumns.length || uploading}
+                    >
+                      Download Format
+                    </button>
+
+                    <button
+                      className="hm-btn hm-btn-secondary"
+                      onClick={downloadExistingMapping}
+                      disabled={!uploadFlowName || uploading}
+                    >
+                      Download Existing Mapping
+                    </button>
+                  </div>
+
+                  <div className="hm-file-picker">
+                    <input
+                      ref={uploadFileRef}
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={(e) => handleUploadFileChange(e.target.files?.[0])}
+                      disabled={uploading}
+                    />
+                    <div>
+                      <strong>{uploadFile?.name || "Choose CSV / Excel file"}</strong>
+                      <span>
+                        Headers must match: {uploadFlowColumns.join(", ") || "select a flow first"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <label className="hm-dry-toggle">
+                    <input
+                      type="checkbox"
+                      checked={uploadDryRun}
+                      onChange={(e) => setUploadDryRun(e.target.checked)}
+                      disabled={uploading}
+                    />
+                    <span>Dry Sync: {uploadDryRun ? "ON" : "OFF"}</span>
+                  </label>
+                </div>
+              </div>
+
+              {uploadError?.message ? (
+                <div className="hm-alert hm-alert-error">
+                  <strong>{uploadError.message}</strong>
+                  {uploadError.details?.missingHeaders?.length ? (
+                    <div>
+                      Missing headers: {uploadError.details.missingHeaders.join(", ")}
+                    </div>
+                  ) : null}
+                  {uploadError.details?.invalidHeaders?.length ? (
+                    <div>
+                      Invalid headers: {uploadError.details.invalidHeaders.join(", ")}
+                    </div>
+                  ) : null}
+                  {uploadError.details?.invalidRows?.length ? (
+                    <div>
+                      Row issues:{" "}
+                      {uploadError.details.invalidRows
+                        .slice(0, 5)
+                        .map((row) => `row ${row.rowNumber}: ${row.reason}`)
+                        .join("; ")}
+                    </div>
+                  ) : null}
+                  {uploadError.details?.duplicateRows?.length ? (
+                    <div>
+                      Duplicate {prettifyLabel(uploadError.details.lowestField || uploadLowestField)} values:{" "}
+                      {uploadError.details.duplicateRows
+                        .slice(0, 5)
+                        .map((row) => `${row.code} on rows ${row.rowNumbers.join(", ")}`)
+                        .join("; ")}
+                    </div>
+                  ) : null}
+                  {uploadError.details?.missingActorCodes?.length ? (
+                    <>
+                      <div>
+                        Missing actor codes:{" "}
+                        {uploadError.details.missingActorCodes
+                          .slice(0, 8)
+                          .map(
+                            (item) =>
+                              `${item.code} (${prettifyLabel(item.field)}) rows ${
+                                Array.isArray(item.rowNumbers)
+                                  ? item.rowNumbers.join(", ")
+                                  : item.rowNumber || "-"
+                              }`
+                          )
+                          .join("; ")}
+                      </div>
+                      <div className="hm-alert-actions">
+                        <button
+                          type="button"
+                          className="hm-btn hm-btn-secondary"
+                          onClick={downloadMissingActorCodes}
+                        >
+                          Download Missing Actor Codes
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {uploadResult ? (
+                <div className="hm-upload-result">
+                  <div className="hm-upload-result-head">
+                    <div>
+                      <div className="hm-inline-preview-label">
+                        {uploadResult.dryRun ? "Dry Sync Stats" : "Upload Stats"}
+                      </div>
+                      <strong>{uploadResult.message}</strong>
+                    </div>
+                    <span className="hm-mode-pill">
+                      {uploadResult.mode === "replace_flow" ? "Replace Flow" : "Upsert"}
+                    </span>
+                  </div>
+
+                  <div className="hm-upload-stats-grid">
+                    {[
+                      ["Total Rows", uploadResult.totalRows],
+                      ["Valid Rows", uploadResult.validRows],
+                      ["Existing In Flow", uploadResult.existingInFlow],
+                      ["To Insert", uploadResult.toInsert],
+                      ["To Update", uploadResult.toUpdate],
+                      ["Will Delete", uploadResult.willDelete],
+                      ["Inserted", uploadResult.inserted],
+                      ["Updated", uploadResult.updated],
+                      ["Deleted", uploadResult.deleted],
+                    ].map(([label, value]) => (
+                      <div className="summary-chip" key={label}>
+                        <span>{label}</span>
+                        <strong>{value ?? 0}</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  {uploadResult.duplicateExistingRows?.length ? (
+                    <div className="hm-alert hm-alert-warning">
+                      Existing DB has duplicate {prettifyLabel(uploadResult.lowestField)} values. First few:{" "}
+                      {uploadResult.duplicateExistingRows
+                        .slice(0, 5)
+                        .map((row) => row.code)
+                        .join(", ")}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="hm-modal-footer">
+              <button
+                className="hm-btn hm-btn-secondary"
+                onClick={closeUploadModal}
+                disabled={uploading}
+              >
+                Close
+              </button>
+
+              <button
+                className="hm-btn hm-btn-primary"
+                onClick={submitHierarchyUpload}
+                disabled={uploading || !uploadFlowName || !uploadFile}
+              >
+                {uploading
+                  ? "Checking..."
+                  : uploadDryRun
+                    ? "Run Dry Sync"
+                    : uploadMode === "replace_flow"
+                      ? "Delete & Upload"
+                      : "Upload / Upsert"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {createModalOpen && (
         <div className="hm-modal-overlay" onClick={closeCreateModal}>

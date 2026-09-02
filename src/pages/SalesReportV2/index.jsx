@@ -3,7 +3,7 @@ import config from "../../config";
 import "./style.scss";
 import PriceSegmentTable from "./priceSegmentTable";
 import axios from "axios";
-import { FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
+import { FaCheck, FaDownload, FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -17,6 +17,45 @@ const DEALER_FILTER_TYPES = [
 
 const ACTOR_POSITION_KEYS = ["smd", "zsm", "asm", "mdd", "tse", "so", "dealer"];
 const FLOW_NAME = "default_sales_flow";
+
+const formatDateInputValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDatePreset = (preset) => {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (preset === "today") {
+    const value = formatDateInputValue(today);
+    return { start: value, end: value };
+  }
+
+  if (preset === "yesterday") {
+    const value = formatDateInputValue(yesterday);
+    return { start: value, end: value };
+  }
+
+  if (preset === "this_month") {
+    return {
+      start: formatDateInputValue(new Date(today.getFullYear(), today.getMonth(), 1)),
+      end: formatDateInputValue(today),
+    };
+  }
+
+  if (preset === "last_month") {
+    return {
+      start: formatDateInputValue(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+      end: formatDateInputValue(new Date(today.getFullYear(), today.getMonth(), 0)),
+    };
+  }
+
+  return { start: "", end: "" };
+};
 
 const DETAIL_ENDPOINT_CANDIDATES = [
   "/reports/dashboard-summary/drilldown",
@@ -275,6 +314,26 @@ function SalesReportV2() {
     []
   );
 
+  const applyDatePreset = (preset) => {
+    const nextRange = getDatePreset(preset);
+    setStartDate(nextRange.start);
+    setEndDate(nextRange.end);
+  };
+
+  const handleStartDateChange = (value) => {
+    setStartDate(value);
+    if (value && endDate && value > endDate) {
+      setEndDate(value);
+    }
+  };
+
+  const handleEndDateChange = (value) => {
+    setEndDate(value);
+    if (value && startDate && value < startDate) {
+      setStartDate(value);
+    }
+  };
+
   const actorPositionOrder = useMemo(
     () => actorPositions.map((item) => item.value).filter(Boolean),
     [actorPositions]
@@ -365,6 +424,51 @@ function SalesReportV2() {
   const formatPercent = (num) => {
     if (num === null || num === undefined || isNaN(num)) return "-";
     return `${Number(num).toFixed(2)}%`;
+  };
+
+  const isTextDetailColumn = (column) =>
+    ["Product Code", "Model Code", "Product DB Status"].includes(String(column || ""));
+
+  const formatDetailCell = (value, column) => {
+    if (isTextDetailColumn(column)) return value || "-";
+    if (String(column).includes("%")) return formatPercent(value);
+    return formatValue(value, false);
+  };
+
+  const escapeCsvValue = (value) => {
+    const stringValue = value === null || value === undefined ? "" : String(value);
+    return /[",\n]/.test(stringValue)
+      ? `"${stringValue.replace(/"/g, '""')}"`
+      : stringValue;
+  };
+
+  const downloadDetailModalCsv = () => {
+    if (!detailModal.rows.length) return;
+
+    const headers = ["Product", ...detailModal.columns];
+    const csvRows = detailModal.rows.map((row) => [
+      `${row.modelCode || ""}${row.productLabel ? ` - ${row.productLabel}` : ""}`.trim(),
+      ...detailModal.columns.map((column) => row[column]),
+    ]);
+
+    const csv = [headers, ...csvRows]
+      .map((row) => row.map(escapeCsvValue).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const fileLabel = `${detailModal.title || "product-details"}-${detailModal.subtitle || "report"}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    link.href = url;
+    link.download = `${fileLabel || "product-details"}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const buildSubordinateFilters = (
@@ -1604,6 +1708,19 @@ function SalesReportV2() {
           </div>
 
           <div className="controls">
+            <button
+              type="button"
+              className="apply-action"
+              onClick={() => {
+                fetchCoreReports();
+                fetchYtdReports();
+                fetchPriceSegmentReports();
+              }}
+            >
+              <FaCheck />
+              Apply
+            </button>
+
             <button type="button" className="ghost-action" onClick={resetAllFilters}>
               <FaSyncAlt />
               Reset
@@ -1623,18 +1740,6 @@ function SalesReportV2() {
 
             <button
               type="button"
-              className="primary-action"
-              onClick={() => {
-                fetchCoreReports();
-                fetchYtdReports();
-                fetchPriceSegmentReports();
-              }}
-            >
-              Fetch Reports/Apply
-            </button>
-
-            <button
-              type="button"
               onClick={() => setCompactMode(!compactMode)}
             >
               {compactMode ? "Switch to Normal View" : "Switch to Cr/Lac View"}
@@ -1644,22 +1749,39 @@ function SalesReportV2() {
 
         <div className="sales-filter-bar">
           <div className="sales-filter-grid">
-            <div className="sales-filter-field">
-              <label>From</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-
-            <div className="sales-filter-field">
-              <label>To</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+            <div className="sales-filter-field sales-date-range">
+              <label>Date Range</label>
+              <div className="sales-date-range__box">
+                <div className="sales-date-range__inputs">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
+                    aria-label="Start date"
+                  />
+                  <span>to</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => handleEndDateChange(e.target.value)}
+                    aria-label="End date"
+                  />
+                </div>
+                <div className="sales-date-range__presets">
+                  <button type="button" onClick={() => applyDatePreset("today")}>
+                    Today
+                  </button>
+                  <button type="button" onClick={() => applyDatePreset("yesterday")}>
+                    Yesterday
+                  </button>
+                  <button type="button" onClick={() => applyDatePreset("this_month")}>
+                    MTD
+                  </button>
+                  <button type="button" onClick={() => applyDatePreset("last_month")}>
+                    Last Month
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="sales-filter-field">
@@ -2134,9 +2256,21 @@ function SalesReportV2() {
                   <h3>{detailModal.title}</h3>
                   <p>{detailModal.subtitle}</p>
                 </div>
-                <button type="button" onClick={closeDetailModal}>
-                  <FaTimes />
-                </button>
+                <div className="sales-report-modal__actions">
+                  {!detailModal.loading && !detailModal.error && detailModal.rows.length > 0 && (
+                    <button
+                      type="button"
+                      title="Download CSV"
+                      aria-label="Download CSV"
+                      onClick={downloadDetailModalCsv}
+                    >
+                      <FaDownload />
+                    </button>
+                  )}
+                  <button type="button" title="Close" aria-label="Close" onClick={closeDetailModal}>
+                    <FaTimes />
+                  </button>
+                </div>
               </div>
 
               <div className="sales-report-modal__body">
@@ -2170,9 +2304,7 @@ function SalesReportV2() {
                             </td>
                             {detailModal.columns.map((column) => (
                               <td key={column}>
-                                {String(column).includes("%")
-                                  ? formatPercent(row[column])
-                                  : formatValue(row[column], false)}
+                                {formatDetailCell(row[column], column)}
                               </td>
                             ))}
                           </tr>
