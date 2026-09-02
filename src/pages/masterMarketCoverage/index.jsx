@@ -212,6 +212,9 @@ function MasterMarketCoverage() {
   const [timelineDownloading, setTimelineDownloading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [approvalRequired, setApprovalRequired] = useState(true);
+  const [approvalSettingLoading, setApprovalSettingLoading] = useState(false);
+  const [approvalSettingSaving, setApprovalSettingSaving] = useState(false);
 
   const calendarDataByDate = useMemo(() => {
     const map = new Map();
@@ -555,6 +558,22 @@ function MasterMarketCoverage() {
     }
   };
 
+  const fetchApprovalSetting = async () => {
+    setApprovalSettingLoading(true);
+    try {
+      const res = await axios.get(`${backendUrl}/admin/beat-mapping/settings`, {
+        headers: tokenHeaders(),
+      });
+      setApprovalRequired(
+        res?.data?.settings?.routeRequestApprovalRequired !== false
+      );
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to load route approval setting.");
+    } finally {
+      setApprovalSettingLoading(false);
+    }
+  };
+
   useEffect(() => {
     const timeout = setTimeout(fetchCoverage, 250);
     return () => clearTimeout(timeout);
@@ -572,6 +591,11 @@ function MasterMarketCoverage() {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromDate, toDate, requestStatus]);
+
+  useEffect(() => {
+    fetchApprovalSetting();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setSingleDate = (dateKey) => {
     setFromDate(dateKey);
@@ -970,6 +994,36 @@ function MasterMarketCoverage() {
     }
   };
 
+  const updateApprovalSetting = async () => {
+    if (approvalSettingSaving || approvalSettingLoading) return;
+
+    const nextValue = !approvalRequired;
+    const confirmed = window.confirm(
+      nextValue
+        ? "Turn approval requirement ON? New route requests will wait for admin approval."
+        : "Turn approval requirement OFF? New route requests will be auto-approved as soon as users submit them."
+    );
+    if (!confirmed) return;
+
+    setApprovalSettingSaving(true);
+    setError("");
+    try {
+      const res = await axios.put(
+        `${backendUrl}/admin/beat-mapping/settings`,
+        { routeRequestApprovalRequired: nextValue },
+        { headers: tokenHeaders() }
+      );
+      setApprovalRequired(
+        res?.data?.settings?.routeRequestApprovalRequired !== false
+      );
+      await fetchRequests();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to update route approval setting.");
+    } finally {
+      setApprovalSettingSaving(false);
+    }
+  };
+
   const updateEmployeeScheduleStatus = async (row, nextStatus) => {
     const normalizedNextStatus = String(nextStatus || "").toLowerCase();
     const currentStatus = String(row.status || "planned").toLowerCase();
@@ -1006,6 +1060,7 @@ function MasterMarketCoverage() {
     fetchCoverage();
     fetchCalendarOverview();
     fetchRequests();
+    fetchApprovalSetting();
   };
 
   const monthLabel = calendarMonth.toLocaleDateString("en-IN", {
@@ -1025,6 +1080,21 @@ function MasterMarketCoverage() {
           </p>
         </div>
         <div className="mc-hero-actions">
+          <button
+            type="button"
+            className={`mc-approval-toggle ${approvalRequired ? "required" : "auto"}`}
+            onClick={updateApprovalSetting}
+            disabled={approvalSettingLoading || approvalSettingSaving}
+          >
+            {approvalSettingSaving || approvalSettingLoading ? (
+              <Loader2 size={16} className="spin" />
+            ) : approvalRequired ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <XCircle size={16} />
+            )}
+            {approvalRequired ? "Approval Required" : "Auto Approve"}
+          </button>
           <button type="button" onClick={refreshAll} disabled={loading || requestLoading}>
             <RefreshCw size={16} />
             Refresh
