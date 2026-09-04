@@ -1,5 +1,100 @@
 import React, { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import "./style.scss";
+
+const stockTemplateHeaders = [
+  "Stock Source",
+  "Holder Type",
+  "Holder Code",
+  "Holder Name",
+  "Holder Status",
+  "Seller Type",
+  "Seller Code",
+  "Seller Name",
+  "Seller Status",
+  "Brand",
+  "Product Category",
+  "Product Sub Category",
+  "Product Segment",
+  "Model Code",
+  "Product Code",
+  "Product Name",
+  "IMEI/Serial No",
+  "Stock Type",
+  "Stock Qty",
+  "In Transit Qty",
+  "Stock Value",
+  "Tertiary Date",
+  "Aging(In Days)",
+  "Warehouse Name",
+  "Warehouse Code",
+  "Market Name",
+  "Primary Purchase No",
+  "Primary Purchase Date",
+];
+
+const stockTemplateRows = [
+  {
+    "Stock Source": "DEALER_STOCK",
+    "Holder Type": "DEALER",
+    "Holder Code": "DLR001",
+    "Holder Name": "Sample Dealer One",
+    "Holder Status": "ACTIVE",
+    "Seller Type": "MDD",
+    "Seller Code": "MDD001",
+    "Seller Name": "Sample MDD One",
+    "Seller Status": "ACTIVE",
+    Brand: "samsung",
+    "Product Category": "SMART_PHONE",
+    "Product Sub Category": "MOBILE",
+    "Product Segment": "5G",
+    "Model Code": "F971BG",
+    "Product Code": "SM-F971BLVG",
+    "Product Name": "H8 (12/512GB)",
+    "IMEI/Serial No": "356789012345671",
+    "Stock Type": "Saleable",
+    "Stock Qty": 1,
+    "In Transit Qty": 0,
+    "Stock Value": 198999,
+    "Tertiary Date": "03/09/2026",
+    "Aging(In Days)": 12,
+    "Warehouse Name": "",
+    "Warehouse Code": "",
+    "Market Name": "Jaipur",
+    "Primary Purchase No": "",
+    "Primary Purchase Date": "",
+  },
+  {
+    "Stock Source": "MDD_STOCK",
+    "Holder Type": "MDD",
+    "Holder Code": "MDD001",
+    "Holder Name": "Sample MDD One",
+    "Holder Status": "ACTIVE",
+    "Seller Type": "SMD",
+    "Seller Code": "SMD001",
+    "Seller Name": "Sample SMD One",
+    "Seller Status": "ACTIVE",
+    Brand: "samsung",
+    "Product Category": "SMART_PHONE",
+    "Product Sub Category": "MOBILE",
+    "Product Segment": "Flagship 5G",
+    "Model Code": "F976BG",
+    "Product Code": "SM-F976BZKG",
+    "Product Name": "Q8 (12/512GB)",
+    "IMEI/Serial No": "356789012345672",
+    "Stock Type": "Saleable",
+    "Stock Qty": 1,
+    "In Transit Qty": 0,
+    "Stock Value": 218999,
+    "Tertiary Date": "03/09/2026",
+    "Aging(In Days)": 8,
+    "Warehouse Name": "Sample Warehouse",
+    "Warehouse Code": "WH001",
+    "Market Name": "Jaipur",
+    "Primary Purchase No": "PP001",
+    "Primary Purchase Date": "01/09/2026",
+  },
+];
 
 function StockUploadModal({
   open,
@@ -27,6 +122,33 @@ function StockUploadModal({
   }, [open]);
 
   const selectedFileName = useMemo(() => file?.name || "", [file]);
+
+  const downloadFormat = () => {
+    const sampleRows = stockTemplateRows.map((row) =>
+      stockTemplateHeaders.map((header) => row[header] ?? "")
+    );
+    const sheet = XLSX.utils.aoa_to_sheet([stockTemplateHeaders, ...sampleRows]);
+    const instructionSheet = XLSX.utils.aoa_to_sheet([
+      ["Upload Stock Report Format"],
+      ["Use the Upload Format sheet for data upload."],
+      ["Remove the two sample rows before uploading live data."],
+      ["Required fields: Holder Code, Holder Name, Product Code, IMEI/Serial No."],
+      ["Use Stock Source as DEALER_STOCK or MDD_STOCK. If blank, backend derives it from Holder Type."],
+      ["Dates can be entered as dd/mm/yyyy or valid Excel dates."],
+      ["The upload system reads headers from row 1 of the Upload Format sheet."],
+    ]);
+
+    sheet["!cols"] = stockTemplateHeaders.map((header) => ({
+      wch: Math.max(14, String(header).length + 3),
+    }));
+    instructionSheet["!cols"] = [{ wch: 34 }, { wch: 90 }];
+    sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "Upload Format");
+    XLSX.utils.book_append_sheet(book, instructionSheet, "Instructions");
+    XLSX.writeFile(book, "stock-upload-format-sample.xlsx");
+  };
 
   const handleUpload = async () => {
     try {
@@ -115,6 +237,15 @@ function StockUploadModal({
 
         <div className="csv-modal-body">
           <div className="csv-upload-card">
+            <button
+              type="button"
+              className="csv-format-btn"
+              onClick={downloadFormat}
+              disabled={loading}
+            >
+              Download Format
+            </button>
+
             <label className="csv-file-picker">
               <input
                 type="file"

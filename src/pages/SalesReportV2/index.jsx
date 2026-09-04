@@ -356,6 +356,7 @@ function SalesReportV2() {
   const [activationVolYtdActual, setActivationVolYtdActual] = useState(null);
   const [tertiaryValueYtdActual, setTertiaryValueYtdActual] = useState(null);
   const [tertiaryVolYtdActual, setTertiaryVolYtdActual] = useState(null);
+  const [activationYtdMatrix, setActivationYtdMatrix] = useState(null);
 
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
@@ -378,6 +379,8 @@ function SalesReportV2() {
   const [loadingTertiaryValueYtdActual, setLoadingTertiaryValueYtdActual] =
     useState(false);
   const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
+    useState(false);
+  const [loadingActivationYtdMatrix, setLoadingActivationYtdMatrix] =
     useState(false);
 
   const [loadingCoreTagRows, setLoadingCoreTagRows] = useState(false);
@@ -1028,6 +1031,7 @@ function SalesReportV2() {
     setLoadingActivationVolYtdActual(true);
     setLoadingTertiaryValueYtdActual(true);
     setLoadingTertiaryVolYtdActual(true);
+    setLoadingActivationYtdMatrix(true);
 
     try {
       const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
@@ -1048,6 +1052,7 @@ function SalesReportV2() {
             "activation_vol_ytd_actual",
             "tertiary_value_ytd_actual",
             "tertiary_vol_ytd_actual",
+            "activation_ytd_matrix",
           ],
         }),
       });
@@ -1066,6 +1071,7 @@ function SalesReportV2() {
       setActivationVolYtdActual(data.activation_vol_ytd_actual || null);
       setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
       setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
+      setActivationYtdMatrix(data.activation_ytd_matrix || null);
 
       // ❌ DO NOT merge tag_grouped here (intentionally skipped)
 
@@ -1086,6 +1092,7 @@ function SalesReportV2() {
       setLoadingActivationVolYtdActual(false);
       setLoadingTertiaryValueYtdActual(false);
       setLoadingTertiaryVolYtdActual(false);
+      setLoadingActivationYtdMatrix(false);
     }
   };
 
@@ -1460,6 +1467,98 @@ function SalesReportV2() {
               : null}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  const renderActivationYtdMatrixTable = (table, { isCurrency = false, tone = "value" } = {}) => {
+    if (!table?.columns || !Array.isArray(table?.rows)) return null;
+
+    const columns = table.columns;
+    const rows = table.rows;
+
+    return (
+      <div className={`ytd-matrix-block ytd-matrix-block--${tone}`}>
+        <div className="ytd-matrix-title">{table.title}</div>
+        <div className="report-table-wrapper ytd-matrix-scroll">
+          <table className="report-table ytd-matrix-table">
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={column.key === "category" ? "sticky-col" : ""}
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.length ? (
+                rows.map((row) => {
+                  const isTotal = String(row.category || "").toLowerCase() === "total";
+
+                  return (
+                    <tr key={row.category} className={isTotal ? "ytd-matrix-total-row" : ""}>
+                      {columns.map((column) => {
+                        const rawValue = row[column.key];
+                        const isGrowthColumn = column.type === "growth";
+                        const content =
+                          column.type === "text"
+                            ? rawValue || "-"
+                            : isGrowthColumn
+                            ? formatPercent(rawValue)
+                            : formatValue(rawValue, isCurrency);
+
+                        const className = [
+                          column.key === "category" ? "sticky-col metric-title" : "",
+                          isGrowthColumn
+                            ? Number(rawValue || 0) >= 0
+                              ? "positive"
+                              : "negative"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+
+                        return (
+                          <td key={column.key} className={className}>
+                            {content}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} className="ytd-matrix-empty">
+                    No activation YTD data for the selected filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderActivationYtdMatrixContent = (report) => {
+    if (!report) return null;
+
+    return (
+      <div className="ytd-matrix-section">
+        {renderActivationYtdMatrixTable(report.sellOutValue, {
+          isCurrency: true,
+          tone: "value",
+        })}
+        {renderActivationYtdMatrixTable(report.sellOutVolume, {
+          isCurrency: false,
+          tone: "volume",
+        })}
       </div>
     );
   };
@@ -2060,6 +2159,25 @@ function SalesReportV2() {
                 />
               </ReportCard>
             )
+          )}
+        </ReportGroup>
+
+        <ReportGroup
+          title="Activation YTD New Format"
+          subtitle="Excel-style sell-out value and volume by category"
+          tone="teal"
+          defaultOpen={true}
+        >
+          {loadingActivationYtdMatrix ? (
+            <SectionLoader title="Activation YTD New Format" tone="teal" />
+          ) : (
+            <ReportCard
+              title="Activation YTD New Format"
+              subtitle="Preview format for YTD dashboard reporting"
+              tone="teal"
+            >
+              {renderActivationYtdMatrixContent(activationYtdMatrix)}
+            </ReportCard>
           )}
         </ReportGroup>
 

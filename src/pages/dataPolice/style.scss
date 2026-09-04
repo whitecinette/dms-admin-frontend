@@ -648,3 +648,24 @@
 .stock-upload-modal {
   width: min(1150px, 96vw);
 }
+
+.stock-upload-modal .csv-format-btn {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 12px;
+
+  &:hover:not(:disabled) {
+    background: #dbeafe;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
