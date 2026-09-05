@@ -66,6 +66,17 @@ const DETAIL_ENDPOINT_CANDIDATES = [
 
 const MONTH_SHORT_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const formatWodColumnLabel = (column) => {
+  const match = String(column || "").match(/^(\d{4})-(\d{2})$/);
+  if (!match) return column;
+
+  const year = match[1].slice(-2);
+  const monthIndex = Number(match[2]) - 1;
+  const monthLabel = MONTH_SHORT_LABELS[monthIndex];
+
+  return monthLabel ? `${monthLabel}'${year}` : column;
+};
+
 const getWodTagCellValue = (row, column) => {
   if (Object.prototype.hasOwnProperty.call(row, column)) return row[column];
 
@@ -1701,7 +1712,7 @@ function SalesReportV2() {
                 <tr>
                   <th className="sticky-col">Metric</th>
                   {columns.map((col) => (
-                    <th key={col}>{col}</th>
+                    <th key={col}>{formatWodColumnLabel(col)}</th>
                   ))}
                 </tr>
               </thead>
@@ -1753,7 +1764,7 @@ function SalesReportV2() {
                   <tr>
                     <th className="sticky-col">Metric</th>
                     {columns.map((col) => (
-                      <th key={col}>{col}</th>
+                      <th key={col}>{formatWodColumnLabel(col)}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1777,7 +1788,7 @@ function SalesReportV2() {
                   <tr>
                     <th className="sticky-col">Metric</th>
                     {columns.map((col) => (
-                      <th key={col}>{col}</th>
+                      <th key={col}>{formatWodColumnLabel(col)}</th>
                     ))}
                   </tr>
                 </thead>
