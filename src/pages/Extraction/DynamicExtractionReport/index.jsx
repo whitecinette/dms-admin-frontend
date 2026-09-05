@@ -41,6 +41,35 @@ const DEALER_FILTER_TYPES = [
   { key: "top_outlet", label: "Top Outlet" },
 ];
 
+const HEATMAP_STOPS = [
+  [248, 96, 103],
+  [250, 124, 109],
+  [255, 176, 121],
+  [255, 218, 130],
+  [255, 241, 132],
+  [195, 223, 130],
+  [132, 199, 124],
+  [96, 189, 125],
+];
+
+const getRedToGreenHeatmapColor = (normalized) => {
+  const clamped = Math.max(0, Math.min(1, normalized));
+  const scaled = clamped * (HEATMAP_STOPS.length - 1);
+  const index = Math.min(Math.floor(scaled), HEATMAP_STOPS.length - 2);
+  const t = scaled - index;
+  const [r1, g1, b1] = HEATMAP_STOPS[index];
+  const [r2, g2, b2] = HEATMAP_STOPS[index + 1];
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return {
+    background: `rgb(${r}, ${g}, ${b})`,
+    text: luminance < 0.58 ? "#ffffff" : "#1f2937",
+  };
+};
+
 const parseNumericValue = (value) => {
   if (typeof value === "number") return value;
   if (typeof value !== "string") return NaN;
@@ -114,38 +143,7 @@ const getSmartHeatmapColor = (value, stats) => {
   // clamp
   normalized = Math.max(0, Math.min(1, normalized));
 
-  let r, g, b;
-
-  // blue -> cyan -> green -> yellow -> red
-  if (normalized <= 0.25) {
-    const t = normalized / 0.25;
-    r = Math.round(232 + (103 - 232) * t);
-    g = Math.round(244 + (232 - 244) * t);
-    b = Math.round(253 + (249 - 253) * t);
-  } else if (normalized <= 0.5) {
-    const t = (normalized - 0.25) / 0.25;
-    r = Math.round(103 + (110 - 103) * t);
-    g = Math.round(232 + (231 - 232) * t);
-    b = Math.round(249 + (183 - 249) * t);
-  } else if (normalized <= 0.75) {
-    const t = (normalized - 0.5) / 0.25;
-    r = Math.round(110 + (253 - 110) * t);
-    g = Math.round(231 + (224 - 231) * t);
-    b = Math.round(183 + (71 - 183) * t);
-  } else {
-    const t = (normalized - 0.75) / 0.25;
-    r = Math.round(253 + (239 - 253) * t);
-    g = Math.round(224 + (68 - 224) * t);
-    b = Math.round(71 + (68 - 71) * t);
-  }
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  const textColor = luminance < 0.58 ? "#ffffff" : "#1f2937";
-
-  return {
-    background: `rgb(${r}, ${g}, ${b})`,
-    text: textColor,
-  };
+  return getRedToGreenHeatmapColor(normalized);
 };
 
 const formatNormalNumber = (value) => {
@@ -205,27 +203,7 @@ const getRedShadeColor = (value, rowMin, rowMax) => {
 
   const normalized = (numValue - rowMin) / (rowMax - rowMin);
 
-  let r, g, b;
-
-  if (normalized < 0.5) {
-    const factor = normalized * 2;
-    r = Math.floor(255);
-    g = Math.floor(229 - (229 - 153) * factor);
-    b = Math.floor(204 - (204 - 51) * factor);
-  } else {
-    const factor = (normalized - 0.5) * 2;
-    r = Math.floor(255 - (255 - 204) * factor);
-    g = Math.floor(153 - (153 - 85) * factor);
-    b = Math.floor(51 - 51 * factor);
-  }
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  const textColor = luminance < 0.5 ? "#ffffff" : "#333333";
-
-  return {
-    background: `rgb(${r},${g},${b})`,
-    text: textColor,
-  };
+  return getRedToGreenHeatmapColor(normalized);
 };
 
 const calculateRowHeatmapRange = (row, header) => {

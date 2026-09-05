@@ -22,6 +22,7 @@ import AddUser from "./pages/addUser";
 import Attendance from "./pages/attendance";
 import ViewAttendance from "./pages/viewAttendance";
 import LatestAttendance from "./pages/latestAttendance";
+import HrConfigsPage from "./pages/hrConfigs";
 import Hierarchy from "./pages/hierarchy";
 import AlphaMessages from "./pages/alphaMessages";
 import AdminPage from "./pages/admin";
@@ -108,6 +109,7 @@ function App() {
               path="/attendance/allAttendance"
               element={<LatestAttendance />}
             />
+            <Route path="/hr-configs" element={<HrConfigsPage />} />
             <Route path="/hierarchy" element={<Hierarchy />} />
             <Route path="/alphaMessages" element={<AlphaMessages />} />
             <Route path="/admin" element={<AdminPage />} />

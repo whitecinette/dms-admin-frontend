@@ -180,6 +180,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
           { name: "Attendance", to: "/attendance", icon: <FaUserCheck /> },
           { name: "Attendance Matrix", to: "/attendance-matrix", icon: <FaCalendarAlt /> },
           { name: "Leave Application", to: "/leaveApplication", icon: <RiFilePaper2Line /> },
+          { name: "HR Configs", to: "/hr-configs", icon: <MdOutlineSettings /> },
           { name: "Payroll", to: "/payroll", icon: <FaMoneyCheckAlt /> },
           { name: "Travel Expenses", to: "/travelExpenses", icon: <FaPlane /> },
           { name: "Expense Matrix", to: "/expense", icon: <TbReportMoney /> },

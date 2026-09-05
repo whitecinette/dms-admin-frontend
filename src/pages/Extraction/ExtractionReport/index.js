@@ -8,6 +8,34 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import DealerShopInsights from "./DealerShopInsights";
 
 const backend_url = config.backend_url;
+const HEATMAP_STOPS = [
+  [248, 96, 103],
+  [250, 124, 109],
+  [255, 176, 121],
+  [255, 218, 130],
+  [255, 241, 132],
+  [195, 223, 130],
+  [132, 199, 124],
+  [96, 189, 125],
+];
+
+const getRedToGreenHeatmapColor = (normalized) => {
+  const clamped = Math.max(0, Math.min(1, normalized));
+  const scaled = clamped * (HEATMAP_STOPS.length - 1);
+  const index = Math.min(Math.floor(scaled), HEATMAP_STOPS.length - 2);
+  const t = scaled - index;
+  const [r1, g1, b1] = HEATMAP_STOPS[index];
+  const [r2, g2, b2] = HEATMAP_STOPS[index + 1];
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return {
+    background: `rgb(${r}, ${g}, ${b})`,
+    text: luminance < 0.58 ? "#ffffff" : "#1f2937",
+  };
+};
 
 function ExtractionReport() {
   const today = new Date();
@@ -280,27 +308,7 @@ function ExtractionReport() {
 
     const normalized = (numValue - rowMin) / (rowMax - rowMin);
 
-    let r, g, b;
-
-    if (normalized < 0.5) {
-      const factor = normalized * 2;
-      r = Math.floor(255);
-      g = Math.floor(229 - (229 - 153) * factor);
-      b = Math.floor(204 - (204 - 51) * factor);
-    } else {
-      const factor = (normalized - 0.5) * 2;
-      r = Math.floor(255 - (255 - 204) * factor);
-      g = Math.floor(153 - (153 - 85) * factor);
-      b = Math.floor(51 - 51 * factor);
-    }
-
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    const textColor = luminance < 0.5 ? "#ffffff" : "#333333";
-
-    return {
-      background: `rgb(${r},${g},${b})`,
-      text: textColor,
-    };
+    return getRedToGreenHeatmapColor(normalized);
   };
 
   const calculateRowHeatmapRange = (row, header) => {
