@@ -65,8 +65,26 @@ const DETAIL_ENDPOINT_CANDIDATES = [
 ];
 
 const MONTH_SHORT_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const EXPECTED_ACHIEVEMENT_LABEL = "%Exp Ach";
+
+const isExpectedAchievementColumn = (column) =>
+  ["wfm", "wmf"].includes(String(column || "").trim().toLowerCase());
+
+const isExpAchievementColumn = (column) =>
+  ["expach", "exp.ach"].includes(String(column || "").trim().toLowerCase());
+
+const isPercentMetricColumn = (column) =>
+  String(column || "").includes("%") || isExpectedAchievementColumn(column);
+
+const formatSalesReportColumnLabel = (column) => {
+  if (isExpectedAchievementColumn(column)) return EXPECTED_ACHIEVEMENT_LABEL;
+  if (isExpAchievementColumn(column)) return "Exp Ach";
+  return column;
+};
 
 const formatWodColumnLabel = (column) => {
+  if (isExpectedAchievementColumn(column)) return EXPECTED_ACHIEVEMENT_LABEL;
+
   const match = String(column || "").match(/^(\d{4})-(\d{2})$/);
   if (!match) return column;
 
@@ -445,7 +463,7 @@ function SalesReportV2() {
 
   const formatDetailCell = (value, column) => {
     if (isTextDetailColumn(column)) return value || "-";
-    if (String(column).includes("%")) return formatPercent(value);
+    if (isPercentMetricColumn(column)) return formatPercent(value);
     return formatValue(value, false);
   };
 
@@ -459,7 +477,7 @@ function SalesReportV2() {
   const downloadDetailModalCsv = () => {
     if (!detailModal.rows.length) return;
 
-    const headers = ["Product", ...detailModal.columns];
+    const headers = ["Product", ...detailModal.columns.map(formatSalesReportColumnLabel)];
     const csvRows = detailModal.rows.map((row) => [
       `${row.modelCode || ""}${row.productLabel ? ` - ${row.productLabel}` : ""}`.trim(),
       ...detailModal.columns.map((column) => row[column]),
@@ -1328,7 +1346,7 @@ function SalesReportV2() {
             <tr>
               <th>Metric</th>
               {columns.map((col) => (
-                <th key={col}>{col}</th>
+                <th key={col}>{formatSalesReportColumnLabel(col)}</th>
               ))}
             </tr>
           </thead>
@@ -1349,7 +1367,7 @@ function SalesReportV2() {
                         : ""
                     }
                   >
-                    {key.includes("%")
+                    {isPercentMetricColumn(key)
                       ? `${Number(val || 0).toFixed(2)}%`
                       : formatValue(val, true)}
                   </td>
@@ -1372,7 +1390,7 @@ function SalesReportV2() {
                         : ""
                     }
                   >
-                    {key.includes("%")
+                    {isPercentMetricColumn(key)
                       ? `${Number(val || 0).toFixed(2)}%`
                       : formatValue(val, false)}
                   </td>
@@ -1386,7 +1404,7 @@ function SalesReportV2() {
               metricColumns: columns,
               firstColumnLabel: "Tag Volume",
               formatCell: (value, column) =>
-                String(column).includes("%")
+                isPercentMetricColumn(column)
                   ? formatPercent(value)
                   : formatValue(value, false),
             })}
@@ -1421,7 +1439,7 @@ function SalesReportV2() {
           <thead>
             <tr>
               {columns.map((c) => (
-                <th key={c}>{c}</th>
+                <th key={c}>{formatSalesReportColumnLabel(c)}</th>
               ))}
             </tr>
           </thead>
@@ -1468,7 +1486,7 @@ function SalesReportV2() {
                     metricColumns: columns.slice(1),
                     firstColumnLabel: "Tag Volume",
                     formatCell: (value, column) =>
-                      String(column).includes("%")
+                      isPercentMetricColumn(column)
                         ? formatPercent(value)
                         : formatValue(value, false),
                   })
@@ -1584,7 +1602,12 @@ function SalesReportV2() {
   };
 
   const getComparableColumns = (columns) => {
-    return columns.filter((col) => col !== "G/D%" && col !== "Exp.Ach");
+    return columns.filter(
+      (col) =>
+        col !== "G/D%" &&
+        !isExpAchievementColumn(col) &&
+        !isExpectedAchievementColumn(col)
+    );
   };
 
   const getRowScaleStats = (rowData, columns) => {
@@ -1666,7 +1689,7 @@ function SalesReportV2() {
     if (!isNumeric(value)) return {};
 
     if (col === "G/D%") return getGrowthStyle(value);
-    if (col === "Exp.Ach") return getExpAchStyle();
+    if (isExpAchievementColumn(col) || isExpectedAchievementColumn(col)) return getExpAchStyle();
 
     const stats = getRowScaleStats(rowData, columns);
     return getNeutralIntensityStyle(value, stats);
@@ -1680,11 +1703,13 @@ function SalesReportV2() {
           <td
             key={col}
             className={`wod-value-cell ${col === "G/D%" ? "is-growth" : ""} ${
-              col === "Exp.Ach" ? "is-exp" : ""
+              isExpAchievementColumn(col) || isExpectedAchievementColumn(col) ? "is-exp" : ""
             }`}
             style={getCellStyle(rowData?.[col], col, rowData, columns)}
           >
-            {formatValue(rowData?.[col])}
+            {isPercentMetricColumn(col)
+              ? formatPercent(rowData?.[col])
+              : formatValue(rowData?.[col])}
           </td>
         ))}
       </tr>
@@ -1727,7 +1752,7 @@ function SalesReportV2() {
                   sourceKey: "sellInWOD",
                   getCellValue: getWodTagCellValue,
                   formatCell: (value, column) =>
-                    String(column).includes("%")
+                    isPercentMetricColumn(column)
                       ? formatPercent(value)
                       : formatValue(value, false),
                 })}
@@ -1743,7 +1768,7 @@ function SalesReportV2() {
                   sourceKey: "sellOutWOD",
                   getCellValue: getWodTagCellValue,
                   formatCell: (value, column) =>
-                    String(column).includes("%")
+                    isPercentMetricColumn(column)
                       ? formatPercent(value)
                       : formatValue(value, false),
                 })}
@@ -2418,7 +2443,7 @@ function SalesReportV2() {
                         <tr>
                           <th>Product</th>
                           {detailModal.columns.map((column) => (
-                            <th key={column}>{column}</th>
+                            <th key={column}>{formatSalesReportColumnLabel(column)}</th>
                           ))}
                         </tr>
                       </thead>

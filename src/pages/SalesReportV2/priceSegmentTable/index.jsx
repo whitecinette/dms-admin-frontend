@@ -20,6 +20,8 @@ const getGrowthStyle = (gd) => {
   return { color: n >= 0 ? "green" : "red", fontWeight: 600 };
 };
 
+const getExpectedAchievement = (row) => row?.WFM ?? row?.WMF ?? 0;
+
 const PriceSegmentTable = ({ data, title, formatValue }) => {
   // ✅ hooks must be unconditional
   const monthKeys = useMemo(() => {
@@ -27,7 +29,7 @@ const PriceSegmentTable = ({ data, title, formatValue }) => {
     const volume = data?.volume || [];
     const sample = value?.[0] || volume?.[0] || {};
 
-    const fixed = new Set(["Seg", "MTD", "LMTD", "FTD", "G/D%", "Exp.Ach", "WMF"]);
+    const fixed = new Set(["Seg", "MTD", "LMTD", "FTD", "G/D%", "Exp.Ach", "WMF", "WFM"]);
     return Object.keys(sample).filter((k) => !fixed.has(k)).slice(0, 3);
   }, [data]);
 
@@ -58,8 +60,8 @@ const PriceSegmentTable = ({ data, title, formatValue }) => {
             <th>LMTD</th>
             <th>FTD</th>
             <th>G/D%</th>
-            <th>Exp.Ach</th>
-            <th>WMF</th>
+            <th>Exp Ach</th>
+            <th>%Exp Ach</th>
           </tr>
         </thead>
 
@@ -88,7 +90,7 @@ const PriceSegmentTable = ({ data, title, formatValue }) => {
                 </td>
 
                 <td>{renderNum(row["Exp.Ach"], isCurrency)}</td>
-                <td>{renderNum(row.WMF, isCurrency)}</td>
+                <td>{formatPercent(getExpectedAchievement(row))}</td>
               </tr>
             );
           })}
