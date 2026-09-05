@@ -76,6 +76,15 @@ const isExpAchievementColumn = (column) =>
 const isPercentMetricColumn = (column) =>
   String(column || "").includes("%") || isExpectedAchievementColumn(column);
 
+const isGrowthColumn = (column) => String(column || "").trim() === "G/D%";
+
+const getGrowthTextClass = (value, column = "G/D%") => {
+  if (!isGrowthColumn(column)) return "";
+  const num = Number(value);
+  if (!Number.isFinite(num) || num === 0) return "neutral-growth";
+  return num > 0 ? "positive" : "negative";
+};
+
 const formatSalesReportColumnLabel = (column) => {
   if (isExpectedAchievementColumn(column)) return EXPECTED_ACHIEVEMENT_LABEL;
   if (isExpAchievementColumn(column)) return "Exp Ach";
@@ -216,6 +225,37 @@ const OptionShimmerGrid = ({ count = 6 }) => (
 
 const isActorTab = (tabKey) => ACTOR_POSITION_KEYS.includes(tabKey);
 
+const DETAIL_COLUMN_EXCLUDE = new Set([
+  "Product Code",
+  "Model Code",
+  "Product DB Status",
+]);
+
+const isMonthMetricColumn = (column) =>
+  MONTH_SHORT_LABELS.includes(String(column || "").trim()) ||
+  /^\d{4}-\d{2}$/.test(String(column || "").trim());
+
+const toDetailNumber = (value) => {
+  const raw = String(value ?? "").replace(/,/g, "").trim().toLowerCase();
+  const parsed = Number(raw.replace(/cr|lac|lakh|k|%/g, "").trim());
+  if (!Number.isFinite(parsed)) return 0;
+  if (raw.includes("cr")) return parsed * 10000000;
+  if (raw.includes("lac") || raw.includes("lakh")) return parsed * 100000;
+  if (raw.includes("k")) return parsed * 1000;
+  return parsed;
+};
+
+const filterDetailColumns = (columns = []) =>
+  columns.filter((column) => !DETAIL_COLUMN_EXCLUDE.has(String(column || "").trim()));
+
+const getDetailSortAverage = (row, columns = []) => {
+  const monthColumns = columns.filter(isMonthMetricColumn);
+  if (!monthColumns.length) return 0;
+
+  const total = monthColumns.reduce((sum, column) => sum + toDetailNumber(row[column]), 0);
+  return total / monthColumns.length;
+};
+
 const normalizeFilterOption = (item) => {
   if (!item) return null;
   if (typeof item === "string") return { label: item, value: item };
@@ -266,7 +306,12 @@ const normalizeProductDetailRows = (rawRows = [], metricColumns = []) =>
 
       return normalized;
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => {
+      const avgDiff = getDetailSortAverage(b, metricColumns) - getDetailSortAverage(a, metricColumns);
+      if (avgDiff !== 0) return avgDiff;
+      return String(a.productLabel || "").localeCompare(String(b.productLabel || ""));
+    });
 
 const normalizeGroupedTagRows = (groupedReport) => {
   if (!groupedReport?.columns || !Array.isArray(groupedReport?.rows)) {
@@ -477,9 +522,9 @@ function SalesReportV2() {
   const downloadDetailModalCsv = () => {
     if (!detailModal.rows.length) return;
 
-    const headers = ["Product", ...detailModal.columns.map(formatSalesReportColumnLabel)];
+    const headers = ["Product Name / Model Code", ...detailModal.columns.map(formatSalesReportColumnLabel)];
     const csvRows = detailModal.rows.map((row) => [
-      `${row.modelCode || ""}${row.productLabel ? ` - ${row.productLabel}` : ""}`.trim(),
+      `${row.productLabel || ""}${row.modelCode ? ` - ${row.modelCode}` : ""}`.trim(),
       ...detailModal.columns.map((column) => row[column]),
     ]);
 
@@ -827,14 +872,17 @@ function SalesReportV2() {
       result;
 
     if (Array.isArray(payload)) {
+      const columns = filterDetailColumns(metricColumns);
       return {
-        columns: metricColumns,
-        rows: normalizeProductDetailRows(payload, metricColumns),
+        columns,
+        rows: normalizeProductDetailRows(payload, columns),
       };
     }
 
     if (payload?.headers && Array.isArray(payload?.data)) {
-      const columns = payload.headers.filter((header) => !productIdentityColumns.has(header));
+      const columns = filterDetailColumns(
+        payload.headers.filter((header) => !productIdentityColumns.has(header))
+      );
       return {
         columns,
         rows: normalizeProductDetailRows(payload.data, columns),
@@ -842,7 +890,9 @@ function SalesReportV2() {
     }
 
     if (payload?.columns && Array.isArray(payload?.rows)) {
-      const columns = payload.columns.filter((column) => !productIdentityColumns.has(column));
+      const columns = filterDetailColumns(
+        payload.columns.filter((column) => !productIdentityColumns.has(column))
+      );
       return {
         columns,
         rows: normalizeProductDetailRows(payload.rows, columns),
@@ -850,9 +900,10 @@ function SalesReportV2() {
     }
 
     if (Array.isArray(payload?.products)) {
+      const columns = filterDetailColumns(metricColumns);
       return {
-        columns: metricColumns,
-        rows: normalizeProductDetailRows(payload.products, metricColumns),
+        columns,
+        rows: normalizeProductDetailRows(payload.products, columns),
       };
     }
 
@@ -1302,7 +1353,12 @@ function SalesReportV2() {
             </div>
           </td>
           {resolvedColumns.map((column) => (
-            <td key={column}>{formatCell(getCellValue(row, column), column)}</td>
+            <td
+              key={column}
+              className={getGrowthTextClass(getCellValue(row, column), column)}
+            >
+              {formatCell(getCellValue(row, column), column)}
+            </td>
           ))}
         </tr>
       );
@@ -1359,13 +1415,7 @@ function SalesReportV2() {
                 return (
                   <td
                     key={key}
-                    className={
-                      key === "G/D%"
-                        ? Number(val || 0) >= 0
-                          ? "positive"
-                          : "negative"
-                        : ""
-                    }
+                    className={getGrowthTextClass(val, key)}
                   >
                     {isPercentMetricColumn(key)
                       ? `${Number(val || 0).toFixed(2)}%`
@@ -1382,13 +1432,7 @@ function SalesReportV2() {
                 return (
                   <td
                     key={key}
-                    className={
-                      key === "G/D%"
-                        ? Number(val || 0) >= 0
-                          ? "positive"
-                          : "negative"
-                        : ""
-                    }
+                    className={getGrowthTextClass(val, key)}
                   >
                     {isPercentMetricColumn(key)
                       ? `${Number(val || 0).toFixed(2)}%`
@@ -1462,11 +1506,7 @@ function SalesReportV2() {
                     else cell = formatValue(v, isCurrency);
 
                     const cls =
-                      isGdRow && col !== "Year"
-                        ? Number(v || 0) >= 0
-                          ? "positive"
-                          : "negative"
-                        : "";
+                      isGdRow && col !== "Year" ? getGrowthTextClass(v) : "";
 
                     return (
                       <td key={col} className={cls}>
@@ -1533,21 +1573,17 @@ function SalesReportV2() {
                     <tr key={row.category} className={isTotal ? "ytd-matrix-total-row" : ""}>
                       {columns.map((column) => {
                         const rawValue = row[column.key];
-                        const isGrowthColumn = column.type === "growth";
+                        const isGrowthMetric = column.type === "growth";
                         const content =
                           column.type === "text"
                             ? rawValue || "-"
-                            : isGrowthColumn
+                            : isGrowthMetric
                             ? formatPercent(rawValue)
                             : formatValue(rawValue, isCurrency);
 
                         const className = [
                           column.key === "category" ? "sticky-col metric-title" : "",
-                          isGrowthColumn
-                            ? Number(rawValue || 0) >= 0
-                              ? "positive"
-                              : "negative"
-                            : "",
+                          isGrowthMetric ? getGrowthTextClass(rawValue) : "",
                         ]
                           .filter(Boolean)
                           .join(" ");
@@ -2452,12 +2488,15 @@ function SalesReportV2() {
                           <tr key={`${row.modelCode}-${index}`}>
                             <td className="metric-title">
                               <div className="product-cell">
-                                <span>{row.modelCode || "-"}</span>
-                                <small>{row.productLabel || "-"}</small>
+                                <span>{row.productLabel || "-"}</span>
+                                <small>{row.modelCode || "-"}</small>
                               </div>
                             </td>
                             {detailModal.columns.map((column) => (
-                              <td key={column}>
+                              <td
+                                key={column}
+                                className={getGrowthTextClass(row[column], column)}
+                              >
                                 {formatDetailCell(row[column], column)}
                               </td>
                             ))}

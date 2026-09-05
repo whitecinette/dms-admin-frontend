@@ -752,6 +752,11 @@
       color: #c62828;
       font-weight: 700;
     }
+
+    .neutral-growth {
+      color: #667085;
+      font-weight: 700;
+    }
   }
 }
 
@@ -846,6 +851,24 @@
     color: #667085;
     font-size: 12px;
     font-weight: 500;
+  }
+}
+
+.report-table--modal {
+  .product-cell {
+    min-width: 170px;
+
+    span {
+      color: #1d4ed8;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    small {
+      color: #475467;
+      font-size: 11px;
+      letter-spacing: 0;
+    }
   }
 }
 
@@ -1117,6 +1140,11 @@
 
   .negative {
     color: #b42318;
+    font-weight: 800;
+  }
+
+  .neutral-growth {
+    color: #667085;
     font-weight: 800;
   }
 }
