@@ -61,6 +61,8 @@ import HierarchyManagerPage from "./pages/hierarchyManagerPage";
 import ActorDashboard from "./pages/actorDashboard";
 import DealerShopProfilesPage from "./pages/dealerShopProfiles";
 import MasterMarketCoverage from "./pages/masterMarketCoverage";
+import SecurityAlertsPage from "./pages/securityAlerts";
+import AppConfigsPage from "./pages/appConfigs";
 
 
 
@@ -154,6 +156,8 @@ function App() {
             <Route path="/hierarchy-manager" element={<HierarchyManagerPage /> } />
             <Route path="/actor-dashboard" element={<ActorDashboard /> } />
             <Route path="/dealer-shop-profiles" element={<DealerShopProfilesPage /> } />
+            <Route path="/security-alerts" element={<SecurityAlertsPage /> } />
+            <Route path="/app-configs" element={<AppConfigsPage /> } />
 
             
           </Route>

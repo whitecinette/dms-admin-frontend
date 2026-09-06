@@ -248,6 +248,12 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
           { name: "Hierarchy", to: "/hierarchy", icon: <TbHierarchy3 /> },
           { name: "Actor Type Hierarchy", to: "/actorTypeHierarchy", icon: <PiTreeStructureFill /> },
           { name: "Add User", to: "/addUser", icon: <MdManageAccounts /> },
+          ...(role === "super_admin"
+            ? [
+                { name: "App Configs", to: "/app-configs", icon: <MdOutlineSettings /> },
+                { name: "Security Alerts", to: "/security-alerts", icon: <RiShieldCheckLine /> },
+              ]
+            : []),
         ],
       },
 
