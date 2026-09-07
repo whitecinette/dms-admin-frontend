@@ -235,14 +235,24 @@ const isMonthMetricColumn = (column) =>
   MONTH_SHORT_LABELS.includes(String(column || "").trim()) ||
   /^\d{4}-\d{2}$/.test(String(column || "").trim());
 
-const toDetailNumber = (value) => {
-  const raw = String(value ?? "").replace(/,/g, "").trim().toLowerCase();
+const parseNumericValue = (value) => {
+  if (typeof value === "number") return value;
+  const raw = String(value ?? "")
+    .replace(/₹/g, "")
+    .replace(/,/g, "")
+    .trim()
+    .toLowerCase();
   const parsed = Number(raw.replace(/cr|lac|lakh|k|%/g, "").trim());
-  if (!Number.isFinite(parsed)) return 0;
+  if (!Number.isFinite(parsed)) return NaN;
   if (raw.includes("cr")) return parsed * 10000000;
   if (raw.includes("lac") || raw.includes("lakh")) return parsed * 100000;
   if (raw.includes("k")) return parsed * 1000;
   return parsed;
+};
+
+const toDetailNumber = (value) => {
+  const parsed = parseNumericValue(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const filterDetailColumns = (columns = []) =>
@@ -461,22 +471,21 @@ function SalesReportV2() {
   const [loadingYtdTagRows, setLoadingYtdTagRows] = useState(false);
 
   const formatCompact = (num, isCurrency = false) => {
-    if (num === null || num === undefined || isNaN(num)) return "-";
+    if (num === null || num === undefined) return "-";
 
-    const n = Number(num);
+    const n = parseNumericValue(num);
+    if (Number.isNaN(n)) return "-";
     const isNegative = n < 0;
     const abs = Math.abs(n);
 
     let formatted;
 
-    if (abs >= 10000000) {
+    if (isCurrency) {
       formatted = (abs / 10000000).toFixed(2).replace(/\.00$/, "") + " Cr";
-    } else if (abs >= 100000) {
-      formatted = (abs / 100000).toFixed(2).replace(/\.00$/, "") + " Lac";
-    } else if (abs >= 1000) {
+    } else if (abs > 0) {
       formatted = (abs / 1000).toFixed(2).replace(/\.00$/, "") + " K";
     } else {
-      formatted = abs.toLocaleString("en-IN");
+      formatted = "0 K";
     }
 
     if (isCurrency) return (isNegative ? "-₹ " : "₹ ") + formatted;
@@ -484,9 +493,10 @@ function SalesReportV2() {
   };
 
   const formatNormal = (num, isCurrency = false) => {
-    if (num === null || num === undefined || isNaN(num)) return "-";
+    if (num === null || num === undefined) return "-";
 
-    const n = Number(num);
+    const n = parseNumericValue(num);
+    if (Number.isNaN(n)) return "-";
     const formatted = Math.abs(n).toLocaleString("en-IN", {
       maximumFractionDigits: 2,
     });
@@ -1913,7 +1923,7 @@ function SalesReportV2() {
               type="button"
               onClick={() => setCompactMode(!compactMode)}
             >
-              {compactMode ? "Switch to Normal View" : "Switch to Cr/Lac View"}
+              {compactMode ? "Switch to Normal View" : "Switch to Cr/K View"}
             </button>
           </div>
         </div>

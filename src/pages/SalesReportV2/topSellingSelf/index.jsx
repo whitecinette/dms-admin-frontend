@@ -53,7 +53,20 @@ const getAuthHeader = () => {
   return { Authorization: raw.startsWith("Bearer ") ? raw : `Bearer ${raw}` };
 };
 
-const safeNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+const safeNum = (v) => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const raw = String(v ?? "")
+    .replace(/₹/g, "")
+    .replace(/,/g, "")
+    .trim()
+    .toLowerCase();
+  const parsed = Number(raw.replace(/cr|lac|lakh|k|%/g, "").trim());
+  if (!Number.isFinite(parsed)) return 0;
+  if (raw.includes("cr")) return parsed * 10000000;
+  if (raw.includes("lac") || raw.includes("lakh")) return parsed * 100000;
+  if (raw.includes("k")) return parsed * 1000;
+  return parsed;
+};
 
 const formatNum = (v) => safeNum(v).toLocaleString("en-IN");
 
@@ -69,10 +82,7 @@ const formatMoneyNormal = (v) => `₹${safeNum(v).toLocaleString("en-IN")}`;
 
 const formatMoneyCompact = (v) => {
   const n = safeNum(v);
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(2)} Lac`;
-  if (n >= 1000) return `₹${(n / 1000).toFixed(2)} K`;
-  return `₹${n.toLocaleString("en-IN")}`;
+  return `₹${(n / 10000000).toFixed(2)} Cr`;
 };
 
 const pickFirst = (obj, keys = [], fallback = 0) => {
@@ -1339,7 +1349,7 @@ const toggleSelection = (type, item) => {
               className={`tss-toggle-btn ${moneyView === "compact" ? "active" : ""}`}
               onClick={() => setMoneyView("compact")}
             >
-              Cr/Lac View
+              Cr/K View
             </button>
           </div>
 
