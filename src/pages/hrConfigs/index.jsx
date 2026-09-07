@@ -16,6 +16,11 @@ const DEFAULT_CONFIG = {
     enabled: false,
     afterTime: "",
   },
+  marketCoverage: {
+    manualDealerSelectionEnabled: true,
+    mddRadiusFilterEnabled: true,
+    mddRadiusKm: 50,
+  },
 };
 
 const timeToMinutes = (value) => {
@@ -44,6 +49,13 @@ function HrConfigsPage() {
     absentAfter: {
       enabled: data.absentAfter?.enabled === true,
       afterTime: data.absentAfter?.afterTime || "",
+    },
+    marketCoverage: {
+      manualDealerSelectionEnabled:
+        data.marketCoverage?.manualDealerSelectionEnabled !== false,
+      mddRadiusFilterEnabled:
+        data.marketCoverage?.mddRadiusFilterEnabled !== false,
+      mddRadiusKm: data.marketCoverage?.mddRadiusKm || 50,
     },
   });
 
@@ -100,6 +112,12 @@ function HrConfigsPage() {
     ) {
       return "Absent cutoff must be later than half-day cutoff.";
     }
+    if (form.marketCoverage?.mddRadiusFilterEnabled !== false) {
+      const radius = Number(form.marketCoverage?.mddRadiusKm);
+      if (!Number.isFinite(radius) || radius <= 0) {
+        return "MDD radius must be greater than 0 km.";
+      }
+    }
 
     return "";
   };
@@ -122,6 +140,13 @@ function HrConfigsPage() {
         absentAfter: {
           enabled: !!form.absentAfter.enabled,
           afterTime: form.absentAfter.enabled ? form.absentAfter.afterTime : null,
+        },
+        marketCoverage: {
+          manualDealerSelectionEnabled:
+            form.marketCoverage?.manualDealerSelectionEnabled !== false,
+          mddRadiusFilterEnabled:
+            form.marketCoverage?.mddRadiusFilterEnabled !== false,
+          mddRadiusKm: Number(form.marketCoverage?.mddRadiusKm || 50),
         },
       };
 
@@ -217,6 +242,94 @@ function HrConfigsPage() {
               }
             />
           </label>
+        </section>
+
+        <section className="hr-config-rule-card">
+          <div className="rule-title-row">
+            <div>
+              <h3>Manual Dealer Selection</h3>
+              <p>Allow individual dealer/MDD picking in market coverage</p>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={
+                  form.marketCoverage?.manualDealerSelectionEnabled !== false
+                }
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    marketCoverage: {
+                      ...prev.marketCoverage,
+                      manualDealerSelectionEnabled: e.target.checked,
+                    },
+                  }))
+                }
+              />
+              <span />
+            </label>
+          </div>
+
+          <div className="config-note">
+            {form.marketCoverage?.manualDealerSelectionEnabled === false
+              ? "Off: teams must filter by zone, district, taluka, or town and select the full shown category."
+              : "On: teams can choose individual dealers/MDDs or select shown in bulk."}
+          </div>
+        </section>
+
+        <section className="hr-config-rule-card">
+          <div className="rule-title-row">
+            <div>
+              <h3>MDD Radius Preference</h3>
+              <p>Prefer MDD attendance points near the user</p>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={
+                  form.marketCoverage?.mddRadiusFilterEnabled !== false
+                }
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    marketCoverage: {
+                      ...prev.marketCoverage,
+                      mddRadiusFilterEnabled: e.target.checked,
+                    },
+                  }))
+                }
+              />
+              <span />
+            </label>
+          </div>
+
+          <label className="time-field">
+            <span>Radius in km</span>
+            <input
+              type="number"
+              min="1"
+              step="0.5"
+              value={form.marketCoverage?.mddRadiusKm ?? 50}
+              disabled={form.marketCoverage?.mddRadiusFilterEnabled === false}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  marketCoverage: {
+                    ...prev.marketCoverage,
+                    mddRadiusKm: e.target.value,
+                  },
+                }))
+              }
+            />
+          </label>
+
+          <div className="config-note">
+            {form.marketCoverage?.mddRadiusFilterEnabled === false
+              ? "Off: attendance point list uses the old MDD-first order."
+              : `On: show MDDs within ${
+                  form.marketCoverage?.mddRadiusKm || 50
+                } km first; if none are nearby, show dealers instead.`}
+          </div>
         </section>
       </div>
 

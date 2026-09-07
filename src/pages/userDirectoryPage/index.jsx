@@ -90,6 +90,14 @@ const buildMetadataForm = (metadata = {}, code = "", name = "") => {
         : cleaned.use_payroll_policy === "No"
         ? false
         : false,
+    mandatory_market_coverage:
+      typeof cleaned.mandatory_market_coverage === "boolean"
+        ? cleaned.mandatory_market_coverage
+        : cleaned.mandatory_market_coverage === "Yes"
+        ? true
+        : cleaned.mandatory_market_coverage === "No"
+        ? false
+        : false,
     basic_salary:
       cleaned.basic_salary && cleaned.basic_salary !== "NA"
         ? cleaned.basic_salary
@@ -130,8 +138,11 @@ export default function UserDirectoryPage() {
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
   const [metaSaving, setMetaSaving] = useState(false);
-  const [bulkPolicySaving, setBulkPolicySaving] = useState(false);
-  const [bulkPolicyValue, setBulkPolicyValue] = useState("true");
+  const [bulkMetadataSaving, setBulkMetadataSaving] = useState(false);
+  const [bulkMetadataField, setBulkMetadataField] = useState(
+    "mandatory_market_coverage"
+  );
+  const [bulkMetadataValue, setBulkMetadataValue] = useState("true");
   const [selectedCodes, setSelectedCodes] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [metaForm, setMetaForm] = useState(buildMetadataForm({}, "", ""));
@@ -238,6 +249,7 @@ export default function UserDirectoryPage() {
   const visibleMetadataKeys = useMemo(() => {
     const preferredOrder = [
       "attendance",
+      "mandatory_market_coverage",
       "firm_code",
       "basic_salary",
       "allowed_leaves",
@@ -384,6 +396,7 @@ export default function UserDirectoryPage() {
         attendance: !!metaForm.attendance,
         leaves: !!metaForm.leaves,
         use_payroll_policy: !!metaForm.use_payroll_policy,
+        mandatory_market_coverage: !!metaForm.mandatory_market_coverage,
       };
 
       await axios.put(
@@ -416,8 +429,8 @@ export default function UserDirectoryPage() {
     }, 0);
   };
 
-  const applyBulkPayrollPolicy = async () => {
-    if (loading || bulkPolicySaving) return;
+  const applyBulkMetadataUpdate = async () => {
+    if (loading || bulkMetadataSaving) return;
 
     const selectedTargetCodes = selectedCodes.filter(Boolean);
     const useSelected = selectedTargetCodes.length > 0;
@@ -430,20 +443,29 @@ export default function UserDirectoryPage() {
       return;
     }
 
-    const nextValue = bulkPolicyValue === "true";
-    const confirmationMessage = `Apply payroll policy as ${
+    const fieldLabel =
+      {
+        mandatory_market_coverage: "Mandatory Market Coverage",
+        use_payroll_policy: "Payroll Policy",
+        attendance: "Attendance",
+        leaves: "Leaves",
+      }[bulkMetadataField] || bulkMetadataField;
+
+    const nextValue = bulkMetadataValue === "true";
+    const confirmationMessage = `Set ${fieldLabel} ${
       nextValue ? "ON" : "OFF"
     } for ${targetCount} ${useSelected ? "selected" : "filtered"} user(s)?`;
 
     if (!window.confirm(confirmationMessage)) return;
 
     try {
-      setBulkPolicySaving(true);
+      setBulkMetadataSaving(true);
 
       await axios.patch(
-        `${backendUrl}/super-admin/user-directory/metadata/bulk/payroll-policy`,
+        `${backendUrl}/super-admin/user-directory/metadata/bulk`,
         {
-          use_payroll_policy: nextValue,
+          field: bulkMetadataField,
+          value: nextValue,
           ...(useSelected
             ? { codes: selectedTargetCodes }
             : {
@@ -460,19 +482,19 @@ export default function UserDirectoryPage() {
       await fetchData(1);
       if (useSelected) setSelectedCodes([]);
       alert(
-        `Bulk payroll policy updated successfully for ${
+        `Bulk metadata updated successfully for ${
           useSelected ? "selected" : "filtered"
         } users: ${
-          nextValue ? "ON" : "OFF"
-        }.`
+          fieldLabel
+        } ${nextValue ? "ON" : "OFF"}.`
       );
     } catch (error) {
-      console.error("Failed to bulk update payroll policy:", error);
+      console.error("Failed to bulk update metadata:", error);
       alert(
-        error?.response?.data?.message || "Failed to bulk update payroll policy"
+        error?.response?.data?.message || "Failed to bulk update metadata"
       );
     } finally {
-      setBulkPolicySaving(false);
+      setBulkMetadataSaving(false);
     }
   };
 
@@ -599,7 +621,7 @@ export default function UserDirectoryPage() {
         </div>
 
         <div className="bulk-policy-row">
-          <div className="bulk-policy-text">Bulk Payroll Policy</div>
+          <div className="bulk-policy-text">Bulk Metadata Edit</div>
           <div className="bulk-policy-controls">
             <span className="bulk-scope-note">
               {selectedCodes.length > 0
@@ -610,25 +632,37 @@ export default function UserDirectoryPage() {
               <button
                 className="secondary-btn small"
                 onClick={() => setSelectedCodes([])}
-                disabled={loading || bulkPolicySaving}
+                disabled={loading || bulkMetadataSaving}
               >
                 Clear Selection
               </button>
             )}
             <select
-              value={bulkPolicyValue}
-              onChange={(e) => setBulkPolicyValue(e.target.value)}
-              disabled={loading || bulkPolicySaving}
+              value={bulkMetadataField}
+              onChange={(e) => setBulkMetadataField(e.target.value)}
+              disabled={loading || bulkMetadataSaving}
             >
-              <option value="true">Set ON (Apply PF/ESI)</option>
-              <option value="false">Set OFF (Skip PF/ESI)</option>
+              <option value="mandatory_market_coverage">
+                Mandatory Market Coverage
+              </option>
+              <option value="use_payroll_policy">Payroll Policy</option>
+              <option value="attendance">Attendance</option>
+              <option value="leaves">Leaves</option>
+            </select>
+            <select
+              value={bulkMetadataValue}
+              onChange={(e) => setBulkMetadataValue(e.target.value)}
+              disabled={loading || bulkMetadataSaving}
+            >
+              <option value="true">Set ON</option>
+              <option value="false">Set OFF</option>
             </select>
             <button
               className="primary-btn"
-              onClick={applyBulkPayrollPolicy}
-              disabled={loading || bulkPolicySaving}
+              onClick={applyBulkMetadataUpdate}
+              disabled={loading || bulkMetadataSaving}
             >
-              {bulkPolicySaving ? "Applying..." : "Apply Bulk Policy"}
+              {bulkMetadataSaving ? "Applying..." : "Apply Bulk Edit"}
             </button>
           </div>
         </div>
@@ -773,6 +807,21 @@ export default function UserDirectoryPage() {
                               {parsePolicyFlag(row.metadata?.use_payroll_policy) === true
                                 ? "PF/ESI On"
                                 : "PF/ESI Off"}
+                            </span>
+                            <span
+                              className={`pill policy ${
+                                parsePolicyFlag(
+                                  row.metadata?.mandatory_market_coverage
+                                ) === true
+                                  ? "active"
+                                  : "inactive"
+                              }`}
+                            >
+                              {parsePolicyFlag(
+                                row.metadata?.mandatory_market_coverage
+                              ) === true
+                                ? "Coverage Req"
+                                : "Coverage Off"}
                             </span>
                           </div>
                         </td>
@@ -1027,6 +1076,25 @@ export default function UserDirectoryPage() {
                           }
                         />
                         <span>{metaForm.use_payroll_policy ? "Yes" : "No"}</span>
+                      </div>
+                    </div>
+
+                    <div className="field checkbox-field">
+                      <label>Mandatory Market Coverage</label>
+                      <div className="switch-row">
+                        <input
+                          type="checkbox"
+                          checked={!!metaForm.mandatory_market_coverage}
+                          onChange={(e) =>
+                            handleMetaInput(
+                              "mandatory_market_coverage",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        <span>
+                          {metaForm.mandatory_market_coverage ? "Yes" : "No"}
+                        </span>
                       </div>
                     </div>
                   </div>

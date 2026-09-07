@@ -175,6 +175,18 @@
     }
   }
 
+  .config-note {
+    min-height: 44px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    padding: 12px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
   .hr-configs-actions {
     display: flex;
     align-items: center;
