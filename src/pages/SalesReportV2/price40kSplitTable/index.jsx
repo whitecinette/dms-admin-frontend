@@ -21,6 +21,10 @@ const getGrowthStyle = (gd) => {
 };
 
 const getExpectedAchievement = (row) => row?.WFM ?? row?.WMF ?? 0;
+const stockColumns = ["SPD Stk", "MDD Stk", "Ret Stk", "DOS"];
+
+const renderPlainCell = (value, renderNum) =>
+  value === null || value === undefined ? "-" : renderNum(value, false);
 
 const Price40kSplitTable = ({ data, title, formatValue }) => {
   // ✅ hooks must be unconditional
@@ -57,10 +61,16 @@ const Price40kSplitTable = ({ data, title, formatValue }) => {
 
             <th>MTD</th>
             <th>LMTD</th>
+            <th>FTD-2</th>
+            <th>FTD-1</th>
             <th>FTD</th>
+            <th>ADS</th>
             <th>G/D%</th>
             <th>Exp Ach</th>
             <th>%Exp Ach</th>
+            {stockColumns.map((column) => (
+              <th key={column}>{column}</th>
+            ))}
           </tr>
         </thead>
 
@@ -82,7 +92,10 @@ const Price40kSplitTable = ({ data, title, formatValue }) => {
 
                 <td>{renderNum(row.MTD, isCurrency)}</td>
                 <td>{renderNum(row.LMTD, isCurrency)}</td>
+                <td>{renderNum(row["FTD-2"], isCurrency)}</td>
+                <td>{renderNum(row["FTD-1"], isCurrency)}</td>
                 <td>{renderNum(row.FTD, isCurrency)}</td>
+                <td>{renderNum(row.ADS, isCurrency)}</td>
 
                 <td style={getGrowthStyle(gd)}>
                   {gd === null || gd === undefined ? "" : formatPercent(gd)}
@@ -90,6 +103,9 @@ const Price40kSplitTable = ({ data, title, formatValue }) => {
 
                 <td>{renderNum(row["Exp.Ach"], isCurrency)}</td>
                 <td>{formatPercent(getExpectedAchievement(row))}</td>
+                {stockColumns.map((column) => (
+                  <td key={column}>{renderPlainCell(row[column], renderNum)}</td>
+                ))}
               </tr>
             );
           })}

@@ -1,5 +1,5 @@
 .dashboard-table {
-  width: 100%;
+  min-width: 1320px;
   border-collapse: collapse;
 }
 
@@ -8,6 +8,8 @@
   border: 1px solid #ddd;
   padding: 8px;
   text-align: right;
+  min-width: 92px;
+  white-space: nowrap;
 }
 
 .dashboard-table th:first-child,
