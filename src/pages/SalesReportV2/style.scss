@@ -700,7 +700,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 720px;
+  min-width: 1320px;
 
   thead {
     background: #f7f9fc;
@@ -733,6 +733,8 @@
       text-align: center;
       border-bottom: 1px solid #eef2f7;
       color: #374151;
+      min-width: 92px;
+      white-space: nowrap;
     }
 
     .metric-title {
