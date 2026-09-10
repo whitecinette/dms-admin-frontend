@@ -50,12 +50,14 @@ const Attendance = () => {
   });
   const [attendancePositions, setAttendancePositions] = useState([]);
   const [attendanceStatuses, setAttendanceStatuses] = useState([]);
-  const [attendanceTodayByCode, setAttendanceTodayByCode] = useState({});
-  const [recentAttendanceByCode, setRecentAttendanceByCode] = useState({});
+  const [, setAttendanceTodayByCode] = useState({});
+  const [, setRecentAttendanceByCode] = useState({});
   const [isMonthlyDownloading, setIsMonthlyDownloading] = useState(false);
   const [isDailyDownloading, setIsDailyDownloading] = useState(false);
   const limit = 50;
   const matrixLimit = 12;
+  const canApproveDealerPointAttendance =
+    String(localStorage.getItem("role") || "").toLowerCase() === "super_admin";
 
   const normalizeCodeKey = (value) => String(value || "").trim().toLowerCase();
 
@@ -351,10 +353,11 @@ const Attendance = () => {
 
     if (normalized === "present") return 0;
     if (normalized === "half day" || normalized === "halfday") return 1;
-    if (normalized === "pending") return 2;
-    if (normalized === "leave") return 3;
-    if (normalized === "absent") return 4;
-    return 5;
+    if (normalized === "requested") return 2;
+    if (normalized === "pending") return 3;
+    if (normalized === "leave") return 4;
+    if (normalized === "absent") return 5;
+    return 6;
   };
 
   const getTimingSortValue = (timeValue) => {
@@ -437,6 +440,7 @@ const Attendance = () => {
     if (status === "present") return "P";
     if (status === "half day" || status === "halfday") return "HD";
     if (status === "leave") return "L";
+    if (status === "requested") return "RQ";
     if (status === "pending") return "PN";
     return "A";
   };
@@ -448,6 +452,7 @@ const Attendance = () => {
     if (status === "present") return "Present";
     if (status === "half day" || status === "halfday") return "Half Day";
     if (status === "leave") return "Leave";
+    if (status === "requested") return "Requested";
     if (status === "pending") return "Pending";
     return "Absent";
   };
@@ -479,6 +484,12 @@ const Attendance = () => {
       return {
         fill: { patternType: "solid", fgColor: { rgb: "E2E8F0" } },
         font: { color: { rgb: "334155" }, bold: true },
+      };
+    }
+    if (status === "requested") {
+      return {
+        fill: { patternType: "solid", fgColor: { rgb: "FEF3C7" } },
+        font: { color: { rgb: "92400E" }, bold: true },
       };
     }
 
@@ -1200,35 +1211,6 @@ const Attendance = () => {
     }
   };
 
-  const latestAttendanceFlat = useMemo(() => {
-    const rows = extractAttendanceRows(latestAttendance);
-    if (rows.length > 0) return rows;
-
-    if (!Array.isArray(latestAttendance)) return [];
-    return latestAttendance.flat(Infinity).filter((item) => item && typeof item === "object");
-  }, [latestAttendance]);
-
-  const latestAttendanceByCode = useMemo(() => {
-    const map = {};
-
-    latestAttendanceFlat.forEach((record) => {
-      const key = normalizeCodeKey(
-        record?.code || record?.employeeCode || record?.empCode || record?.userCode
-      );
-      if (!key) return;
-
-      const currentRecord = map[key];
-      const currentStamp = getRecordTimestamp(currentRecord);
-      const nextStamp = getRecordTimestamp(record);
-
-      if (!currentRecord || nextStamp >= currentStamp) {
-        map[key] = record;
-      }
-    });
-
-    return map;
-  }, [latestAttendanceFlat]);
-
   const toCoordNumber = (value) => {
     if (value === null || value === undefined) return null;
     if (typeof value === "object" && value?.$numberDecimal !== undefined) {
@@ -1257,26 +1239,56 @@ const Attendance = () => {
     });
   };
 
-  const getAttendanceForCode = (code) => {
-    const normalizedCode = normalizeCodeKey(code);
-    const todayRecord = attendanceTodayByCode[normalizedCode] || null;
-    const recentRecord = recentAttendanceByCode[normalizedCode] || null;
-    const latestRecord = latestAttendanceByCode[normalizedCode] || null;
-
-    if (hasPunchData(todayRecord)) return todayRecord;
-    if (hasPunchData(recentRecord)) return recentRecord;
-    if (hasPunchData(latestRecord)) return latestRecord;
-
-    return todayRecord || recentRecord || latestRecord || {};
+  const getDisplayAttendance = (item) => {
+    return item?.today || {};
   };
 
-  const getDisplayAttendance = (item) => {
-    const todayRecord = item?.today || null;
-    if (hasPunchData(todayRecord)) return todayRecord;
-    return getAttendanceForCode(item?.code);
+  const isDealerPointApprovalPending = (record) =>
+    String(record?.attendanceApprovalStatus || "").toLowerCase() ===
+      "pending" &&
+    String(record?.attendanceApprovalType || "").toLowerCase() ===
+      "dealer_point" &&
+    Boolean(record?.attendanceId);
+
+  const approveDealerPointAttendance = async (record) => {
+    if (!record?.attendanceId) return;
+    if (!canApproveDealerPointAttendance) {
+      window.alert("Only superadmin can approve this request.");
+      return;
+    }
+    const reason = record?.attendanceApprovalReason
+      ? `\n\nReason: ${record.attendanceApprovalReason}`
+      : "";
+    if (!window.confirm(`Approve this dealer-point attendance?${reason}`)) {
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `${backendUrl}/attendance-admin/dealer-point-requests/${record.attendanceId}/approve`,
+        {},
+        {
+          headers: {
+            Authorization: localStorage.getItem("authToken"),
+          },
+        }
+      );
+      await getAllEmployee();
+      await getMatrixData({ page: 1, append: false });
+      await getRecentAttendanceByCode();
+    } catch (error) {
+      console.error("Failed to approve dealer-point attendance:", error);
+      window.alert(
+        error?.response?.data?.message || "Failed to approve attendance."
+      );
+    }
   };
 
   const getRowStatusClass = (attendanceRecord) => {
+    if (isDealerPointApprovalPending(attendanceRecord)) {
+      return "status-requested";
+    }
+
     const status = String(attendanceRecord?.status || "")
       .trim()
       .toLowerCase();
@@ -1285,6 +1297,7 @@ const Attendance = () => {
     if (status === "absent") return "status-absent";
     if (status === "half day" || status === "halfday") return "status-halfday";
     if (status === "leave") return "status-leave";
+    if (status === "requested") return "status-requested";
     if (status === "pending") return "status-pending";
     return "";
   };
@@ -1887,6 +1900,7 @@ const Attendance = () => {
                   <th>Punch In Location</th>
                   <th>Punch Out</th>
                   <th>Punch Out Location</th>
+                  <th>Approval</th>
                   <th>View</th>
                 </tr>
               </thead>
@@ -1915,6 +1929,30 @@ const Attendance = () => {
                         <td className="location-cell">
                           {formatLocationText(attendanceRecord, "out")}
                         </td>
+                        <td>
+                          {isDealerPointApprovalPending(attendanceRecord) ? (
+	                            <div className="approval-request-cell">
+	                              <span>Requested</span>
+	                              {canApproveDealerPointAttendance && (
+	                                <button
+	                                  type="button"
+	                                  className="approval-request-btn"
+	                                  onClick={() =>
+	                                    approveDealerPointAttendance(attendanceRecord)
+	                                  }
+	                                  title={
+	                                    attendanceRecord.attendanceApprovalReason ||
+	                                    "Dealer-point attendance approval"
+	                                  }
+	                                >
+	                                  Approve
+	                                </button>
+	                              )}
+	                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         <td className="view-button">
                           <button
                             onClick={() => navigate(`/attendance/${item.code}`)}
@@ -1927,7 +1965,7 @@ const Attendance = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="9" style={{ textAlign: "center" }}>
+                    <td colSpan="10" style={{ textAlign: "center" }}>
                       No data found
                     </td>
                   </tr>

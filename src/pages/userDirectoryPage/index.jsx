@@ -98,6 +98,14 @@ const buildMetadataForm = (metadata = {}, code = "", name = "") => {
         : cleaned.mandatory_market_coverage === "No"
         ? false
         : false,
+    allow_attendance_from_dealer_point:
+      typeof cleaned.allow_attendance_from_dealer_point === "boolean"
+        ? cleaned.allow_attendance_from_dealer_point
+        : cleaned.allow_attendance_from_dealer_point === "Yes"
+        ? true
+        : cleaned.allow_attendance_from_dealer_point === "No"
+        ? false
+        : false,
     basic_salary:
       cleaned.basic_salary && cleaned.basic_salary !== "NA"
         ? cleaned.basic_salary
@@ -250,6 +258,7 @@ export default function UserDirectoryPage() {
     const preferredOrder = [
       "attendance",
       "mandatory_market_coverage",
+      "allow_attendance_from_dealer_point",
       "firm_code",
       "basic_salary",
       "allowed_leaves",
@@ -397,6 +406,8 @@ export default function UserDirectoryPage() {
         leaves: !!metaForm.leaves,
         use_payroll_policy: !!metaForm.use_payroll_policy,
         mandatory_market_coverage: !!metaForm.mandatory_market_coverage,
+        allow_attendance_from_dealer_point:
+          !!metaForm.allow_attendance_from_dealer_point,
       };
 
       await axios.put(
@@ -446,6 +457,7 @@ export default function UserDirectoryPage() {
     const fieldLabel =
       {
         mandatory_market_coverage: "Mandatory Market Coverage",
+        allow_attendance_from_dealer_point: "Allow Attendance From Dealer Point",
         use_payroll_policy: "Payroll Policy",
         attendance: "Attendance",
         leaves: "Leaves",
@@ -644,6 +656,9 @@ export default function UserDirectoryPage() {
             >
               <option value="mandatory_market_coverage">
                 Mandatory Market Coverage
+              </option>
+              <option value="allow_attendance_from_dealer_point">
+                Allow Attendance From Dealer Point
               </option>
               <option value="use_payroll_policy">Payroll Policy</option>
               <option value="attendance">Attendance</option>
@@ -1097,6 +1112,29 @@ export default function UserDirectoryPage() {
                         </span>
                       </div>
                     </div>
+
+                    {metaForm.mandatory_market_coverage && (
+                      <div className="field checkbox-field">
+                        <label>Allow Attendance From Dealer Point</label>
+                        <div className="switch-row">
+                          <input
+                            type="checkbox"
+                            checked={!!metaForm.allow_attendance_from_dealer_point}
+                            onChange={(e) =>
+                              handleMetaInput(
+                                "allow_attendance_from_dealer_point",
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>
+                            {metaForm.allow_attendance_from_dealer_point
+                              ? "Yes"
+                              : "No"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

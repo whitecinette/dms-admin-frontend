@@ -415,6 +415,12 @@
             border-color: #a7f3d0;
           }
 
+          &.requested {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+          }
+
           &.absent {
             background: #fef2f2;
             color: #b91c1c;
@@ -913,6 +919,11 @@
                 background: rgba(148, 163, 184, 0.14);
               }
 
+              &.status-requested {
+                background: rgba(99, 102, 241, 0.13);
+                box-shadow: inset 4px 0 0 #6366f1;
+              }
+
               &:hover {
                 background: #f1f5f9;
 
@@ -934,6 +945,10 @@
 
                 &.status-pending {
                   background: rgba(148, 163, 184, 0.19);
+                }
+
+                &.status-requested {
+                  background: rgba(99, 102, 241, 0.19);
                 }
               }
 
@@ -959,6 +974,33 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 text-align: left;
+              }
+
+              .approval-request-cell {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+
+                span {
+                  border-radius: 999px;
+                  padding: 6px 10px;
+                  background: #eef2ff;
+                  color: #4338ca;
+                  font-size: 0.76rem;
+                  font-weight: 900;
+                }
+              }
+
+              .approval-request-btn {
+                border: 0;
+                border-radius: 10px;
+                padding: 8px 12px;
+                background: #4f46e5;
+                color: #fff;
+                font-size: 0.78rem;
+                font-weight: 900;
+                cursor: pointer;
               }
 
               .view-button {

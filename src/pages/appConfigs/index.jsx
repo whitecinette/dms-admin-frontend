@@ -10,12 +10,16 @@ const DEFAULT_FORM = {
   forceUpdateEnabled: false,
   minimumVersion: "",
   updateMessage: "Please update your application to continue.",
+  privileged: "SC-PNKJ\nSC-SH-01",
 };
 
 const normalizeConfig = (data = {}) => ({
   forceUpdateEnabled: data.forceUpdateEnabled === true,
   minimumVersion: data.minimumVersion || "",
   updateMessage: data.updateMessage || DEFAULT_FORM.updateMessage,
+  privileged: Array.isArray(data.privileged)
+    ? data.privileged.join("\n")
+    : DEFAULT_FORM.privileged,
   updatedBy: data.updatedBy || "",
   updatedAt: data.updatedAt || "",
 });
@@ -52,6 +56,7 @@ export default function AppConfigsPage() {
         forceUpdateEnabled: next.forceUpdateEnabled,
         minimumVersion: next.minimumVersion,
         updateMessage: next.updateMessage,
+        privileged: next.privileged,
       });
       setMeta(next);
     } catch (error) {
@@ -92,6 +97,10 @@ export default function AppConfigsPage() {
         updateMessage:
           form.updateMessage.trim() ||
           "Please update your application to continue.",
+        privileged: form.privileged
+          .split(/[\n,]+/)
+          .map((value) => value.trim().toUpperCase())
+          .filter(Boolean),
       };
 
       const res = await axios.put(`${backendUrl}/admin/app-configs`, payload, {
@@ -103,6 +112,7 @@ export default function AppConfigsPage() {
         forceUpdateEnabled: next.forceUpdateEnabled,
         minimumVersion: next.minimumVersion,
         updateMessage: next.updateMessage,
+        privileged: next.privileged,
       });
       setMeta(next);
       setMessage("App configs saved successfully.");
@@ -178,6 +188,16 @@ export default function AppConfigsPage() {
               value={form.updateMessage}
               onChange={(e) => updateField("updateMessage", e.target.value)}
               placeholder="Please update your application to continue."
+            />
+          </label>
+
+          <label className="app-config-wide">
+            <span>Privileged User Codes</span>
+            <textarea
+              value={form.privileged}
+              onChange={(e) => updateField("privileged", e.target.value)}
+              placeholder={"SC-PNKJ\nSC-SH-01"}
+              rows={4}
             />
           </label>
         </div>

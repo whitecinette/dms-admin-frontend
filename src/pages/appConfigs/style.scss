@@ -134,6 +134,10 @@
     gap: 8px;
   }
 
+  .app-config-wide {
+    grid-column: 1 / -1;
+  }
+
   span {
     color: #475569;
     font-size: 11px;
@@ -142,12 +146,14 @@
     text-transform: uppercase;
   }
 
-  input {
+  input,
+  textarea {
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     color: #111827;
     font-size: 14px;
     padding: 12px 13px;
+    resize: vertical;
 
     &:focus {
       border-color: #2563eb;

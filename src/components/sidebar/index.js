@@ -125,9 +125,13 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       },
       {
         name: "Sales Report",
-        to: "/all-reports",
+        to: "#",
         icon: <RiBarChartGroupedLine />,
         iconColor: "#16a34a",
+        children: [
+          { name: "All Reports", to: "/all-reports", icon: <RiBarChartGroupedLine /> },
+          { name: "Pivot Report", to: "/sales-activation-report", icon: <LuChartColumnIncreasing /> },
+        ],
       },
       {
         name: "Top Selling",
@@ -178,9 +182,11 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         iconColor: "#db2777",
         children: [
           { name: "Attendance", to: "/attendance", icon: <FaUserCheck /> },
+          { name: "Attendance Requests", to: "/attendance-requests", icon: <FaClipboardList /> },
           { name: "Attendance Matrix", to: "/attendance-matrix", icon: <FaCalendarAlt /> },
           { name: "Leave Application", to: "/leaveApplication", icon: <RiFilePaper2Line /> },
           { name: "HR Configs", to: "/hr-configs", icon: <MdOutlineSettings /> },
+          { name: "Add User", to: "/addUser", icon: <MdManageAccounts /> },
           { name: "Payroll", to: "/payroll", icon: <FaMoneyCheckAlt /> },
           { name: "Travel Expenses", to: "/travelExpenses", icon: <FaPlane /> },
           { name: "Expense Matrix", to: "/expense", icon: <TbReportMoney /> },
@@ -247,7 +253,6 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         children: [
           { name: "Hierarchy", to: "/hierarchy", icon: <TbHierarchy3 /> },
           { name: "Actor Type Hierarchy", to: "/actorTypeHierarchy", icon: <PiTreeStructureFill /> },
-          { name: "Add User", to: "/addUser", icon: <MdManageAccounts /> },
           ...(role === "super_admin"
             ? [
                 { name: "App Configs", to: "/app-configs", icon: <MdOutlineSettings /> },

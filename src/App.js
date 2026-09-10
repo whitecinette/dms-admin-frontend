@@ -20,6 +20,7 @@ import ViewBeatMappingStatus from "./pages/viewBeatMappingStatus";
 import ActorTypeHierarchy from "./pages/actorTypeHierarchy";
 import AddUser from "./pages/addUser";
 import Attendance from "./pages/attendance";
+import AttendanceRequests from "./pages/attendanceRequests";
 import ViewAttendance from "./pages/viewAttendance";
 import LatestAttendance from "./pages/latestAttendance";
 import HrConfigsPage from "./pages/hrConfigs";
@@ -50,6 +51,7 @@ import SessionsViewer from "./pages/sessions/sessionViewer";
 import DealerHierarchy from "./pages/dealerHierarchy";
 import CombinedDataUpload from "./pages/combinedDataUpload";
 import SalesReportV2 from "./pages/SalesReportV2";
+import SalesActivationReport from "./pages/SalesActivationReport";
 import ProductMaster from "./pages/productMaster";
 import DataPolice from "./pages/dataPolice";
 import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
@@ -106,6 +108,7 @@ function App() {
             />
             <Route path="/addUser" element={<AddUser />} />
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/attendance-requests" element={<AttendanceRequests />} />
             <Route path="/attendance/:code" element={<ViewAttendance />} />
             <Route
               path="/attendance/allAttendance"
@@ -146,6 +149,7 @@ function App() {
             <Route path="/dealer-hierarchy" element={<DealerHierarchy/> } />
             <Route path="/combined-upload" element={<CombinedDataUpload />} />
             <Route path="/all-reports" element={<SalesReportV2 /> } />
+            <Route path="/sales-activation-report" element={<SalesActivationReport /> } />
             <Route path="/product-master" element={<ProductMaster /> } />
             <Route path="/data-police" element={<DataPolice /> } />
             <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
