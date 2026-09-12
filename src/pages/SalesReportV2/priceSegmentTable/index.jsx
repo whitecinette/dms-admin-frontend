@@ -21,10 +21,19 @@ const getGrowthStyle = (gd) => {
 };
 
 const getExpectedAchievement = (row) => row?.WFM ?? row?.WMF ?? 0;
-const stockColumns = ["SPD Stk", "MDD Stk", "Ret Stk", "DOS"];
+const stockColumns = ["SPD Stk", "MDD Stk", "Ret Stk", "Days of Stock", "DOS"];
+const stockColumnLabel = (column) => (column === "DOS" ? "Stock Depth" : column);
+const plainRoundedColumns = new Set(["Days of Stock", "DOS"]);
 
-const renderPlainCell = (value, renderNum) =>
-  value === null || value === undefined ? "-" : renderNum(value, false);
+const renderPlainCell = (value, renderNum, column) => {
+  if (value === null || value === undefined) return "-";
+  if (plainRoundedColumns.has(column)) {
+    if (String(value).trim() === "" || String(value).trim() === "-") return "-";
+    const n = Number(value);
+    return Number.isNaN(n) ? "-" : Math.round(n).toLocaleString("en-IN");
+  }
+  return renderNum(value, false);
+};
 
 const PriceSegmentTable = ({ data, title, formatValue }) => {
   // ✅ hooks must be unconditional
@@ -70,7 +79,7 @@ const PriceSegmentTable = ({ data, title, formatValue }) => {
             <th>Exp Ach</th>
             <th>%Exp Ach</th>
             {stockColumns.map((column) => (
-              <th key={column}>{column}</th>
+              <th key={column}>{stockColumnLabel(column)}</th>
             ))}
           </tr>
         </thead>
@@ -105,7 +114,7 @@ const PriceSegmentTable = ({ data, title, formatValue }) => {
                 <td>{renderNum(row["Exp.Ach"], isCurrency)}</td>
                 <td>{formatPercent(getExpectedAchievement(row))}</td>
                 {stockColumns.map((column) => (
-                  <td key={column}>{renderPlainCell(row[column], renderNum)}</td>
+                  <td key={column}>{renderPlainCell(row[column], renderNum, column)}</td>
                 ))}
               </tr>
             );

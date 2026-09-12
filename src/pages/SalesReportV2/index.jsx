@@ -88,6 +88,7 @@ const getGrowthTextClass = (value, column = "G/D%") => {
 const formatSalesReportColumnLabel = (column) => {
   if (isExpectedAchievementColumn(column)) return EXPECTED_ACHIEVEMENT_LABEL;
   if (isExpAchievementColumn(column)) return "Exp Ach";
+  if (String(column || "").trim() === "DOS") return "Stock Depth";
   return column;
 };
 
@@ -508,6 +509,25 @@ function SalesReportV2() {
   const formatValue = (num, isCurrency = false) =>
     compactMode ? formatCompact(num, isCurrency) : formatNormal(num, isCurrency);
 
+  const isPlainRoundedColumn = (column) => {
+    const key = String(column || "").trim().toLowerCase();
+    return key === "days of stock" || key === "dos";
+  };
+
+  const formatPlainRounded = (num) => {
+    if (num === null || num === undefined) return "-";
+    if (String(num).trim() === "" || String(num).trim() === "-") return "-";
+    const n = parseNumericValue(num);
+    if (Number.isNaN(n)) return "-";
+    return Math.round(n).toLocaleString("en-IN");
+  };
+
+  const formatReportCell = (value, column, isCurrency = false) => {
+    if (isPlainRoundedColumn(column)) return formatPlainRounded(value);
+    if (isPercentMetricColumn(column)) return formatPercent(value);
+    return formatValue(value, isCurrency);
+  };
+
   const formatPercent = (num) => {
     if (num === null || num === undefined || isNaN(num)) return "-";
     return `${Number(num).toFixed(2)}%`;
@@ -518,8 +538,7 @@ function SalesReportV2() {
 
   const formatDetailCell = (value, column) => {
     if (isTextDetailColumn(column)) return value || "-";
-    if (isPercentMetricColumn(column)) return formatPercent(value);
-    return formatValue(value, false);
+    return formatReportCell(value, column, false);
   };
 
   const escapeCsvValue = (value) => {
@@ -1326,7 +1345,7 @@ function SalesReportV2() {
       reportTitle,
       metricColumns = [],
       firstColumnLabel = "Tag",
-      formatCell = (value) => formatValue(value, false),
+      formatCell = (value, column) => formatReportCell(value, column, false),
       getCellValue = (row, column) => row[column],
       sourceKey = "",
     } = {}
@@ -1427,9 +1446,7 @@ function SalesReportV2() {
                     key={key}
                     className={getGrowthTextClass(val, key)}
                   >
-                    {isPercentMetricColumn(key)
-                      ? `${Number(val || 0).toFixed(2)}%`
-                      : formatValue(val, true)}
+                    {formatReportCell(val, key, true)}
                   </td>
                 );
               })}
@@ -1444,9 +1461,7 @@ function SalesReportV2() {
                     key={key}
                     className={getGrowthTextClass(val, key)}
                   >
-                    {isPercentMetricColumn(key)
-                      ? `${Number(val || 0).toFixed(2)}%`
-                      : formatValue(val, false)}
+                    {formatReportCell(val, key, false)}
                   </td>
                 );
               })}
@@ -1457,10 +1472,7 @@ function SalesReportV2() {
               reportTitle,
               metricColumns: columns,
               firstColumnLabel: "Tag Volume",
-              formatCell: (value, column) =>
-                isPercentMetricColumn(column)
-                  ? formatPercent(value)
-                  : formatValue(value, false),
+              formatCell: (value, column) => formatReportCell(value, column, false),
             })}
 
             {!tagGroupedReports[reportType] && loadingCoreTagRows
@@ -1513,7 +1525,7 @@ function SalesReportV2() {
                     if (col === "Year") cell = row?.Year ?? "-";
                     else if (v === null || v === undefined) cell = "-";
                     else if (isGdRow) cell = formatPercent(v);
-                    else cell = formatValue(v, isCurrency);
+                    else cell = formatReportCell(v, col, isCurrency);
 
                     const cls =
                       isGdRow && col !== "Year" ? getGrowthTextClass(v) : "";
@@ -1535,10 +1547,7 @@ function SalesReportV2() {
                     reportTitle,
                     metricColumns: columns.slice(1),
                     firstColumnLabel: "Tag Volume",
-                    formatCell: (value, column) =>
-                      isPercentMetricColumn(column)
-                        ? formatPercent(value)
-                        : formatValue(value, false),
+                    formatCell: (value, column) => formatReportCell(value, column, false),
                   })
                 : loadingYtdTagRows
                 ? renderTagRowShimmer(columns.slice(1))
@@ -1589,7 +1598,7 @@ function SalesReportV2() {
                             ? rawValue || "-"
                             : isGrowthMetric
                             ? formatPercent(rawValue)
-                            : formatValue(rawValue, isCurrency);
+                            : formatReportCell(rawValue, column.key, isCurrency);
 
                         const className = [
                           column.key === "category" ? "sticky-col metric-title" : "",
@@ -1753,9 +1762,7 @@ function SalesReportV2() {
             }`}
             style={getCellStyle(rowData?.[col], col, rowData, columns)}
           >
-            {isPercentMetricColumn(col)
-              ? formatPercent(rowData?.[col])
-              : formatValue(rowData?.[col])}
+            {formatReportCell(rowData?.[col], col, false)}
           </td>
         ))}
       </tr>
@@ -1797,10 +1804,7 @@ function SalesReportV2() {
                   firstColumnLabel: "Tag WOD",
                   sourceKey: "sellInWOD",
                   getCellValue: getWodTagCellValue,
-                  formatCell: (value, column) =>
-                    isPercentMetricColumn(column)
-                      ? formatPercent(value)
-                      : formatValue(value, false),
+                  formatCell: (value, column) => formatReportCell(value, column, false),
                 })}
                 {!groupedWod.sellInWOD && loadingCoreTagRows
                   ? renderTagRowShimmer(columns)
@@ -1813,10 +1817,7 @@ function SalesReportV2() {
                   firstColumnLabel: "Tag WOD",
                   sourceKey: "sellOutWOD",
                   getCellValue: getWodTagCellValue,
-                  formatCell: (value, column) =>
-                    isPercentMetricColumn(column)
-                      ? formatPercent(value)
-                      : formatValue(value, false),
+                  formatCell: (value, column) => formatReportCell(value, column, false),
                 })}
                 {!groupedWod.sellOutWOD && loadingCoreTagRows
                   ? renderTagRowShimmer(columns)

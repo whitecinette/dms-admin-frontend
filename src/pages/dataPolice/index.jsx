@@ -950,7 +950,7 @@ function DataPolice() {
         open={showUserCsvModal}
         onClose={() => setShowUserCsvModal(false)}
         title="Update Users From CSV"
-        subtitle="Match by user code, preview with dry run, and optionally create new fields in user documents."
+        subtitle="Match by user code. For labels, use Excel columns like label1, label2, label3; they become the user's labels array."
         endpoint={`${backendUrl}/master/update-users-from-csv`}
         fileFieldName="file"
         onSuccess={() => {
