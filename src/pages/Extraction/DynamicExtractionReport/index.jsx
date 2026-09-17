@@ -38,6 +38,7 @@ const DEALER_FILTER_TYPES = [
   { key: "district", label: "District" },
   { key: "town", label: "Town" },
   { key: "category", label: "Category" },
+  { key: "labels", label: "Manned / Unmanned" },
   { key: "product_tags", label: "Product Tags" },
   { key: "top_outlet", label: "Top Outlet" },
 ];
@@ -282,6 +283,7 @@ function DynamicExtractionReport() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     product_tags: [],
     top_outlet: [],
   });
@@ -294,6 +296,7 @@ function DynamicExtractionReport() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     product_tags: [],
     top_outlet: [],
   });
@@ -476,6 +479,17 @@ function DynamicExtractionReport() {
 
   const loadFilterOptionsForTab = async (tabKey) => {
     if (!tabKey) return;
+
+    if (tabKey === "labels") {
+      setFilterValues((old) => ({
+        ...old,
+        labels: [
+          { label: "Manned", value: "manned" },
+          { label: "Unmanned", value: "unmanned" },
+        ],
+      }));
+      return;
+    }
 
     if (tabKey === "product_tags") {
       const selectedTags = (selectedDealerFilters.product_tags || [])
@@ -866,6 +880,7 @@ function DynamicExtractionReport() {
       district: [],
       town: [],
       category: [],
+      labels: [],
       product_tags: [],
       top_outlet: [],
     });
