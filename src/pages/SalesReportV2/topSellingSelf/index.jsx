@@ -515,6 +515,7 @@ const DEALER_FILTER_TYPES = [
   { key: "district", label: "District" },
   { key: "town", label: "Town" },
   { key: "category", label: "Category" },
+  { key: "labels", label: "Label" },
   { key: "top_outlet", label: "Top Outlet" },
 ];
 
@@ -586,6 +587,7 @@ export default function TopSellingSelf() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     top_outlet: [],
   });
 
@@ -596,6 +598,7 @@ export default function TopSellingSelf() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     top_outlet: [],
   });
 
@@ -610,6 +613,7 @@ export default function TopSellingSelf() {
       district: [],
       town: [],
       category: [],
+      labels: [],
       top_outlet: [],
     }),
     []
@@ -790,15 +794,28 @@ export default function TopSellingSelf() {
   }, [activeFilterTab, selectedActorFilters, selectedDealerFilters]);
 
   const filteredCurrentOptions = useMemo(() => {
+    const selected = currentTabSelected || [];
+    const selectedKeys = new Set(
+      selected.map((item) =>
+        isActorTab(activeFilterTab) ? item.code : String(item.value)
+      )
+    );
+    const mergedOptions = [
+      ...selected,
+      ...currentTabOptions.filter((item) => {
+        const key = isActorTab(activeFilterTab) ? item.code : String(item.value);
+        return !selectedKeys.has(key);
+      }),
+    ];
     const q = searchText.trim().toLowerCase();
-    if (!q) return currentTabOptions;
+    if (!q) return mergedOptions;
 
-    return currentTabOptions.filter((item) => {
+    return mergedOptions.filter((item) => {
       const raw =
         `${item.label || ""} ${item.name || ""} ${item.code || ""} ${item.value || ""}`.toLowerCase();
       return raw.includes(q);
     });
-  }, [currentTabOptions, searchText]);
+  }, [activeFilterTab, currentTabOptions, currentTabSelected, searchText]);
 
 
 const toggleSelection = (type, item) => {
@@ -854,7 +871,10 @@ const toggleSelection = (type, item) => {
         : [...prev, item],
   }));
 
-  setFilterValues(defaultDealerFilterValues);
+  setFilterValues((old) => ({
+    ...defaultDealerFilterValues,
+    [type]: old[type] || [],
+  }));
 };
 
   const removeSelection = (type, item) => {

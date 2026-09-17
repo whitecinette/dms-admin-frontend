@@ -11,16 +11,17 @@ const backendUrl = config.backend_url;
 const DUMP_APIS = [
   {
     key: "samsung_product_tags",
-    title: "Samsung Product Tags Sync",
-    subtitle: "Adds missing tags to existing Samsung products by product code.",
+    title: "Product Tags Sync",
+    subtitle: "Adds missing tags to existing products by _id or product code.",
     endpoint: "/dump-sync/samsung-products/tags/upload",
+    downloadEndpoint: "/dump-sync/products/tags/list",
     accept: [".csv"],
-    hint: "CSV only. Required headers: code, tag, Tag... Every Tag column becomes a separate tag.",
-    templateHeaders: ["code", "tag", "Tag"],
+    hint: "CSV only. Required: _id or code, plus tag columns like tag, tags[0], tags[1]. _id is best for non-Samsung products.",
+    templateHeaders: ["_id", "code", "tag", "tags[1]", "tags[2]"],
     templateRows: [
-      ["SM-X236BZAA", "Tab", ""],
-      ["SM-A366EZKK", "Innovative 5G", "5G"],
-      ["SM-A176BZAL", "Innovative 5G", "5G"],
+      ["69a5424ab76108b18777a902", "", "4G", "", ""],
+      ["69a5424ab76108b18777a95f", "", "Flagship 5G", "5G", ""],
+      ["", "SM-A366EZKK", "Innovative 5G", "5G", ""],
     ],
   },
   {
@@ -332,6 +333,46 @@ function DumpSyncUpload() {
     setLoading(false);
   };
 
+  const downloadProductList = async () => {
+    if (!selectedApi?.downloadEndpoint) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${backendUrl}${selectedApi.downloadEndpoint}`, {
+        method: "GET",
+        headers: {
+          Authorization: localStorage.getItem("authToken"),
+        },
+      });
+
+      if (!res.ok) {
+        let message = "Download failed";
+        try {
+          const data = await res.json();
+          message = data?.message || message;
+        } catch (_) {}
+        throw new Error(message);
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("content-disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      const filename = match?.[1] || "product-tag-sync-list.csv";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Download failed");
+    }
+
+    setLoading(false);
+  };
+
   // =============================
   // UI HELPERS
   // =============================
@@ -399,7 +440,7 @@ function DumpSyncUpload() {
             <>
             <div className="kpi"><div className="kpi__label">Total Rows</div><div className="kpi__value">{result.totalRows ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Valid Rows</div><div className="kpi__value">{result.validRows ?? "-"}</div></div>
-            <div className="kpi"><div className="kpi__label">Unique Codes</div><div className="kpi__value">{result.uniqueCodesInFile ?? "-"}</div></div>
+            <div className="kpi"><div className="kpi__label">Unique Products</div><div className="kpi__value">{result.uniqueProductsInFile ?? result.uniqueCodesInFile ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Changed</div><div className="kpi__value">{result.changed ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Updated</div><div className="kpi__value">{result.updated ?? "-"}</div></div>
             <div className="kpi"><div className="kpi__label">Unchanged</div><div className="kpi__value">{result.unchanged ?? "-"}</div></div>
@@ -926,6 +967,16 @@ function DumpSyncUpload() {
               disabled={loading}
             >
               Download Format
+            </button>
+          ) : null}
+
+          {selectedApi.downloadEndpoint ? (
+            <button
+              className="btn btn-secondary"
+              onClick={downloadProductList}
+              disabled={loading}
+            >
+              Download Product List
             </button>
           ) : null}
 

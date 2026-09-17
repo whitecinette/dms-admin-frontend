@@ -38,6 +38,7 @@ const DEALER_FILTER_TYPES = [
   { key: "district", label: "District" },
   { key: "town", label: "Town" },
   { key: "category", label: "Category" },
+  { key: "product_tags", label: "Product Tags" },
   { key: "top_outlet", label: "Top Outlet" },
 ];
 
@@ -281,6 +282,7 @@ function DynamicExtractionReport() {
     district: [],
     town: [],
     category: [],
+    product_tags: [],
     top_outlet: [],
   });
 
@@ -292,6 +294,7 @@ function DynamicExtractionReport() {
     district: [],
     town: [],
     category: [],
+    product_tags: [],
     top_outlet: [],
   });
 
@@ -302,6 +305,14 @@ function DynamicExtractionReport() {
   const [header, setHeader] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [scopedDealerCodes, setScopedDealerCodes] = useState([]);
+  const [productDetail, setProductDetail] = useState({
+    open: false,
+    loading: false,
+    title: "",
+    columns: [],
+    rows: [],
+    error: "",
+  });
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState("zone");
@@ -437,6 +448,7 @@ function DynamicExtractionReport() {
     targetKey,
     subordinates = {},
     dealer = {},
+    productTags = {},
   }) => {
     try {
       const body = {
@@ -445,7 +457,7 @@ function DynamicExtractionReport() {
         target_key: targetKey,
         subordinates,
         dealer,
-        product_tags: {},
+        product_tags: productTags,
       };
 
       const res = await axios.post(`${backend_url}/filters/dropdown-options`, body, {
@@ -464,6 +476,26 @@ function DynamicExtractionReport() {
 
   const loadFilterOptionsForTab = async (tabKey) => {
     if (!tabKey) return;
+
+    if (tabKey === "product_tags") {
+      const selectedTags = (selectedDealerFilters.product_tags || [])
+        .map((item) => item.value)
+        .filter(Boolean);
+
+      const values = await fetchDropdownOptions({
+        targetType: "product_tag",
+        targetKey: "product_tag",
+        subordinates: {},
+        dealer: {},
+        productTags: selectedTags.length ? { product_tag: selectedTags } : {},
+      });
+
+      setFilterValues((old) => ({
+        ...old,
+        [tabKey]: values,
+      }));
+      return;
+    }
 
     if (isActorTab(tabKey)) {
       const values = await fetchDropdownOptions({
@@ -633,6 +665,43 @@ function DynamicExtractionReport() {
     }
   };
 
+  const openProductDetail = async (row, brandColumn) => {
+    const groupValue = row["Price Class"] || row.Group;
+    if (!groupValue || !brandColumn) return;
+
+    setProductDetail({
+      open: true,
+      loading: true,
+      title: `${groupValue} · ${brandColumn}`,
+      columns: [],
+      rows: [],
+      error: "",
+    });
+
+    try {
+      const res = await axios.get(`${backend_url}/dynamic-report`, {
+        params: {
+          ...buildParams(),
+          drilldownGroup: groupValue,
+          drilldownBrand: brandColumn,
+        },
+        headers: authHeaders,
+      });
+      setProductDetail((current) => ({
+        ...current,
+        loading: false,
+        columns: Array.isArray(res.data?.columns) ? res.data.columns : [],
+        rows: Array.isArray(res.data?.rows) ? res.data.rows : [],
+      }));
+    } catch (error) {
+      setProductDetail((current) => ({
+        ...current,
+        loading: false,
+        error: error.response?.data?.message || "Failed to load product details",
+      }));
+    }
+  };
+
   const downloadCombinedExtractionReport = async () => {
     if (!isAdminLikeUser) return;
 
@@ -797,6 +866,7 @@ function DynamicExtractionReport() {
       district: [],
       town: [],
       category: [],
+      product_tags: [],
       top_outlet: [],
     });
     setGroupActorSelection([]);
@@ -1382,6 +1452,10 @@ function DynamicExtractionReport() {
                             ].includes(headerKey);
 
                             const isNumeric = !isNaN(parseNumericValue(value));
+                            const isProductCell =
+                              isNumeric &&
+                              parseNumericValue(value) > 0 &&
+                              !["Price Class", "Group", "Rank of Samsung"].includes(headerKey);
 
                             const { background, text } =
                             isHeatmapColumn && isNumeric && !isTotalRow
@@ -1391,6 +1465,8 @@ function DynamicExtractionReport() {
                             return (
                             <td
                                 key={headerKey}
+                                className={isProductCell ? "product-drilldown-cell" : ""}
+                                onClick={() => isProductCell && openProductDetail(row, headerKey)}
                                 style={{
                                 textAlign: "center",
                                 ...(isHeatmapColumn && isNumeric && !isTotalRow
@@ -1434,6 +1510,54 @@ function DynamicExtractionReport() {
           </table>
         </div>
       </div>
+
+      {productDetail.open && (
+        <div className="extraction-product-modal-backdrop" onMouseDown={() => setProductDetail((v) => ({ ...v, open: false }))}>
+          <div className="extraction-product-modal" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="extraction-product-modal-header">
+              <div>
+                <h3>{productDetail.title}</h3>
+                <p>Model-wise contribution for the selected table cell</p>
+              </div>
+              <button type="button" onClick={() => setProductDetail((v) => ({ ...v, open: false }))} aria-label="Close">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="extraction-product-modal-body">
+              {productDetail.loading ? (
+                <div className="product-modal-state">Loading products...</div>
+              ) : productDetail.error ? (
+                <div className="product-modal-state error">{productDetail.error}</div>
+              ) : productDetail.rows.length === 0 ? (
+                <div className="product-modal-state">No product rows found</div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>{productDetail.columns.map((column) => <th key={column}>{column}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {productDetail.rows.map((detailRow, index) => (
+                      <tr key={`${detailRow.Product || "product"}-${index}`}>
+                        {productDetail.columns.map((column) => (
+                          <td key={column}>
+                            {column === "% of Cell"
+                              ? `${Number(detailRow[column] || 0).toFixed(2)}%`
+                              : column === "Value"
+                                ? formatCrLacNumber(detailRow[column])
+                                : column === "Volume"
+                                  ? formatNormalNumber(detailRow[column])
+                                  : detailRow[column] ?? "-"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <DealerShopInsights
         startDate={startDate}

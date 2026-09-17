@@ -12,6 +12,7 @@ const DEALER_FILTER_TYPES = [
   { key: "district", label: "District" },
   { key: "town", label: "Town" },
   { key: "category", label: "Category" },
+  { key: "labels", label: "Label" },
   { key: "top_outlet", label: "Top Outlet" },
 ];
 
@@ -260,6 +261,9 @@ const filterDetailColumns = (columns = []) =>
   columns.filter((column) => !DETAIL_COLUMN_EXCLUDE.has(String(column || "").trim()));
 
 const getDetailSortAverage = (row, columns = []) => {
+  if (columns.includes("Average Stock")) {
+    return toDetailNumber(row["Average Stock"]);
+  }
   const monthColumns = columns.filter(isMonthMetricColumn);
   if (!monthColumns.length) return 0;
 
@@ -348,6 +352,7 @@ function SalesReportV2() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     top_outlet: [],
   });
 
@@ -358,6 +363,7 @@ function SalesReportV2() {
     district: [],
     town: [],
     category: [],
+    labels: [],
     top_outlet: [],
   });
 
@@ -385,6 +391,7 @@ function SalesReportV2() {
       district: [],
       town: [],
       category: [],
+      labels: [],
       top_outlet: [],
     }),
     []
@@ -428,48 +435,26 @@ function SalesReportV2() {
   const [tertiary, setTertiary] = useState(null);
   const [secondary, setSecondary] = useState(null);
   const [wodTables, setWodTables] = useState(null);
+  const [stockWod, setStockWod] = useState(null);
   const [priceSegmentTables, setPriceSegmentTables] = useState(null);
   const [priceSegmentSplit40k, setPriceSegmentSplit40k] = useState(null);
   const [tagGroupedReports, setTagGroupedReports] = useState({});
 
-  const [activationValueYtd, setActivationValueYtd] = useState(null);
-  const [activationVolYtd, setActivationVolYtd] = useState(null);
-  const [tertiaryValueYtd, setTertiaryValueYtd] = useState(null);
-  const [tertiaryVolYtd, setTertiaryVolYtd] = useState(null);
-
-  const [activationValueYtdActual, setActivationValueYtdActual] = useState(null);
-  const [activationVolYtdActual, setActivationVolYtdActual] = useState(null);
-  const [tertiaryValueYtdActual, setTertiaryValueYtdActual] = useState(null);
-  const [tertiaryVolYtdActual, setTertiaryVolYtdActual] = useState(null);
   const [activationYtdMatrix, setActivationYtdMatrix] = useState(null);
 
   const [loadingActivation, setLoadingActivation] = useState(false);
   const [loadingTertiary, setLoadingTertiary] = useState(false);
   const [loadingSecondary, setLoadingSecondary] = useState(false);
   const [loadingWod, setLoadingWod] = useState(false);
+  const [loadingStockWod, setLoadingStockWod] = useState(false);
   const [loadingPriceSegment, setLoadingPriceSegment] = useState(false);
   const [loadingPriceSegmentSplit40k, setLoadingPriceSegmentSplit40k] =
     useState(false);
 
-  const [loadingActivationValueYtd, setLoadingActivationValueYtd] =
-    useState(false);
-  const [loadingActivationVolYtd, setLoadingActivationVolYtd] = useState(false);
-  const [loadingTertiaryValueYtd, setLoadingTertiaryValueYtd] = useState(false);
-  const [loadingTertiaryVolYtd, setLoadingTertiaryVolYtd] = useState(false);
-
-  const [loadingActivationValueYtdActual, setLoadingActivationValueYtdActual] =
-    useState(false);
-  const [loadingActivationVolYtdActual, setLoadingActivationVolYtdActual] =
-    useState(false);
-  const [loadingTertiaryValueYtdActual, setLoadingTertiaryValueYtdActual] =
-    useState(false);
-  const [loadingTertiaryVolYtdActual, setLoadingTertiaryVolYtdActual] =
-    useState(false);
   const [loadingActivationYtdMatrix, setLoadingActivationYtdMatrix] =
     useState(false);
 
   const [loadingCoreTagRows, setLoadingCoreTagRows] = useState(false);
-  const [loadingYtdTagRows, setLoadingYtdTagRows] = useState(false);
 
   const formatCompact = (num, isCurrency = false) => {
     if (num === null || num === undefined) return "-";
@@ -538,6 +523,9 @@ function SalesReportV2() {
 
   const formatDetailCell = (value, column) => {
     if (isTextDetailColumn(column)) return value || "-";
+    if (["SPD Stk WOD", "MDD Stk WOD", "Ret Stk WOD", "Total Stock WOD", "Average Stock"].includes(column)) {
+      return formatPlainRounded(value);
+    }
     return formatReportCell(value, column, false);
   };
 
@@ -734,15 +722,28 @@ function SalesReportV2() {
   }, [activeFilterTab, selectedActorFilters, selectedDealerFilters]);
 
   const filteredCurrentOptions = useMemo(() => {
+    const selected = currentTabSelected || [];
+    const selectedKeys = new Set(
+      selected.map((item) =>
+        isActorTab(activeFilterTab) ? item.code : String(item.value)
+      )
+    );
+    const mergedOptions = [
+      ...selected,
+      ...currentTabOptions.filter((item) => {
+        const key = isActorTab(activeFilterTab) ? item.code : String(item.value);
+        return !selectedKeys.has(key);
+      }),
+    ];
     const q = searchText.trim().toLowerCase();
-    if (!q) return currentTabOptions;
+    if (!q) return mergedOptions;
 
-    return currentTabOptions.filter((item) => {
+    return mergedOptions.filter((item) => {
       const raw =
         `${item.label || ""} ${item.name || ""} ${item.code || ""} ${item.value || ""}`.toLowerCase();
       return raw.includes(q);
     });
-  }, [currentTabOptions, searchText]);
+  }, [activeFilterTab, currentTabOptions, currentTabSelected, searchText]);
 
   const toggleSelection = (type, item) => {
     if (isActorTab(type)) {
@@ -797,7 +798,10 @@ function SalesReportV2() {
           : [...prev, item],
     }));
 
-    setFilterValues(defaultDealerFilterValues);
+    setFilterValues((old) => ({
+      ...defaultDealerFilterValues,
+      [type]: old[type] || [],
+    }));
   };
 
   const removeSelection = (type, item) => {
@@ -1037,6 +1041,7 @@ function SalesReportV2() {
     setLoadingTertiary(true);
     setLoadingSecondary(true);
     setLoadingWod(true);
+    setLoadingStockWod(true);
     setLoadingPriceSegment(true);
     setLoadingPriceSegmentSplit40k(true);
     setTagGroupedReports((old) => {
@@ -1059,6 +1064,7 @@ function SalesReportV2() {
             "tertiary",
             "secondary",
             "wod",
+            "stock_wod",
           ],
         }),
       });
@@ -1072,6 +1078,7 @@ function SalesReportV2() {
       setTertiary(data.tertiary || null);
       setSecondary(data.secondary || null);
       setWodTables(data.wod || null);
+      setStockWod(data.stock_wod || null);
 
       setTagGroupedReports((old) => ({
         ...old,
@@ -1088,6 +1095,7 @@ function SalesReportV2() {
       setLoadingTertiary(false);
       setLoadingSecondary(false);
       setLoadingWod(false);
+      setLoadingStockWod(false);
     }
   };
 
@@ -1131,15 +1139,6 @@ function SalesReportV2() {
   };
 
   const fetchYtdReports = async () => {
-    setLoadingActivationValueYtd(true);
-    setLoadingActivationVolYtd(true);
-    setLoadingTertiaryValueYtd(true);
-    setLoadingTertiaryVolYtd(true);
-
-    setLoadingActivationValueYtdActual(true);
-    setLoadingActivationVolYtdActual(true);
-    setLoadingTertiaryValueYtdActual(true);
-    setLoadingTertiaryVolYtdActual(true);
     setLoadingActivationYtdMatrix(true);
 
     try {
@@ -1153,14 +1152,6 @@ function SalesReportV2() {
           ...getRequestBody("batch"),
           include_tag_grouped: false, // 🚀 fast initial load
           report_types: [
-            "activation_value_ytd",
-            "activation_vol_ytd",
-            "tertiary_value_ytd",
-            "tertiary_vol_ytd",
-            "activation_value_ytd_actual",
-            "activation_vol_ytd_actual",
-            "tertiary_value_ytd_actual",
-            "tertiary_vol_ytd_actual",
             "activation_ytd_matrix",
           ],
         }),
@@ -1171,76 +1162,12 @@ function SalesReportV2() {
 
       const data = result.data || {};
 
-      setActivationValueYtd(data.activation_value_ytd || null);
-      setActivationVolYtd(data.activation_vol_ytd || null);
-      setTertiaryValueYtd(data.tertiary_value_ytd || null);
-      setTertiaryVolYtd(data.tertiary_vol_ytd || null);
-
-      setActivationValueYtdActual(data.activation_value_ytd_actual || null);
-      setActivationVolYtdActual(data.activation_vol_ytd_actual || null);
-      setTertiaryValueYtdActual(data.tertiary_value_ytd_actual || null);
-      setTertiaryVolYtdActual(data.tertiary_vol_ytd_actual || null);
       setActivationYtdMatrix(data.activation_ytd_matrix || null);
-
-      // ❌ DO NOT merge tag_grouped here (intentionally skipped)
-
-      // ✅ Fetch tag rows AFTER base data loads
-      setTimeout(() => {
-        fetchYtdTagGroupedReports();
-      }, 0);
 
     } catch (error) {
       console.error("YTD fetch error:", error);
     } finally {
-      setLoadingActivationValueYtd(false);
-      setLoadingActivationVolYtd(false);
-      setLoadingTertiaryValueYtd(false);
-      setLoadingTertiaryVolYtd(false);
-
-      setLoadingActivationValueYtdActual(false);
-      setLoadingActivationVolYtdActual(false);
-      setLoadingTertiaryValueYtdActual(false);
-      setLoadingTertiaryVolYtdActual(false);
       setLoadingActivationYtdMatrix(false);
-    }
-  };
-
-  const fetchYtdTagGroupedReports = async () => {
-    setLoadingYtdTagRows(true);
-
-    try {
-      const res = await fetch(`${backendUrl}/reports/dashboard-summary-batch`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: localStorage.getItem("authToken"),
-        },
-        body: JSON.stringify({
-          ...getRequestBody("batch"),
-          include_tag_grouped: true,
-          only_tag_grouped: true,
-          report_types: [
-            "activation_vol_ytd",
-            "tertiary_vol_ytd",
-            "activation_vol_ytd_actual",
-            "tertiary_vol_ytd_actual",
-          ],
-        }),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "YTD tag fetch failed");
-
-      const data = result.data || {};
-
-      setTagGroupedReports((old) => ({
-        ...old,
-        ...(data.tag_grouped || {}),
-      }));
-    } catch (error) {
-      console.error("YTD tag-grouped fetch error:", error);
-    } finally {
-      setLoadingYtdTagRows(false);
     }
   };
 
@@ -1477,81 +1404,6 @@ function SalesReportV2() {
 
             {!tagGroupedReports[reportType] && loadingCoreTagRows
               ? renderTagRowShimmer(columns)
-              : null}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  const renderYtdTableContent = (
-    report,
-    { isCurrency = false, reportType = "ytd", reportTitle = "YTD Tag Volume" } = {}
-  ) => {
-    if (!report?.columns || !report?.rows) return null;
-
-    const { columns, rows } = report;
-
-    const supportsYtdTagRows = [
-      "activation_vol_ytd",
-      "activation_vol_ytd_actual",
-      "tertiary_vol_ytd",
-      "tertiary_vol_ytd_actual",
-    ].includes(reportType);
-
-    return (
-      <div className="report-table-wrapper">
-        <table className="report-table">
-          <thead>
-            <tr>
-              {columns.map((c) => (
-                <th key={c}>{formatSalesReportColumnLabel(c)}</th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {rows.map((row, idx) => {
-              const isGdRow =
-                String(row?.Year || "").toLowerCase().includes("g/d") ||
-                String(row?.Year || "").toLowerCase().includes("gd");
-
-              return (
-                <tr key={idx}>
-                  {columns.map((col) => {
-                    const v = row?.[col];
-
-                    let cell = "-";
-                    if (col === "Year") cell = row?.Year ?? "-";
-                    else if (v === null || v === undefined) cell = "-";
-                    else if (isGdRow) cell = formatPercent(v);
-                    else cell = formatReportCell(v, col, isCurrency);
-
-                    const cls =
-                      isGdRow && col !== "Year" ? getGrowthTextClass(v) : "";
-
-                    return (
-                      <td key={col} className={cls}>
-                        {cell}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-
-            {supportsYtdTagRows
-              ? tagGroupedReports[reportType]
-                ? renderInlineTagRows(tagGroupedReports[reportType], {
-                    reportType,
-                    reportTitle,
-                    metricColumns: columns.slice(1),
-                    firstColumnLabel: "Tag Volume",
-                    formatCell: (value, column) => formatReportCell(value, column, false),
-                  })
-                : loadingYtdTagRows
-                ? renderTagRowShimmer(columns.slice(1))
-                : null
               : null}
           </tbody>
         </table>
@@ -1878,6 +1730,75 @@ function SalesReportV2() {
     );
   };
 
+  const renderStockWodContent = () => {
+    const columns = stockWod?.columns || [];
+    const rows = stockWod?.rows || [];
+    if (!columns.length) return null;
+
+    return (
+      <div className="report-table-wrapper">
+        <table className="report-table wod-report-table">
+          <thead>
+            <tr>
+              {columns.map((column, index) => (
+                <th key={column} className={index === 0 ? "sticky-col" : ""}>
+                  {column}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => {
+              const isTotal = row.Category === "Total";
+              return (
+                <tr
+                  key={`${row.Category || "row"}-${rowIndex}`}
+                  className={isTotal ? "total-row" : "clickable-row"}
+                  onClick={
+                    isTotal
+                      ? undefined
+                      : () =>
+                          openTagDetailModal({
+                            reportType: "stock_wod",
+                            reportTitle: "Stock WOD",
+                            row: { ...row, __tagLabel: row.Category },
+                            metricColumns: [
+                              "SPD Stk WOD",
+                              "MDD Stk WOD",
+                              "Ret Stk WOD",
+                              "Total Stock WOD",
+                              "Total Stock Qty",
+                              "Average Stock",
+                            ],
+                          })
+                  }
+                >
+                  {columns.map((column, columnIndex) => {
+                    const value = row[column];
+                    const isWodCount = column.includes("WOD");
+                    const isPlain = isWodCount || column === "Days of Stock" || column === "Stock Depth";
+                    return (
+                      <td
+                        key={column}
+                        className={columnIndex === 0 ? "metric-title sticky-col" : ""}
+                      >
+                        {columnIndex === 0
+                          ? value
+                          : isPlain
+                          ? formatPlainRounded(value)
+                          : formatReportCell(value, column, false)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="sales-report-page">
       <div className="report-container">
@@ -2200,6 +2121,20 @@ function SalesReportV2() {
               })}
             </ReportCard>
           )}
+
+          {loadingStockWod ? (
+            <SectionLoader title="Stock WOD" tone="purple" />
+          ) : (
+            stockWod && (
+              <ReportCard
+                title="Stock WOD"
+                subtitle="Stock-point width, quantity, and depth by product category"
+                tone="purple"
+              >
+                {renderStockWodContent()}
+              </ReportCard>
+            )
+          )}
         </ReportGroup>
 
         <ReportGroup
@@ -2260,188 +2195,6 @@ function SalesReportV2() {
               tone="teal"
             >
               {renderActivationYtdMatrixContent(activationYtdMatrix)}
-            </ReportCard>
-          )}
-        </ReportGroup>
-
-        <ReportGroup
-          title="YTD Reports"
-          subtitle="Full-month year-to-date monthly analysis"
-          tone="teal"
-          defaultOpen={false}
-        >
-          {loadingActivationValueYtdActual ? (
-            <SectionLoader title="Activation Value YTD " tone="teal" />
-          ) : (
-            <ReportCard
-              title="Activation Value YTD "
-              subtitle="Full-month activation value trend"
-              tone="teal"
-            >
-              {renderTagAwareReportContent(activationValueYtdActual, {
-                reportType: "activation_value_ytd_actual",
-                reportTitle: "Activation Value YTD",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: true,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingActivationVolYtdActual ? (
-            <SectionLoader title="Activation Vol YTD " tone="teal" />
-          ) : (
-            <ReportCard
-              title="Activation Vol YTD "
-              subtitle="Full-month activation volume trend"
-              tone="teal"
-            >
-              {renderTagAwareReportContent(activationVolYtdActual, {
-                reportType: "activation_vol_ytd_actual",
-                reportTitle: "Activation Vol YTD",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: false,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingTertiaryValueYtdActual ? (
-            <SectionLoader title="Tertiary Value YTD Actual" tone="teal" />
-          ) : (
-            <ReportCard
-              title="Tertiary Value YTD Actual"
-              subtitle="Full-month tertiary value performance"
-              tone="teal"
-            >
-              {renderTagAwareReportContent(tertiaryValueYtdActual, {
-                reportType: "tertiary_value_ytd_actual",
-                reportTitle: "Tertiary Value YTD Actual",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: true,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingTertiaryVolYtdActual ? (
-            <SectionLoader title="Tertiary Vol YTD Actual" tone="teal" />
-          ) : (
-            <ReportCard
-              title="Tertiary Vol YTD Actual"
-              subtitle="Full-month tertiary volume performance"
-              tone="teal"
-            >
-              {renderTagAwareReportContent(tertiaryVolYtdActual, {
-                reportType: "tertiary_vol_ytd_actual",
-                reportTitle: "Tertiary Vol YTD Actual",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: false,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-        </ReportGroup>
-
-        <ReportGroup
-          title="YTD Pace Reports "
-          subtitle="Pace-based YTD analysis using same day-of-month comparison"
-          tone="green"
-          defaultOpen={false}
-        >
-          {loadingActivationValueYtd ? (
-            <SectionLoader title="Activation Value YTD G/D" tone="green" />
-          ) : (
-            <ReportCard
-              title="Activation Value YTD G/D"
-              subtitle="Year-to-date value trend"
-              tone="green"
-            >
-              {renderTagAwareReportContent(activationValueYtd, {
-                reportType: "activation_value_ytd",
-                reportTitle: "Activation Value YTD G/D",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: true,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingActivationVolYtd ? (
-            <SectionLoader title="Activation Vol YTD G/D" tone="green" />
-          ) : (
-            <ReportCard
-              title="Activation Vol YTD G/D"
-              subtitle="Year-to-date volume trend"
-              tone="green"
-            >
-              {renderTagAwareReportContent(activationVolYtd, {
-                reportType: "activation_vol_ytd",
-                reportTitle: "Activation Vol YTD G/D",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: false,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingTertiaryValueYtd ? (
-            <SectionLoader title="Tertiary Value YTD G/D" tone="green" />
-          ) : (
-            <ReportCard
-              title="Tertiary Value YTD G/D"
-              subtitle="Year-to-date value performance"
-              tone="green"
-            >
-              {renderTagAwareReportContent(tertiaryValueYtd, {
-                reportType: "tertiary_value_ytd",
-                reportTitle: "Tertiary Value YTD G/D",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: true,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
-            </ReportCard>
-          )}
-
-          {loadingTertiaryVolYtd ? (
-            <SectionLoader title="Tertiary Vol YTD G/D" tone="green" />
-          ) : (
-            <ReportCard
-              title="Tertiary Vol YTD G/D"
-              subtitle="Year-to-date volume performance"
-              tone="green"
-            >
-              {renderTagAwareReportContent(tertiaryVolYtd, {
-                reportType: "tertiary_vol_ytd",
-                reportTitle: "Tertiary Vol YTD G/D",
-                renderPrimary: (report, meta) =>
-                  renderYtdTableContent(report, {
-                    isCurrency: false,
-                    reportType: meta.reportType,
-                    reportTitle: meta.reportTitle,
-                  }),
-              })}
             </ReportCard>
           )}
         </ReportGroup>
