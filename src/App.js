@@ -65,6 +65,8 @@ import DealerShopProfilesPage from "./pages/dealerShopProfiles";
 import MasterMarketCoverage from "./pages/masterMarketCoverage";
 import SecurityAlertsPage from "./pages/securityAlerts";
 import AppConfigsPage from "./pages/appConfigs";
+import ExtractionDataEditor from "./pages/extractionDataEditor";
+import ExtractionLogs from "./pages/extractionLogs";
 
 
 
@@ -162,6 +164,8 @@ function App() {
             <Route path="/dealer-shop-profiles" element={<DealerShopProfilesPage /> } />
             <Route path="/security-alerts" element={<SecurityAlertsPage /> } />
             <Route path="/app-configs" element={<AppConfigsPage /> } />
+            <Route path="/extraction-data-editor" element={<ExtractionDataEditor /> } />
+            <Route path="/extraction-logs" element={<ExtractionLogs /> } />
 
             
           </Route>

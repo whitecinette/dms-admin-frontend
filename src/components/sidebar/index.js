@@ -141,15 +141,14 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
       },
       {
         name: "Extraction",
-        to: "/extraction",
+        to: "#",
         icon: <LuPackageSearch />,
         iconColor: "#f97316",
-      },
-      {
-        name: "Extraction Status",
-        to: "/extraction-status-overview",
-        icon: <LuChartColumnIncreasing />,
-        iconColor: "#0f766e",
+        children: [
+          { name: "Extraction Report", to: "/extraction", icon: <LuPackageSearch /> },
+          { name: "Extraction Status", to: "/extraction-status-overview", icon: <LuChartColumnIncreasing /> },
+          { name: "Data Editor", to: "/extraction-data-editor", icon: <RiFilePaper2Line /> },
+        ],
       },
 
       ...(role === "super_admin"
@@ -272,6 +271,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
           { name: "Product Master", to: "/product-master", icon: <RiPriceTag3Line /> },
           { name: "Sync Params", to: "/sync-dump-data", icon: <RiRefreshLine /> },
           { name: "Dealer Shop Profile", to: "/dealer-shop-profiles", icon: <RiBuilding4Line /> },
+          { name: "Extraction Logs", to: "/extraction-logs", icon: <RiFilePaper2Line /> },
           ...(role === "super_admin"
             ? [{ name: "Data Manager", to: "/data-police", icon: <RiShieldCheckLine /> }]
             : []),
