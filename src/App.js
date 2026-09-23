@@ -52,7 +52,7 @@ import DealerHierarchy from "./pages/dealerHierarchy";
 import CombinedDataUpload from "./pages/combinedDataUpload";
 import SalesReportV2 from "./pages/SalesReportV2";
 import SalesActivationReport from "./pages/SalesActivationReport";
-import ProductMaster from "./pages/productMaster";
+import ProductFamiliesPage from "./pages/productFamilies";
 import DataPolice from "./pages/dataPolice";
 import ExtractionStatusOverview from "./pages/ExtractionStatusOverview";
 import DumpSyncUpload from "./pages/dumpSync";
@@ -145,6 +145,7 @@ function App() {
             <Route path="/metadata" element={<MetadataPage />} />
             <Route path="/expense" element={<ExpensesMatrix /> } />
             <Route path="/mdd-wise-targets" element={<MddWiseTargets/> } />
+            <Route path="/product-families" element={<ProductFamiliesPage />} />
 
             {/* new  */}
 
@@ -152,7 +153,6 @@ function App() {
             <Route path="/combined-upload" element={<CombinedDataUpload />} />
             <Route path="/all-reports" element={<SalesReportV2 /> } />
             <Route path="/sales-activation-report" element={<SalesActivationReport /> } />
-            <Route path="/product-master" element={<ProductMaster /> } />
             <Route path="/data-police" element={<DataPolice /> } />
             <Route path="/extraction-status-overview" element={<ExtractionStatusOverview /> } />
             <Route path="/sync-dump-data" element={<DumpSyncUpload /> } />

@@ -121,122 +121,6 @@ const getDateValueFromRow = (row = {}, isoDate = "") => {
   return undefined;
 };
 
-const getGroupFamilyName = (groupRow = {}) => {
-  const firstChild = Array.isArray(groupRow.children) ? groupRow.children[0] || {} : {};
-  const explicitFamily =
-    pickFirst(groupRow, ["family_name", "familyName", "model_family", "modelFamily"], "") ||
-    pickFirst(firstChild, ["family_name", "familyName", "model_family", "modelFamily"], "");
-
-  if (String(explicitFamily || "").trim()) return String(explicitFamily).trim();
-
-  const firstChildName = String(firstChild?.name || "").trim();
-  if (!firstChildName) return "Model Family";
-
-  return firstChildName.replace(/\s*\([^)]*\)\s*$/, "").trim() || firstChildName;
-};
-
-const buildFamilyGroupedRows = (rows = []) => {
-  const buckets = new Map();
-
-  rows.forEach((row) => {
-    const familyName = getGroupFamilyName(row);
-    const familyKey = String(familyName || "").toLowerCase().trim() || "unknown";
-
-    if (!buckets.has(familyKey)) {
-      buckets.set(familyKey, {
-        ...row,
-        model_code: familyName,
-        model: familyName,
-        name: familyName,
-        familyName,
-        product_category: "",
-        category: "",
-        variantCount: 0,
-        total: 0,
-        totalValue: 0,
-        LM: 0,
-        MTD: 0,
-        FTD: 0,
-        D1: 0,
-        SPD_STK: 0,
-        MDD_STK: 0,
-        RETAIL_STK: 0,
-        ADS: 0,
-        WOS: 0,
-        GR: 0,
-        dp: 0,
-        minDp: Number.POSITIVE_INFINITY,
-        maxDp: 0,
-        tags: [],
-        children: [],
-        _ratioCount: 0,
-      });
-    }
-
-    const bucket = buckets.get(familyKey);
-    const rowChildren = Array.isArray(row.children) ? row.children : [];
-
-    bucket.variantCount += safeNum(row.variantCount) || rowChildren.length;
-    bucket.total += safeNum(row.total);
-    bucket.totalValue += safeNum(row.totalValue);
-    bucket.LM += safeNum(row.LM);
-    bucket.MTD += safeNum(row.MTD);
-    bucket.FTD += safeNum(row.FTD);
-    bucket.D1 += safeNum(row.D1);
-    bucket.SPD_STK += safeNum(row.SPD_STK);
-    bucket.MDD_STK += safeNum(row.MDD_STK);
-    bucket.RETAIL_STK += safeNum(row.RETAIL_STK);
-    bucket.ADS += safeNum(row.ADS);
-    bucket.WOS += safeNum(row.WOS);
-    bucket.GR += safeNum(row.GR);
-    bucket._ratioCount += 1;
-    bucket.dp = Math.max(bucket.dp, safeNum(row.dp));
-    bucket.minDp = Math.min(bucket.minDp, safeNum(row.dp) || Number.POSITIVE_INFINITY);
-    bucket.maxDp = Math.max(bucket.maxDp, safeNum(row.dp));
-
-    if (!bucket.product_category) {
-      bucket.product_category =
-        row.product_category ||
-        row.category ||
-        (rowChildren.find((child) => child?.product_category)?.product_category || "");
-    }
-    if (!bucket.category) {
-      bucket.category = row.category || bucket.product_category || "";
-    }
-
-    const mergedTags = new Set([...(bucket.tags || []), ...(row.tags || [])]);
-    bucket.tags = [...mergedTags];
-
-    rowChildren.forEach((child) => {
-      bucket.children.push({
-        ...child,
-        parentModelCode: row.model_code || row.model || row.name || "-",
-      });
-    });
-  });
-
-  return [...buckets.values()].map((bucket) => {
-    const { _ratioCount, ...rest } = bucket;
-    const ratioCount = safeNum(_ratioCount) || 1;
-    const ads = safeNum(rest.ADS) / ratioCount;
-    const totalStock =
-      safeNum(rest.RETAIL_STK) || safeNum(rest.MDD_STK) || safeNum(rest.SPD_STK);
-    const weeklySales = ads * 7;
-
-    return {
-      ...rest,
-      ADS: ads,
-      WOS: weeklySales ? totalStock / weeklySales : 0,
-      GR: safeNum(rest.GR) / ratioCount,
-      minDp:
-        rest.minDp === Number.POSITIVE_INFINITY
-          ? safeNum(rest.maxDp || rest.dp)
-          : safeNum(rest.minDp),
-      maxDp: safeNum(rest.maxDp || rest.dp),
-    };
-  });
-};
-
 const getVariantCodeLabel = (child = {}) => {
   const modelCode = String(
     child.parentModelCode || child.model_code || child.model || ""
@@ -357,6 +241,11 @@ const normalizeRow = (row = {}, segmentKey = "", d1Date = "") => {
 
   return {
     rowType: row.rowType || "item",
+    groupType: row.groupType || "",
+    family_id: row.family_id || null,
+    family_code: row.family_code || "",
+    family_name: row.family_name || "",
+    assigned: row.assigned !== false,
     segment: row.segment || segmentKey || "unknown",
     product_code: row.product_code || row.productCode || row.model || "-",
     model: row.model || row.model_no || row.modelCode || row.model_code || row.product_code || "-",
@@ -571,7 +460,7 @@ export default function TopSellingSelf() {
   const [moneyView, setMoneyView] = useState("compact");
   const [activeSegment, setActiveSegment] = useState("all");
   const [sortBy, setSortBy] = useState("mtd");
-  const [groupBy, setGroupBy] = useState("model");
+  const [groupBy, setGroupBy] = useState("family");
   const [showDp, setShowDp] = useState(false);
 
   const [categoryOptions, setCategoryOptions] = useState([]);
@@ -995,7 +884,7 @@ const toggleSelection = (type, item) => {
     usedDefaultDateRange: true,
     ftdDate: "",
     d1Date: "",
-    groupBy: "product_code",
+    groupBy: "family",
   });
 
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -1025,7 +914,7 @@ const toggleSelection = (type, item) => {
     setSelectedTags([]);
     setActiveSegment("all");
     setSortBy("mtd");
-    setGroupBy("product_code");
+    setGroupBy("family");
   };
 
   const buildUrl = () => {
@@ -1139,7 +1028,7 @@ const toggleSelection = (type, item) => {
         groupBy: res.data?.meta?.groupBy || groupBy,
       });
 
-      if ((res.data?.meta?.groupBy || groupBy) === "model") {
+      if (["model", "family"].includes(res.data?.meta?.groupBy || groupBy)) {
         const nextExpanded = {};
         Object.keys(rawMap || {}).forEach((segmentKey) => {
           const rows = Array.isArray(rawMap[segmentKey]) ? rawMap[segmentKey] : [];
@@ -1240,19 +1129,15 @@ const toggleSelection = (type, item) => {
         return safeNum(b.MTD) - safeNum(a.MTD);
       });
 
-      if (groupBy === "model") {
-        rows = buildFamilyGroupedRows(rows);
-      }
-
       next[segment] = rows;
     });
 
     return next;
-  }, [sortedSegments, segmentMap, activeSegment, selectedCategory, selectedTags, search, sortBy]);
+  }, [sortedSegments, segmentMap, activeSegment, selectedCategory, selectedTags, search, sortBy, groupBy]);
 
   const rowsForHeat = useMemo(() => {
     const rows = Object.values(visibleSegmentRows).flat();
-    if (groupBy === "model") {
+    if (["model", "family"].includes(groupBy)) {
       return rows.flatMap((row) => [row, ...(row.children || [])]);
     }
     return rows;
@@ -1260,7 +1145,7 @@ const toggleSelection = (type, item) => {
 
   const summary = useMemo(() => {
     const flatRows =
-      groupBy === "model"
+      ["model", "family"].includes(groupBy)
         ? Object.values(visibleSegmentRows).flatMap((groups) =>
             groups.flatMap((group) => group.children || [])
           )
@@ -1345,9 +1230,9 @@ const toggleSelection = (type, item) => {
     <div className="tss-pro-page">
       <div className="tss-pro-header">
         <div>
-          <h1 className="tss-pro-title">Model Wise Sales</h1>
+          <h1 className="tss-pro-title">Top Selling Products</h1>
           <p className="tss-pro-subtitle">
-            Samsung activation performance with grouped model families and nested product-code rows
+            Family-first Samsung performance with expandable product and model details
           </p>
         </div>
 
@@ -1465,6 +1350,13 @@ const toggleSelection = (type, item) => {
             <div className="tss-toggle-group">
               <button
                 type="button"
+                className={`tss-toggle-btn ${groupBy === "family" ? "active" : ""}`}
+                onClick={() => setGroupBy("family")}
+              >
+                Family
+              </button>
+              <button
+                type="button"
                 className={`tss-toggle-btn ${groupBy === "product_code" ? "active" : ""}`}
                 onClick={() => setGroupBy("product_code")}
               >
@@ -1492,7 +1384,7 @@ const toggleSelection = (type, item) => {
             </label>
           </div>
 
-          {groupBy === "model" ? (
+          {["model", "family"].includes(groupBy) ? (
             <div className="tss-field">
               <label>Group Controls</label>
               <div className="tss-inline-actions">
@@ -1607,7 +1499,7 @@ const toggleSelection = (type, item) => {
                 <tr>
                   <th>#</th>
                   <th>Segment</th>
-                  <th>{groupBy === "model" ? "Model / Product Code" : "Product Code"}</th>
+                  <th>{groupBy === "family" ? "Family / Product Code" : groupBy === "model" ? "Model / Product Code" : "Product Code"}</th>
                   <th>Name</th>
                   <th>Category</th>
                   <th>Tags</th>
@@ -1628,7 +1520,7 @@ const toggleSelection = (type, item) => {
               <tbody>
                 {Object.keys(visibleSegmentRows).map((segment) =>
                   (visibleSegmentRows[segment] || []).flatMap((row, idx) => {
-                    if (groupBy !== "model") {
+                    if (!["model", "family"].includes(groupBy)) {
                       return (
                         <tr key={`${segment}-${row.product_code}-${idx}`}>
                           <td>{idx + 1}</td>
@@ -1671,7 +1563,10 @@ const toggleSelection = (type, item) => {
                     const isOpen = !!expandedGroups[groupKey];
 
                     const parentRow = (
-                      <tr key={`group-${groupKey}`} className="tss-group-row">
+                      <tr
+                        key={`group-${groupKey}`}
+                        className={`tss-group-row ${groupBy === "family" && !row.assigned ? "unassigned" : ""}`}
+                      >
                         <td>{idx + 1}</td>
                         <td><span className="tss-segment-pill">{segment}</span></td>
                         <td>
@@ -1681,11 +1576,17 @@ const toggleSelection = (type, item) => {
                             onClick={() => toggleGroup(groupKey)}
                           >
                             <span className={`tss-caret ${isOpen ? "open" : ""}`}>▸</span>
-                            <span className="mono tss-group-family-label">{row.model_code}</span>
-                            <span className="tss-variant-badge">{row.variantCount} variants</span>
+                            <span className="mono tss-group-family-label">
+                              {groupBy === "family" ? row.family_code || "UNASSIGNED" : row.model_code}
+                            </span>
+                            <span className="tss-variant-badge">
+                              {row.variantCount} {groupBy === "family" ? "products" : "variants"}
+                            </span>
                           </button>
                         </td>
-                        <td className="tss-name-cell tss-group-name">—</td>
+                        <td className="tss-name-cell tss-group-name">
+                          {groupBy === "family" ? row.family_name || "Unassigned Products" : "—"}
+                        </td>
                         <td>{row.product_category || row.category || "—"}</td>
                         <td>
                           <div className="tss-row-tags">

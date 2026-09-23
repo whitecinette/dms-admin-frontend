@@ -3,7 +3,7 @@ import config from "../../config";
 import "./style.scss";
 import PriceSegmentTable from "./priceSegmentTable";
 import axios from "axios";
-import { FaCheck, FaDownload, FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
+import { FaCheck, FaChevronDown, FaChevronRight, FaDownload, FaFilter, FaSyncAlt, FaTimes } from "react-icons/fa";
 
 const backendUrl = config.backend_url;
 
@@ -381,9 +381,12 @@ function SalesReportV2() {
     subtitle: "",
     columns: [],
     rows: [],
+    families: [],
+    totalRow: null,
     loading: false,
     error: "",
   });
+  const [expandedFamilies, setExpandedFamilies] = useState(new Set());
 
   const defaultDealerFilterValues = useMemo(
     () => ({
@@ -496,7 +499,7 @@ function SalesReportV2() {
 
   const isPlainRoundedColumn = (column) => {
     const key = String(column || "").trim().toLowerCase();
-    return key === "days of stock" || key === "dos";
+    return ["days of stock", "dos", "depth", "depth tgt"].includes(key);
   };
 
   const formatPlainRounded = (num) => {
@@ -539,11 +542,28 @@ function SalesReportV2() {
   const downloadDetailModalCsv = () => {
     if (!detailModal.rows.length) return;
 
-    const headers = ["Product Name / Model Code", ...detailModal.columns.map(formatSalesReportColumnLabel)];
-    const csvRows = detailModal.rows.map((row) => [
-      `${row.productLabel || ""}${row.modelCode ? ` - ${row.modelCode}` : ""}`.trim(),
-      ...detailModal.columns.map((column) => row[column]),
-    ]);
+    const headers = ["Family", "Row Type", "Product Name / Model Code", ...detailModal.columns.map(formatSalesReportColumnLabel)];
+    const csvRows = detailModal.families.length
+      ? [
+          ...(detailModal.totalRow
+            ? [["All families", "Overall total", "", ...detailModal.columns.map((column) => detailModal.totalRow[column])]]
+            : []),
+          ...detailModal.families.flatMap((family) => [
+          [family.familyLabel, "Family total", "", ...detailModal.columns.map((column) => family[column])],
+          ...family.products.map((row) => [
+            family.familyLabel,
+            "Product",
+            `${row.productLabel || ""}${row.modelCode ? ` - ${row.modelCode}` : ""}`.trim(),
+            ...detailModal.columns.map((column) => row[column]),
+          ]),
+          ]),
+        ]
+      : detailModal.rows.map((row) => [
+          "",
+          "Product",
+          `${row.productLabel || ""}${row.modelCode ? ` - ${row.modelCode}` : ""}`.trim(),
+          ...detailModal.columns.map((column) => row[column]),
+        ]);
 
     const csv = [headers, ...csvRows]
       .map((row) => row.map(escapeCsvValue).join(","))
@@ -876,9 +896,12 @@ function SalesReportV2() {
       subtitle: "",
       columns: [],
       rows: [],
+      families: [],
+      totalRow: null,
       loading: false,
       error: "",
     });
+    setExpandedFamilies(new Set());
   };
 
   const resolveDetailResponse = (result, metricColumns = []) => {
@@ -926,9 +949,31 @@ function SalesReportV2() {
       const columns = filterDetailColumns(
         payload.columns.filter((column) => !productIdentityColumns.has(column))
       );
+      const rows = normalizeProductDetailRows(payload.rows, columns);
+      const rawTotal = payload.rows.find(
+        (row) => String(row?.Product || row?.product || "").trim().toLowerCase() === "total"
+      );
+      const families = Array.isArray(payload.families)
+        ? payload.families.map((family) => ({
+            familyKey: String(family.familyKey || family.familyCode || family.familyName || "UNASSIGNED"),
+            familyCode: family.familyCode || "UNASSIGNED",
+            familyName: family.familyName || "Unassigned Products",
+            familyBrand: family.familyBrand || "",
+            assigned: Boolean(family.assigned),
+            familyLabel: family.assigned
+              ? [family.familyBrand, family.familyName].filter(Boolean).join(" · ")
+              : "Unassigned Products",
+            ...columns.reduce((values, column) => ({ ...values, [column]: family[column] }), {}),
+            products: normalizeProductDetailRows(family.products || [], columns),
+          }))
+        : [];
       return {
         columns,
-        rows: normalizeProductDetailRows(payload.rows, columns),
+        rows,
+        families,
+        totalRow: rawTotal
+          ? columns.reduce((values, column) => ({ ...values, [column]: rawTotal[column] }), {})
+          : null,
       };
     }
 
@@ -983,6 +1028,8 @@ function SalesReportV2() {
       subtitle: reportTitle,
       columns: metricColumns,
       rows: [],
+      families: [],
+      totalRow: null,
       loading: true,
       error: "",
     });
@@ -1019,6 +1066,8 @@ function SalesReportV2() {
             ...old,
             columns: resolved.columns.length ? resolved.columns : metricColumns,
             rows: resolved.rows,
+            families: resolved.families || [],
+            totalRow: resolved.totalRow || null,
             loading: false,
             error: "",
           }));
@@ -1776,7 +1825,12 @@ function SalesReportV2() {
                   {columns.map((column, columnIndex) => {
                     const value = row[column];
                     const isWodCount = column.includes("WOD");
-                    const isPlain = isWodCount || column === "Days of Stock" || column === "Stock Depth";
+                    const isPlain =
+                      isWodCount ||
+                      column === "Days of Stock" ||
+                      column === "Stock Depth" ||
+                      column === "Depth" ||
+                      column === "Depth Tgt";
                     return (
                       <td
                         key={column}
@@ -2248,7 +2302,68 @@ function SalesReportV2() {
                         </tr>
                       </thead>
                       <tbody>
-                        {detailModal.rows.map((row, index) => (
+                        {detailModal.families.length > 0 ? (
+                          <>
+                            {detailModal.totalRow && (
+                              <tr className="family-overall-row">
+                                <td className="metric-title">Overall total</td>
+                                {detailModal.columns.map((column) => (
+                                  <td key={column} className={getGrowthTextClass(detailModal.totalRow[column], column)}>
+                                    {formatDetailCell(detailModal.totalRow[column], column)}
+                                  </td>
+                                ))}
+                              </tr>
+                            )}
+                            {detailModal.families.map((family) => {
+                          const expanded = expandedFamilies.has(family.familyKey);
+                          return (
+                            <React.Fragment key={family.familyKey}>
+                              <tr className={`family-summary-row ${family.assigned ? "" : "unassigned"}`}>
+                                <td className="metric-title">
+                                  <button
+                                    type="button"
+                                    className="family-expand-button"
+                                    onClick={() => setExpandedFamilies((current) => {
+                                      const next = new Set(current);
+                                      if (next.has(family.familyKey)) next.delete(family.familyKey);
+                                      else next.add(family.familyKey);
+                                      return next;
+                                    })}
+                                    aria-expanded={expanded}
+                                  >
+                                    {expanded ? <FaChevronDown /> : <FaChevronRight />}
+                                    <span>
+                                      <strong>{family.familyLabel}</strong>
+                                      <small>{family.familyCode} · {family.products.length} products</small>
+                                    </span>
+                                  </button>
+                                </td>
+                                {detailModal.columns.map((column) => (
+                                  <td key={column} className={getGrowthTextClass(family[column], column)}>
+                                    {formatDetailCell(family[column], column)}
+                                  </td>
+                                ))}
+                              </tr>
+                              {expanded && family.products.map((row, index) => (
+                                <tr className="family-product-row" key={`${family.familyKey}-${row.modelCode}-${index}`}>
+                                  <td className="metric-title">
+                                    <div className="product-cell">
+                                      <span>{row.productLabel || "-"}</span>
+                                      <small>{row.modelCode || "-"}</small>
+                                    </div>
+                                  </td>
+                                  {detailModal.columns.map((column) => (
+                                    <td key={column} className={getGrowthTextClass(row[column], column)}>
+                                      {formatDetailCell(row[column], column)}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </React.Fragment>
+                          );
+                            })}
+                          </>
+                        ) : detailModal.rows.map((row, index) => (
                           <tr key={`${row.modelCode}-${index}`}>
                             <td className="metric-title">
                               <div className="product-cell">

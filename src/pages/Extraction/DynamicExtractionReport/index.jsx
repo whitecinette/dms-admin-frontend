@@ -1,10 +1,11 @@
 import axios from "axios";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import config from "../../../config";
 import TextToggle from "../../../components/toggle";
 import TableBodyLoading from "../../../components/tableLoading";
 import {
   FaChevronDown,
+  FaChevronRight,
   FaChevronUp,
   FaFilter,
   FaTimes,
@@ -314,8 +315,10 @@ function DynamicExtractionReport() {
     title: "",
     columns: [],
     rows: [],
+    families: [],
     error: "",
   });
+  const [expandedProductFamilies, setExpandedProductFamilies] = useState(new Set());
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState("zone");
@@ -689,8 +692,10 @@ function DynamicExtractionReport() {
       title: `${groupValue} · ${brandColumn}`,
       columns: [],
       rows: [],
+      families: [],
       error: "",
     });
+    setExpandedProductFamilies(new Set());
 
     try {
       const res = await axios.get(`${backend_url}/dynamic-report`, {
@@ -706,6 +711,7 @@ function DynamicExtractionReport() {
         loading: false,
         columns: Array.isArray(res.data?.columns) ? res.data.columns : [],
         rows: Array.isArray(res.data?.rows) ? res.data.rows : [],
+        families: Array.isArray(res.data?.families) ? res.data.families : [],
       }));
     } catch (error) {
       setProductDetail((current) => ({
@@ -1551,21 +1557,64 @@ function DynamicExtractionReport() {
                     <tr>{productDetail.columns.map((column) => <th key={column}>{column}</th>)}</tr>
                   </thead>
                   <tbody>
-                    {productDetail.rows.map((detailRow, index) => (
-                      <tr key={`${detailRow.Product || "product"}-${index}`}>
-                        {productDetail.columns.map((column) => (
-                          <td key={column}>
-                            {column === "% of Cell"
-                              ? `${Number(detailRow[column] || 0).toFixed(2)}%`
-                              : column === "Value"
-                                ? formatCrLacNumber(detailRow[column])
-                                : column === "Volume"
-                                  ? formatNormalNumber(detailRow[column])
-                                  : detailRow[column] ?? "-"}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
+                    {(productDetail.families.length
+                      ? productDetail.families
+                      : [{ familyKey: "ALL", familyName: "Products", familyCode: "", assigned: true, products: productDetail.rows }]
+                    ).map((family) => {
+                      const expanded = expandedProductFamilies.has(family.familyKey);
+                      return (
+                        <Fragment key={family.familyKey}>
+                          <tr className={`extraction-family-row ${family.assigned ? "" : "unassigned"}`}>
+                            <td>
+                              <button
+                                type="button"
+                                className="extraction-family-toggle"
+                                onClick={() => setExpandedProductFamilies((current) => {
+                                  const next = new Set(current);
+                                  if (next.has(family.familyKey)) next.delete(family.familyKey);
+                                  else next.add(family.familyKey);
+                                  return next;
+                                })}
+                                aria-expanded={expanded}
+                              >
+                                {expanded ? <FaChevronDown /> : <FaChevronRight />}
+                                <span>
+                                  <strong>{family.familyName}</strong>
+                                  <small>{family.familyCode ? `${family.familyCode} · ` : ""}{family.products.length} products</small>
+                                </span>
+                              </button>
+                            </td>
+                            <td>{family.familyBrand || "-"}</td>
+                            {productDetail.columns.slice(2).map((column) => (
+                              <td key={column}>
+                                {column === "% of Cell"
+                                  ? `${Number(family[column] || 0).toFixed(2)}%`
+                                  : column === "Value"
+                                    ? formatCrLacNumber(family[column])
+                                    : column === "Volume"
+                                      ? formatNormalNumber(family[column])
+                                      : family[column] ?? "-"}
+                              </td>
+                            ))}
+                          </tr>
+                          {expanded && family.products.map((detailRow, index) => (
+                            <tr className="extraction-family-product-row" key={`${family.familyKey}-${detailRow.Product || "product"}-${index}`}>
+                              {productDetail.columns.map((column) => (
+                                <td key={column}>
+                                  {column === "% of Cell"
+                                    ? `${Number(detailRow[column] || 0).toFixed(2)}%`
+                                    : column === "Value"
+                                      ? formatCrLacNumber(detailRow[column])
+                                      : column === "Volume"
+                                        ? formatNormalNumber(detailRow[column])
+                                        : detailRow[column] ?? "-"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}

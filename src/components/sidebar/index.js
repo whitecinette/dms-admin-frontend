@@ -225,6 +225,7 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         iconColor: "#0f766e",
         children: [
           { name: "Products", to: "/product", icon: <FaBoxOpen /> },
+          { name: "Product Families", to: "/product-families", icon: <RiPriceTag3Line /> },
           { name: "Update Products", to: "/update/products", icon: <RiRefreshLine /> },
           { name: "Orders", to: "/orders", icon: <FaClipboardList /> },
           { name: "Stock", to: "/", icon: <FaWarehouse /> },
@@ -268,7 +269,6 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         iconColor: "#334155",
         children: [
           { name: "Upload Combined", to: "/combined-upload", icon: <RiUploadCloud2Line /> },
-          { name: "Product Master", to: "/product-master", icon: <RiPriceTag3Line /> },
           { name: "Sync Params", to: "/sync-dump-data", icon: <RiRefreshLine /> },
           { name: "Dealer Shop Profile", to: "/dealer-shop-profiles", icon: <RiBuilding4Line /> },
           { name: "Extraction Logs", to: "/extraction-logs", icon: <RiFilePaper2Line /> },

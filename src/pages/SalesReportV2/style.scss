@@ -857,6 +857,11 @@
 }
 
 .report-table--modal {
+  .family-overall-row td {
+    background: #eef4ff;
+    font-weight: 800;
+  }
+
   .product-cell {
     min-width: 170px;
 
@@ -941,6 +946,40 @@
     text-align: center;
     color: #667085;
     font-weight: 500;
+  }
+}
+
+.report-table--modal {
+  .family-summary-row td {
+    background: #f5f8fc;
+    border-top: 1px solid #dfe6ef;
+    font-weight: 700;
+  }
+
+  .family-summary-row.unassigned td {
+    background: #fff9eb;
+  }
+
+  .family-expand-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #344054;
+    cursor: pointer;
+    display: flex;
+    gap: 9px;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+
+    svg { flex: 0 0 auto; font-size: 11px; }
+    span, strong, small { display: block; }
+    strong { font-size: 13px; }
+    small { color: #7c8799; font-size: 10px; margin-top: 3px; }
+  }
+
+  .family-product-row .metric-title {
+    padding-left: 42px;
   }
 }
 

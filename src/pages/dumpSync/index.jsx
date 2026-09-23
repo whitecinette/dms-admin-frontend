@@ -91,18 +91,19 @@ const DUMP_APIS = [
   },
   {
     key: "product_simple_sync",
-    title: "Product Master Simple Sync",
+    title: "Product Catalog Sync",
     subtitle:
-      "Creates or updates products and tags in one upload.",
+      "Creates or updates products, families and tags in one upload.",
     endpoint: "/dump-sync/products/simple/upload",
     accept: [".csv", ".xlsx", ".xls"],
     hint:
-      "Required headers: brand, product_category, price, plus product_name or model_code/product_code. Add one or more tag columns to sync product tags.",
+      "Required headers: brand, product_category, price, plus product_name or model_code/product_code. Family is optional and must already exist in Product Families.",
     templateHeaders: [
       "brand",
       "model_code",
       "product_code",
       "product_name",
+      "family",
       "product_category",
       "price",
       "tag",
@@ -110,17 +111,19 @@ const DUMP_APIS = [
       "tag",
     ],
     templateRows: [
-      ["sample rows", "CODE01", "SM-CODE01", "name1", "smart_phone", "120000", "4G", "", ""],
-      ["samsung", "CODE02", "SM-CODE02", "name2", "smart_phone", "120000", "5G", "Innovative 5G", ""],
-      ["samsung", "CODE03", "SM-CODE03", "name3", "smart_phone", "120000", "5G", "Flagship 5G", ""],
-      ["samsung", "CODE04", "SM-CODE04", "name4", "tab", "10000", "tab", "", ""],
-      ["samsung", "CODE05", "SM-CODE05", "name5", "wearable", "2000", "wearable", "", ""],
+      ["sample rows", "CODE01", "SM-CODE01", "name1", "", "smart_phone", "120000", "4G", "", ""],
+      ["samsung", "CODE02", "SM-CODE02", "name2", "A27 family", "smart_phone", "120000", "5G", "Innovative 5G", ""],
+      ["samsung", "CODE03", "SM-CODE03", "name3", "A27", "smart_phone", "120000", "5G", "Flagship 5G", ""],
+      ["samsung", "CODE04", "SM-CODE04", "name4", "Tab family", "tab", "10000", "tab", "", ""],
+      ["samsung", "CODE05", "SM-CODE05", "name5", "Wearable family", "wearable", "2000", "wearable", "", ""],
     ],
     guide: [
       "Download the format, remove all sample rows, then paste or insert your actual product data.",
       "Only brand, product_category and price are required when model_code or product_code is available; product_name is recommended.",
       "Brand is saved in lowercase automatically.",
       "Every column named tag is saved into the product tags list. Add more tag columns when a product needs multiple tags.",
+      "Family is optional. Use its exact name, code or approved alias from Inventory > Product Families.",
+      "Unknown or inactive families are rejected during Dry Run and are never created automatically.",
       "Segment is calculated from price: 0-6, 6-10, 10-20, 20-30, 30-40, 40-70, 70-100, 100-120 or 120.",
       "Leave model_code blank when it is not available.",
       "When product_code is blank, model_code is used as the product code so sales reports can match it.",
@@ -214,6 +217,7 @@ function DumpSyncUpload() {
 
       worksheet["!cols"] = [
         { wch: 18 },
+        { wch: 22 },
         { wch: 18 },
         { wch: 18 },
         { wch: 24 },
