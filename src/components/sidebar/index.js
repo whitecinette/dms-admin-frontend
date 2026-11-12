@@ -151,6 +151,9 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
         ],
       },
 
+      ...(["admin", "super_admin"].includes(role) ? [
+        { name: "User Directory", to: "/user-directory", icon: <MdManageAccounts />, iconColor: "#db2777" },
+      ] : []),
       ...(role === "super_admin"
         ? [
             {
@@ -158,12 +161,6 @@ function Sidebar({ isCollapsed, open, toggleSidebar }) {
               to: "/sessions",
               icon: <MdDevices />,
               iconColor: "#7c3aed",
-            },
-            {
-              name: "User Directory",
-              to: "/user-directory",
-              icon: <MdManageAccounts />,
-              iconColor: "#db2777",
             },
             {
               name: "Hierarchy Manager",

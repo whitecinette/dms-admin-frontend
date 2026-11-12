@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import config from "../../config";
 import "./style.scss";
+import { PasswordAccountSearch, PasswordDialog } from "./PasswordControls";
 
 const backendUrl = config.backend_url;
 
@@ -126,6 +127,11 @@ const buildMetadataForm = (metadata = {}, code = "", name = "") => {
 };
 
 export default function UserDirectoryPage() {
+  const currentRole = localStorage.getItem("role");
+  const canChangePasswords = ["admin", "super_admin"].includes(currentRole);
+  const isSuperAdmin = currentRole === "super_admin";
+  const [passwordAccount, setPasswordAccount] = useState(null);
+  const endpoint = backendUrl + "/super-admin/user-directory";
   const [loading, setLoading] = useState(false);
   const [updatingCode, setUpdatingCode] = useState("");
   const [rows, setRows] = useState([]);
@@ -244,8 +250,10 @@ export default function UserDirectoryPage() {
   };
 
   useEffect(() => {
-    fetchFirms();
-    fetchData(1);
+    if (isSuperAdmin) {
+      fetchFirms();
+      fetchData(1);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -526,6 +534,23 @@ export default function UserDirectoryPage() {
     });
   };
 
+  const passwordTools = canChangePasswords && (
+    <>
+      <PasswordAccountSearch endpoint={endpoint} getAuthHeader={getAuthHeader} onSelect={setPasswordAccount} />
+      {passwordAccount && <PasswordDialog account={passwordAccount} endpoint={endpoint}
+        getAuthHeader={getAuthHeader} onClose={() => setPasswordAccount(null)} />}
+    </>
+  );
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="user-directory-page">
+        <div className="ud-hero"><div className="ud-title">User Directory</div></div>
+        {passwordTools || <div className="ud-empty">You do not have access to the user directory.</div>}
+      </div>
+    );
+  }
+
   return (
     <div className="user-directory-page">
       <div className="ud-hero">
@@ -549,6 +574,7 @@ export default function UserDirectoryPage() {
         </div>
       </div>
 
+      {passwordTools}
       <div className="ud-filters-card">
         <div className="ud-filters-top">
           <div className="section-title">Filters</div>
@@ -851,6 +877,10 @@ export default function UserDirectoryPage() {
 
                         <td>
                           <div className="action-col">
+                            {canChangePasswords && row.user_data && (
+                              row.role === "super_admin" ? <span className="pill neutral">Password protected</span> :
+                                <button className="secondary-btn small" onClick={() => setPasswordAccount(row)}>Change Password</button>
+                            )}
                             <button
                               className="ghost-btn"
                               onClick={() => toggleExpand(row.code)}
